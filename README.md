@@ -16,10 +16,42 @@ ScrollTrigger, Framer Motion and Lenis smooth scrolling.
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm run build      # production build
-npm start          # serve the production build
+npm run build      # static export -> out/
 npm run typecheck  # tsc --noEmit
 ```
+
+## Deploying
+
+Every route is prerendered, so `npm run build` emits a plain static site into
+`out/` — no Node server required.
+
+**Cloudflare Pages** — connect the repo, then set:
+
+| Setting | Value |
+|---|---|
+| Build command | `npm run build` |
+| Build output directory | `out` |
+| Node version | 22 (`NODE_VERSION` environment variable) |
+
+**Netlify** — `netlify.toml` already carries the same settings, so connecting
+the repo is enough.
+
+**GitHub Pages / any bucket** — upload the contents of `out/`. The export
+includes a `.nojekyll` file so the `_next` directory survives, and `404.html`
+is wired to the designed not-found page.
+
+`public/_headers` sets long-lived immutable caching for hashed build assets and
+the image set, and basic security headers; Cloudflare Pages and Netlify both
+read it from the published directory.
+
+Before going live, replace the `siteUrl` constants in `src/app/layout.tsx`,
+`src/lib/schema.ts`, `src/app/sitemap.ts` and `src/app/robots.ts` with the real
+domain — they drive canonicals, Open Graph tags, the sitemap and the structured
+data.
+
+Deploying to a Node host instead (Vercel, a container)? Remove `output:
+"export"` and `images.unoptimized` from `next.config.ts` and Next's image
+optimiser takes over; nothing else changes.
 
 ## Structure
 
@@ -95,7 +127,8 @@ hook.
 All photography was generated for this project and is committed as optimised
 WebP under `public/images` (1.2 MB total). `src/lib/media.ts` is generated
 alongside it and carries intrinsic dimensions plus an inline blur placeholder
-for every asset, so nothing shifts as images load.
+for every asset, so nothing shifts as images load — which is also why the
+static export needs no image optimiser.
 
 The two before/after pairs were produced as single diptych frames and split
 down the middle, which is why each pair is unmistakably the same person.

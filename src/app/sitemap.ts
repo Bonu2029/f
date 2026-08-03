@@ -1,5 +1,8 @@
 import type { MetadataRoute } from "next";
 
+// Emitted as a real file by the static export.
+export const dynamic = "force-static";
+
 const siteUrl = "https://ashgrovebarber.co";
 
 export default function sitemap(): MetadataRoute.Sitemap {
