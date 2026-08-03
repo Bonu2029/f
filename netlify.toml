@@ -1,0 +1,8 @@
+# Netlify picks this up automatically; Cloudflare Pages needs the same two
+# values entered in its dashboard (build command `npm run build`, output `out`).
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
