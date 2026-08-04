@@ -145,7 +145,10 @@ export default function Booking() {
 
       if (res.ok) {
         setSend({ status: "sent" });
-      } else if (res.status === 501) {
+      } else if (res.status === 501 || res.status === 404 || res.status === 405) {
+        // 501 = endpoint present but no delivery configured.
+        // 404/405 = static hosting, so there is no endpoint at all.
+        // Both mean "nothing was sent" and must say so rather than celebrate.
         setSend({ status: "unconfigured" });
       } else {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;

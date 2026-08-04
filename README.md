@@ -68,6 +68,47 @@ NEXT_PUBLIC_BOOKING_URL=https://...
 
 ---
 
+## Deploying to Netlify
+
+Two ways, depending on how much you want working.
+
+### Option A — Git or CLI (recommended, keeps everything)
+
+`netlify.toml` is already configured. Connect the repo in Netlify, or:
+
+```bash
+npm i -g netlify-cli
+netlify deploy --build --prod
+```
+
+You keep the `/api/booking` endpoint and Google reviews refetched hourly on
+the server. Set the environment variables in **Site settings → Environment
+variables** — the same names as `.env.example`.
+
+### Option B — drag and drop (no build on Netlify)
+
+```bash
+npm run build:static     # writes out/
+```
+
+Drag the `out/` folder onto <https://app.netlify.com/drop>, or upload a zip of
+**its contents** (`index.html` must be at the top level of the zip, not inside
+a folder).
+
+Two things behave differently on this target, by design:
+
+- **No booking endpoint.** The form still validates and still shows its
+  summary, but it tells the visitor plainly that nothing was sent and points
+  them at the salon's own booking link. It never shows a fake confirmation.
+  Set `NEXT_PUBLIC_BOOKING_URL` before building so that link is there.
+- **Reviews are fetched once, at build time**, instead of hourly. Rebuild to
+  refresh them.
+
+Environment variables must be set **before** running `build:static` — a static
+export bakes them in.
+
+---
+
 ## Imagery
 
 Every image slot on the site is declared once in **`src/lib/images.ts`**,
@@ -79,16 +120,23 @@ by design, so nothing invented is ever presented as a photograph.
 
 ### Generating the real imagery
 
-Prompts are written for Higgsfield `soul_2` at 2k. The shared `HOUSE_STYLE`
-suffix in `images.ts` carries the art direction (soft natural window light,
-cream and champagne, sage and copper accents, 35mm grain, shallow depth of
-field) and is appended to every prompt automatically.
+**[`docs/IMAGE-PROMPTS.md`](docs/IMAGE-PROMPTS.md) is the brief** — all thirty
+slots with complete, copy-paste-ready prompts, aspect ratios, minimum sizes
+and where each one appears on the page. Regenerate it any time with
+`npm run images:prompts`.
+
+The shared `HOUSE_STYLE` suffix in `images.ts` carries the art direction (soft
+natural window light, cream and champagne, sage and copper accents, 35mm
+grain, shallow depth of field) and is already appended to every prompt.
 
 ```
-1. Generate each slot with its prompt from src/lib/images.ts
+1. Generate or shoot each slot using its prompt
 2. Save as public/images/art/<slot-id>.jpg   (or .webp / .avif)
-3. node scripts/adopt-images.mjs             # rewrites the manifest
+3. npm run images:adopt                      # rewrites the manifest
 ```
+
+Partial delivery is fine — swap in five images or all thirty; anything without
+a real file stays on its placeholder.
 
 `scripts/generate-placeholders.mjs` regenerates the placeholder art if slots
 are added. Both scripts are safe to re-run.

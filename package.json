@@ -12,8 +12,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "build:static": "node scripts/build-static.mjs",
     "typecheck": "tsc --noEmit",
-    "images:placeholders": "node scripts/generate-placeholders.mjs"
+    "images:placeholders": "node scripts/generate-placeholders.mjs",
+    "images:adopt": "node scripts/adopt-images.mjs",
+    "images:prompts": "node scripts/export-prompts.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.43.0",
