@@ -110,7 +110,9 @@ Colour bar detail, a colourist blending bespoke tone in a ceramic bowl, tinted b
 Hand-painted balayage being swept freehand through mid-lengths, lightener on the brush, soft focus salon interior behind, sunlit. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 06. `service-extensions`
+### 06. `service-extensions` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Services — block 03, Hair Extensions.
 
@@ -132,7 +134,7 @@ Hand-tied hair extension wefts laid in a neat row on cream linen, matched to a n
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/service-haircut.jpg`
 
-**Alt text already written for it** — "A stylist combing a client's hair into section at the styling chair"
+**Alt text already written for it** — "A precision cut in progress, hair sectioned with clips and shears in hand"
 
 **Prompt**
 
@@ -148,7 +150,7 @@ Precision haircut in progress, hair sectioned with clips, shears in hand, mirror
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/service-blowout.jpg`
 
-**Alt text already written for it** — "A blowout being shaped with a round brush and dryer beside the studio's arched window"
+**Alt text already written for it** — "A blowout being lifted and shaped with a round brush, backlit by the studio window"
 
 **Prompt**
 
@@ -156,7 +158,9 @@ Precision haircut in progress, hair sectioned with clips, shears in hand, mirror
 Voluminous blowout being finished with a round brush, hair lifting in motion, backlit by a window, glossy healthy movement. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 09. `service-nails`
+### 09. `service-nails` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Services — block 06, Nail Services.
 
@@ -170,7 +174,9 @@ Voluminous blowout being finished with a round brush, hair lifting in motion, ba
 Manicure table still life, hands mid nail treatment, sheer rose and soft taupe polish bottles, folded ivory towel, copper lamp, warm light. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 10. `service-beauty`
+### 10. `service-beauty` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Services — block 07, Beauty Treatments.
 
@@ -188,13 +194,15 @@ Beauty treatment room, rolled ivory towels, ceramic bowls, dried florals, a trea
 
 ## The Studio
 
-### 11. `studio-portrait`
+### 11. `studio-portrait` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — The Studio — large portrait in an organic petal mask.
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/studio-portrait.jpg`
 
-**Alt text already written for it** — "Portrait of a stylist in the studio"
+**Alt text already written for it** — "A stylist at work with a client in the studio's main styling room"
 
 **Prompt**
 
@@ -350,7 +358,9 @@ Soft champagne balayage styled in loose waves, seen from behind against a limewa
 Sheer rose nude manicure, hand resting on cream linen, close macro, delicate. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 22. `gallery-03`
+### 22. `gallery-03` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery tile. Filter: Cuts & Styling.
 
@@ -484,19 +494,19 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 
 ## Checklist
 
-5 of 30 slots delivered. Still needed:
+10 of 30 slots delivered. Still needed:
 
 - [x] `hero-primary` — 2:3
 - [ ] `hero-secondary` — 4:5
 - [ ] `hero-detail` — 1:1
 - [x] `service-color` — 4:5
 - [x] `service-balayage` — 3:4
-- [ ] `service-extensions` — 4:5
+- [x] `service-extensions` — 4:5
 - [x] `service-haircut` — 4:5
 - [x] `service-blowout` — 4:5
-- [ ] `service-nails` — 4:5
-- [ ] `service-beauty` — 4:5
-- [ ] `studio-portrait` — 4:5
+- [x] `service-nails` — 4:5
+- [x] `service-beauty` — 4:5
+- [x] `studio-portrait` — 4:5
 - [ ] `studio-interior` — 3:2
 - [ ] `studio-detail` — 1:1
 - [ ] `transform-1-before` — 3:4
@@ -507,7 +517,7 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 - [ ] `transform-3-after` — 3:4
 - [ ] `gallery-01` — 3:4
 - [ ] `gallery-02` — 1:1
-- [ ] `gallery-03` — 4:5
+- [x] `gallery-03` — 4:5
 - [ ] `gallery-04` — 3:4
 - [ ] `gallery-05` — 4:3
 - [ ] `gallery-06` — 4:5
