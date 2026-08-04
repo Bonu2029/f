@@ -77,12 +77,14 @@ function ServiceBlock({ service, index }: { service: Service; index: number }) {
 
         <Parallax speed={flipped ? -0.09 : -0.13}>
           <Reveal variant={flipped ? "slide-right" : "slide-left"}>
+            {/* No aspect override — each photograph keeps the ratio it was
+                delivered at, so nobody gets cropped out of frame. Width is
+                capped instead, which is what actually controls block height. */}
             <Art
               slot={service.image}
               frame={service.frame}
               sizes="(max-width: 1024px) 90vw, 44vw"
-              aspect="4 / 4.4"
-              className="mx-auto w-full max-w-[32rem] shadow-[0_46px_110px_-50px_rgba(33,30,27,0.42)]"
+              className="mx-auto w-full max-w-[30rem] shadow-[0_46px_110px_-50px_rgba(33,30,27,0.42)]"
             />
           </Reveal>
         </Parallax>

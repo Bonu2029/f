@@ -10,7 +10,7 @@
  *   node scripts/export-prompts.mjs
  * ========================================================================== */
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -104,6 +104,17 @@ const MIN_PX = {
   "3:2": "1800 × 1200",
 };
 
+/* Which slots already have a real photograph, so the brief shows what is
+   actually still outstanding rather than re-listing everything each time. */
+const artDir = resolve(root, "public/images/art");
+const delivered = new Set();
+if (existsSync(artDir)) {
+  for (const file of readdirSync(artDir)) {
+    const match = /^([a-z0-9-]+)\.(avif|webp|jpg|jpeg|png)$/i.exec(file);
+    if (match) delivered.add(match[1]);
+  }
+}
+
 const GROUPS = [
   { title: "Hero", match: (id) => id.startsWith("hero-") },
   { title: "Services", match: (id) => id.startsWith("service-") },
@@ -173,8 +184,17 @@ for (const group of GROUPS) {
 
   for (const slot of members) {
     index += 1;
-    lines.push(`### ${String(index).padStart(2, "0")}. \`${slot.id}\``);
+    const done = delivered.has(slot.id);
+    lines.push(
+      `### ${String(index).padStart(2, "0")}. \`${slot.id}\`${done ? " ✅ delivered" : ""}`,
+    );
     lines.push("");
+    if (done) {
+      lines.push(
+        `> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.`,
+      );
+      lines.push("");
+    }
     lines.push(`**Where it appears** — ${USAGE[slot.id] ?? "—"}`);
     lines.push("");
     lines.push(
@@ -199,8 +219,13 @@ for (const group of GROUPS) {
 
 lines.push(`## Checklist`);
 lines.push("");
+lines.push(
+  `${delivered.size} of ${slots.length} slots delivered. Still needed:`,
+);
+lines.push("");
 for (const slot of slots) {
-  lines.push(`- [ ] \`${slot.id}\` — ${slot.aspect}`);
+  const done = delivered.has(slot.id);
+  lines.push(`- [${done ? "x" : " "}] \`${slot.id}\` — ${slot.aspect}`);
 }
 lines.push("");
 

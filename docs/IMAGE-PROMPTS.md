@@ -30,13 +30,15 @@ This sentence is already appended to every prompt below. If you are writing new 
 
 ## Hero
 
-### 01. `hero-primary`
+### 01. `hero-primary` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Homepage hero — the large arched image. First thing anyone sees.
 
-**Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/hero-primary.jpg`
+**Aspect ratio** `2:3`  ·  **Minimum size** 1200 × 1800px  ·  **Save as** `public/images/art/hero-primary.jpg`
 
-**Alt text already written for it** — "A stylist finishing a long, glossy balayage blowout in the salon's main styling room"
+**Alt text already written for it** — "A stylist blow-drying a client's long balayage waves in the studio's arched styling room"
 
 **Prompt**
 
@@ -76,13 +78,15 @@ Close-up of softly manicured hands with a sheer rose nude nail finish resting on
 
 ## Services
 
-### 04. `service-color`
+### 04. `service-color` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Services — block 01, Hair Colour.
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/service-color.jpg`
 
-**Alt text already written for it** — "Colour application at the salon's colour bar"
+**Alt text already written for it** — "A colourist working through a client's highlighted lengths at the studio's product-lined styling station"
 
 **Prompt**
 
@@ -90,13 +94,15 @@ Close-up of softly manicured hands with a sheer rose nude nail finish resting on
 Colour bar detail, a colourist blending bespoke tone in a ceramic bowl, tinted brushes, foils fanned on a linen cloth, warm neutral tones. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 05. `service-balayage`
+### 05. `service-balayage` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Services — block 02, Balayage.
 
-**Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/service-balayage.jpg`
+**Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/service-balayage.jpg`
 
-**Alt text already written for it** — "Hand-painted balayage being swept through mid-lengths"
+**Alt text already written for it** — "A stylist lifting a section of finished balayage to check the blend through the mid-lengths"
 
 **Prompt**
 
@@ -118,13 +124,15 @@ Hand-painted balayage being swept freehand through mid-lengths, lightener on the
 Hand-tied hair extension wefts laid in a neat row on cream linen, matched to a natural brunette base, soft shadow, still-life composition. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 07. `service-haircut`
+### 07. `service-haircut` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Services — block 04, Haircuts.
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/service-haircut.jpg`
 
-**Alt text already written for it** — "A precision cut being sectioned at the styling chair"
+**Alt text already written for it** — "A stylist combing a client's hair into section at the styling chair"
 
 **Prompt**
 
@@ -132,13 +140,15 @@ Hand-tied hair extension wefts laid in a neat row on cream linen, matched to a n
 Precision haircut in progress, hair sectioned with clips, shears in hand, mirror reflection softly out of focus, calm quiet moment. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 08. `service-blowout`
+### 08. `service-blowout` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Services — block 05, Blowouts.
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/service-blowout.jpg`
 
-**Alt text already written for it** — "A voluminous blowout being finished with a round brush"
+**Alt text already written for it** — "A blowout being shaped with a round brush and dryer beside the studio's arched window"
 
 **Prompt**
 
@@ -474,14 +484,16 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 
 ## Checklist
 
-- [ ] `hero-primary` — 3:4
+5 of 30 slots delivered. Still needed:
+
+- [x] `hero-primary` — 2:3
 - [ ] `hero-secondary` — 4:5
 - [ ] `hero-detail` — 1:1
-- [ ] `service-color` — 4:5
-- [ ] `service-balayage` — 4:5
+- [x] `service-color` — 4:5
+- [x] `service-balayage` — 3:4
 - [ ] `service-extensions` — 4:5
-- [ ] `service-haircut` — 4:5
-- [ ] `service-blowout` — 4:5
+- [x] `service-haircut` — 4:5
+- [x] `service-blowout` — 4:5
 - [ ] `service-nails` — 4:5
 - [ ] `service-beauty` — 4:5
 - [ ] `studio-portrait` — 4:5
