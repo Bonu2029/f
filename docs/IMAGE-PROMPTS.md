@@ -62,13 +62,15 @@ Wide editorial interior of a luxury hair studio, a stylist mid-motion finishing 
 Extreme close-up of freshly finished balayage hair, ribbons of warm caramel and champagne through soft brunette, light catching the mid-lengths, hands lifting a section. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 03. `hero-detail`
+### 03. `hero-detail` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Homepage hero — small circular image top-right; reused in the reviews block.
 
 **Aspect ratio** `1:1`  ·  **Minimum size** 1400 × 1400px  ·  **Save as** `public/images/art/hero-detail.jpg`
 
-**Alt text already written for it** — "Manicured hands resting on a marble console beside a copper bowl"
+**Alt text already written for it** — "A hand with a sheer rose nude manicure resting on cream linen beside a copper vessel"
 
 **Prompt**
 
@@ -410,7 +412,9 @@ Sculpted blowout with deep body and bend, hair in motion, backlit. editorial bea
 Copper-toned hair colour catching low afternoon light, close three-quarter view, warm glow. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 24. `gallery-05`
+### 24. `gallery-05` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery tile. Filters: The Studio, Colour.
 
@@ -424,7 +428,9 @@ Copper-toned hair colour catching low afternoon light, close three-quarter view,
 Colour bar at rest, ceramic bowls and tint brushes arranged neatly, foils, soft shadow. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 25. `gallery-06`
+### 25. `gallery-06` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery — featured tile. Filter: Cuts & Styling.
 
@@ -452,13 +458,15 @@ Precision blunt cut with a clean line, glossy dark hair, minimal styling, plain 
 Beauty treatment detail, warm rolled towel and ceramic bowl, dried flower, calm still life. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 27. `gallery-08`
+### 27. `gallery-08` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery tile. Filters: Colour, Cuts & Styling.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/gallery-08.jpg`
 
-**Alt text already written for it** — "Extension wefts blended into natural lengths"
+**Alt text already written for it** — "Copper-toned waves catching late afternoon light"
 
 **Prompt**
 
@@ -466,13 +474,15 @@ Beauty treatment detail, warm rolled towel and ceramic bowl, dried flower, calm 
 Hand-tied extensions blended into natural lengths, sectioned to show the invisible join, soft light. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 28. `gallery-09`
+### 28. `gallery-09` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery tile. Filter: Cuts & Styling.
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/gallery-09.jpg`
 
-**Alt text already written for it** — "A soft updo finished with a copper pin"
+**Alt text already written for it** — "A voluminous layered blowout with deep body and bend"
 
 **Prompt**
 
@@ -516,11 +526,11 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 
 ## Checklist
 
-21 of 30 slots delivered. Still needed:
+26 of 30 slots delivered. Still needed:
 
 - [x] `hero-primary` — 2:3
 - [x] `hero-secondary` — 3:4
-- [ ] `hero-detail` — 1:1
+- [x] `hero-detail` — 1:1
 - [x] `service-color` — 4:5
 - [x] `service-balayage` — 3:4
 - [x] `service-extensions` — 4:5
@@ -541,10 +551,10 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 - [ ] `gallery-02` — 1:1
 - [x] `gallery-03` — 4:5
 - [x] `gallery-04` — 3:4
-- [ ] `gallery-05` — 4:3
-- [ ] `gallery-06` — 4:5
+- [x] `gallery-05` — 4:3
+- [x] `gallery-06` — 4:5
 - [ ] `gallery-07` — 1:1
-- [ ] `gallery-08` — 3:4
-- [ ] `gallery-09` — 4:5
+- [x] `gallery-08` — 3:4
+- [x] `gallery-09` — 4:5
 - [ ] `gallery-10` — 3:2
 - [ ] `booking-ambient` — 4:5

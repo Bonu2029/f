@@ -30,8 +30,8 @@ export const gallery: GalleryItem[] = [
   { image: "gallery-05", caption: "The colour bar", categories: ["studio", "colour"] },
   { image: "gallery-06", caption: "Precision blunt cut", categories: ["cuts"], feature: true },
   { image: "gallery-07", caption: "Treatment room detail", categories: ["nails", "studio"] },
-  { image: "gallery-08", caption: "Hand-tied extensions", categories: ["colour", "cuts"] },
-  { image: "gallery-09", caption: "Soft updo, copper pin", categories: ["cuts"] },
+  { image: "gallery-08", caption: "Copper tone, late light", categories: ["colour"] },
+  { image: "gallery-09", caption: "Body, set and finished", categories: ["cuts"] },
   { image: "gallery-10", caption: "Window seat", categories: ["studio"], feature: true },
 ];
 

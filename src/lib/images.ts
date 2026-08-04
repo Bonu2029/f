@@ -74,7 +74,7 @@ export const IMAGES: Record<string, ImageSlot> = {
   ),
   "hero-detail": slot(
     "hero-detail",
-    "Manicured hands resting on a marble console beside a copper bowl",
+    "A hand with a sheer rose nude manicure resting on cream linen beside a copper vessel",
     "1:1",
     "Close-up of softly manicured hands with a sheer rose nude nail finish resting on a cream marble console beside a small brushed copper bowl and a single dried stem",
   ),
@@ -226,13 +226,13 @@ export const IMAGES: Record<string, ImageSlot> = {
   ),
   "gallery-08": slot(
     "gallery-08",
-    "Extension wefts blended into natural lengths",
+    "Copper-toned waves catching late afternoon light",
     "3:4",
     "Hand-tied extensions blended into natural lengths, sectioned to show the invisible join, soft light",
   ),
   "gallery-09": slot(
     "gallery-09",
-    "A soft updo finished with a copper pin",
+    "A voluminous layered blowout with deep body and bend",
     "4:5",
     "Soft romantic updo finished with a single brushed copper pin, loose face-framing pieces, neutral backdrop",
   ),
@@ -265,6 +265,11 @@ export function hasRealPhoto(id: string): boolean {
 IMAGES["gallery-01"].src = "/images/art/gallery-01.webp";
 IMAGES["gallery-03"].src = "/images/art/gallery-03.webp";
 IMAGES["gallery-04"].src = "/images/art/gallery-04.webp";
+IMAGES["gallery-05"].src = "/images/art/gallery-05.webp";
+IMAGES["gallery-06"].src = "/images/art/gallery-06.webp";
+IMAGES["gallery-08"].src = "/images/art/gallery-08.webp";
+IMAGES["gallery-09"].src = "/images/art/gallery-09.webp";
+IMAGES["hero-detail"].src = "/images/art/hero-detail.webp";
 IMAGES["hero-primary"].src = "/images/art/hero-primary.webp";
 IMAGES["hero-secondary"].src = "/images/art/hero-secondary.webp";
 IMAGES["service-balayage"].src = "/images/art/service-balayage.webp";

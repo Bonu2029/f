@@ -8,6 +8,7 @@ import SplitLines from "@/components/motion/SplitLines";
 import Lightbox, { type LightboxItem } from "@/components/ui/Lightbox";
 import Divider from "@/components/decor/Divider";
 import { gallery, galleryFilters, type GalleryCategory } from "@/lib/content";
+import { hasRealPhoto } from "@/lib/images";
 
 /** Rounded frames rotate through the grid so no two neighbours match. */
 const FRAMES = ["soft", "arch", "pebble", "soft", "leaf", "soft"] as const;
@@ -16,12 +17,35 @@ export default function Gallery() {
   const [filter, setFilter] = useState<GalleryCategory>("all");
   const [open, setOpen] = useState<number | null>(null);
 
+  // Tiles still on placeholder art are held back — one abstract gradient among
+  // real photographs reads as a broken image, not as a placeholder. Falls back
+  // to the full set before anything is delivered so the layout stays
+  // reviewable.
+  const pool = useMemo(() => {
+    const real = gallery.filter((g) => hasRealPhoto(g.image));
+    return real.length > 0 ? real : gallery;
+  }, []);
+
+  // Only offer a filter that has something behind it. Holding tiles back can
+  // empty a whole category, and a tab that returns nothing is worse than a tab
+  // that isn't there.
+  const availableFilters = useMemo(
+    () =>
+      galleryFilters.filter((f) => {
+        if (f.id === "all") return true;
+        // Bound to a const so the narrowing survives into the callback.
+        const id = f.id;
+        return pool.some((g) => g.categories.includes(id));
+      }),
+    [pool],
+  );
+
   const visible = useMemo(
     () =>
       filter === "all"
-        ? gallery
-        : gallery.filter((g) => g.categories.includes(filter)),
-    [filter],
+        ? pool
+        : pool.filter((g) => g.categories.includes(filter)),
+    [filter, pool],
   );
 
   const items: LightboxItem[] = visible.map((g) => ({
@@ -57,7 +81,7 @@ export default function Gallery() {
                 aria-label="Filter gallery"
                 className="no-scrollbar -mx-[var(--spacing-gutter)] flex gap-2 overflow-x-auto px-[var(--spacing-gutter)] lg:mx-0 lg:px-0"
               >
-                {galleryFilters.map((f) => {
+                {availableFilters.map((f) => {
                   const active = filter === f.id;
                   return (
                     <button
@@ -132,7 +156,7 @@ export default function Gallery() {
 
           <Reveal variant="rise">
             <p className="mt-10 text-[0.8125rem] tracking-[0.06em] text-graphite-faint">
-              {visible.length} of {gallery.length} shown
+              {visible.length} of {pool.length} shown
             </p>
           </Reveal>
         </div>
