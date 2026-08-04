@@ -22,7 +22,7 @@ the open items, each with the exact place to fix it.
 | **Opening hours** | Placeholder schedule shown with a visible "confirm before launch" note. | `NEXT_PUBLIC_HOURS_JSON`, `NEXT_PUBLIC_HOURS_VERIFIED` |
 | **Prices** | Shown as "Pricing shared at consultation" instead of a number. | `src/lib/services.ts` + `NEXT_PUBLIC_PRICES_VERIFIED` |
 | **Google reviews** | Section renders an honest empty state — there are no hard-coded testimonials anywhere in this codebase. | `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACE_ID` |
-| **Before/after photos** | Abstract placeholder art. Never an invented photograph of a person or of client work. | `public/images/art` + `src/lib/content.ts` |
+| **Before/after photos** | One illustrative pair ships, labelled in plain sight as demonstrating the technique rather than a named client's result. Pairs without real imagery are hidden, not shown as placeholders. | `public/images/art` + `src/lib/content.ts` |
 | **Team names** | Generic roles ("Senior Stylist"). | `src/lib/content.ts` → `specialists` |
 | **Booking delivery** | Form validates and reports honestly that it is not connected. | `RESEND_API_KEY` / `BOOKING_WEBHOOK_URL` |
 | **Address** | Published. Sourced from the Pennsylvania business registry listing for Massiel Beauty Salon LLC — worth confirming the unit number. | `src/lib/site.ts` |

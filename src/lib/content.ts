@@ -38,11 +38,16 @@ export const gallery: GalleryItem[] = [
 /* --- Transformations ------------------------------------------------------ */
 
 /**
- * ⚠️  REPLACE WITH THE SALON'S OWN CLIENT PHOTOGRAPHY BEFORE LAUNCH.
- *     A before/after gallery is a claim about real work, so it has to show
- *     real work — photographed with the client's written consent. The slots
- *     below currently resolve to abstract placeholder art, never to an
- *     invented photograph of a person.
+ * ⚠️  REPLACE WITH THE SALON'S OWN CLIENT PHOTOGRAPHY.
+ *     A before/after gallery is read as a claim about real work on a real
+ *     guest, so the section states in plain sight that what currently ships is
+ *     an illustration of the technique rather than a named client's result.
+ *     Swap in the studio's own photography — taken with written consent — and
+ *     that framing can be relaxed.
+ *
+ *     Pairs whose images are still placeholder art are hidden by the section
+ *     rather than shown as abstract gradients, so partial delivery looks
+ *     deliberate. See `hasRealPhoto` in src/lib/images.ts.
  */
 export type Transformation = {
   id: string;

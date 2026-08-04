@@ -10,13 +10,23 @@ import Divider from "@/components/decor/Divider";
 import Blobs, { FIELD_SOFT } from "@/components/decor/Blobs";
 import Art from "@/components/ui/Art";
 import { transformations } from "@/lib/content";
+import { hasRealPhoto } from "@/lib/images";
 
 export default function Transformations() {
   const [open, setOpen] = useState<number | null>(null);
 
-  const [featured, ...rest] = transformations;
+  // Only show pairs that have real imagery. An abstract gradient in a
+  // before/after slider reads as a broken promise, not as a placeholder.
+  // Before anything is delivered, fall back to all of them so the section can
+  // still be reviewed as a design.
+  const ready = transformations.filter(
+    (t) => hasRealPhoto(t.before) && hasRealPhoto(t.after),
+  );
+  const shown = ready.length > 0 ? ready : transformations;
 
-  const lightboxItems: LightboxItem[] = transformations.flatMap((t) => [
+  const [featured, ...rest] = shown;
+
+  const lightboxItems: LightboxItem[] = shown.flatMap((t) => [
     { slot: t.before, caption: `${t.title} — before`, meta: t.service },
     { slot: t.after, caption: `${t.title} — after`, meta: t.service },
   ]);
@@ -42,9 +52,26 @@ export default function Transformations() {
               Drag the line. Watch it change.
             </SplitLines>
             <Reveal variant="rise" delay={0.1}>
-              <p className="mt-6 max-w-[34rem] text-[length:var(--text-lede)] leading-[1.7] text-graphite-soft">
-                Same light, same angle, same day. The only thing different is the
-                work.
+              <p className="mt-6 max-w-[35rem] text-[length:var(--text-lede)] leading-[1.7] text-graphite-soft">
+                What a colour correction actually changes — a root melt built to
+                grow out softly instead of banding again.
+              </p>
+            </Reveal>
+
+            {/* The images below are reference pieces, not a named client's
+                result. That has to be stated where it is read, not buried. */}
+            <Reveal variant="rise" delay={0.15}>
+              <p className="mt-5 flex max-w-[35rem] items-start gap-3 rounded-2xl bg-shell/80 px-4 py-3 text-[0.8125rem] leading-relaxed text-graphite-soft">
+                <span
+                  aria-hidden
+                  className="mt-[0.5em] h-1.5 w-1.5 shrink-0 rounded-full bg-copper"
+                />
+                <span>
+                  Shown for illustration — these images demonstrate the technique
+                  rather than a particular guest&apos;s appointment. The studio&apos;s
+                  own client photography replaces them as it is taken, with
+                  permission.
+                </span>
               </p>
             </Reveal>
           </div>
@@ -61,7 +88,7 @@ export default function Transformations() {
             </Reveal>
 
             <Reveal variant="slide-right" className="lg:pl-4">
-              <span className="eyebrow text-[0.5625rem]">Featured</span>
+              <span className="eyebrow text-[0.5625rem]">Illustrative example</span>
               <h3 className="mt-4 font-display text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.05] text-graphite">
                 {featured.title}
               </h3>
@@ -89,7 +116,11 @@ export default function Transformations() {
           </div>
 
           {/* ---------------------------------------------------- masonry --- */}
-          <div className="mt-[clamp(3rem,6vw,5.5rem)] grid gap-[clamp(1.5rem,3vw,3rem)] md:grid-cols-2">
+          <div
+            className={`grid gap-[clamp(1.5rem,3vw,3rem)] md:grid-cols-2 ${
+              rest.length > 0 ? "mt-[clamp(3rem,6vw,5.5rem)]" : ""
+            }`}
+          >
             {rest.map((t, i) => (
               <Parallax key={t.id} speed={i === 0 ? -0.05 : 0.05} className={i === 1 ? "md:mt-16" : ""}>
                 <Reveal variant={i === 0 ? "drape" : "bloom"} delay={i * 0.08}>
@@ -115,7 +146,7 @@ export default function Transformations() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setOpen(transformations.indexOf(t) * 2 + 1)}
+                        onClick={() => setOpen(shown.indexOf(t) * 2 + 1)}
                         aria-label={`Open ${t.title} fullscreen`}
                         className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-taupe text-graphite transition-all duration-300 hover:border-copper hover:text-copper"
                       >
@@ -128,7 +159,10 @@ export default function Transformations() {
             ))}
           </div>
 
-          {/* Contact sheet — every frame, tap to enlarge */}
+          {/* Contact sheet — every frame, tap to enlarge. With a single pair
+              it just repeats the slider above it, so it only earns its place
+              once there are at least two transformations. */}
+          {shown.length > 1 && (
           <Reveal variant="stagger-children" className="mt-[clamp(3rem,6vw,5rem)] grid grid-cols-3 gap-3 sm:grid-cols-6">
             {lightboxItems.map((item, i) => (
               <button
@@ -149,6 +183,7 @@ export default function Transformations() {
               </button>
             ))}
           </Reveal>
+          )}
         </div>
       </section>
 

@@ -248,13 +248,15 @@ Still life, brushed copper shears and a folded linen towel on cream marble, sing
 
 ## Transformations
 
-### 14. `transform-1-before`
+### 14. `transform-1-before` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Transformations — featured slider, BEFORE half.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/transform-1-before.jpg`
 
-**Alt text already written for it** — "Before: grown-out colour with uneven banding"
+**Alt text already written for it** — "Illustrative example, before: grown-out colour with uneven banding"
 
 **Prompt**
 
@@ -262,13 +264,15 @@ Still life, brushed copper shears and a folded linen towel on cream marble, sing
 Hair before a colour correction, grown-out roots and uneven banding, honest documentary lighting, neutral cream backdrop, three-quarter back view. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 15. `transform-1-after`
+### 15. `transform-1-after` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Transformations — featured slider, AFTER half.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/transform-1-after.jpg`
 
-**Alt text already written for it** — "After: seamless dimensional balayage"
+**Alt text already written for it** — "Illustrative example, after: seamless dimensional balayage"
 
 **Prompt**
 
@@ -502,7 +506,7 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 
 ## Checklist
 
-14 of 30 slots delivered. Still needed:
+16 of 30 slots delivered. Still needed:
 
 - [x] `hero-primary` — 2:3
 - [x] `hero-secondary` — 3:4
@@ -517,8 +521,8 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 - [x] `studio-portrait` — 4:5
 - [x] `studio-interior` — 3:2
 - [x] `studio-detail` — 1:1
-- [ ] `transform-1-before` — 3:4
-- [ ] `transform-1-after` — 3:4
+- [x] `transform-1-before` — 3:4
+- [x] `transform-1-after` — 3:4
 - [ ] `transform-2-before` — 3:4
 - [ ] `transform-2-after` — 3:4
 - [ ] `transform-3-before` — 3:4
