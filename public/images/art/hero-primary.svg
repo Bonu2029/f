@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="hero-primary-pool0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#A2B597" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#A2B597" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hero-primary-pool1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D6B88F" stop-opacity="0.8099999999999999"/>
+      <stop offset="100%" stop-color="#D6B88F" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hero-primary-pool2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7E9473" stop-opacity="0.6699999999999999"/>
+      <stop offset="100%" stop-color="#7E9473" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hero-primary-veil" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#FAF8F5" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.34"/>
+    </linearGradient>
+    <radialGradient id="hero-primary-vignette" cx="50%" cy="46%" r="72%">
+      <stop offset="55%" stop-color="#A5947F" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="hero-primary-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="hero-primary-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="1200" fill="#EDE5DA"/>
+  <circle cx="230.6" cy="581.8" r="766.1" fill="url(#hero-primary-pool0)"/>
+  <circle cx="550.9" cy="618.4" r="716.7" fill="url(#hero-primary-pool1)"/>
+  <circle cx="635.4" cy="973.3" r="492.3" fill="url(#hero-primary-pool2)"/>
+
+  <ellipse cx="338" cy="625.8" rx="286.8" ry="349.9"
+           fill="#FFFCF7" opacity="0.5" filter="url(#hero-primary-soft)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M -72 1019.4 C 270 848.4, 612 808.8, 972 637.8" stroke="#A9663A" stroke-width="1.8" opacity="0.4"/>
+    <path d="M -72 1209 C 270 933.1, 612 1741.1, 972 1465.2" stroke="#D6B88F" stroke-width="0.9" opacity="0.2"/>
+    <path d="M -72 993.5 C 270 829.1, 612 939.2, 972 774.8" stroke="#7E9473" stroke-width="3.3" opacity="0.3"/>
+    <path d="M -72 1300.4 C 270 1048.1, 612 890.8, 972 638.5" stroke="#A9663A" stroke-width="1" opacity="0.5"/>
+    <path d="M -72 789.2 C 270 600, 612 1366.9, 972 1177.7" stroke="#D6B88F" stroke-width="1.1" opacity="0.3"/>
+    <path d="M -72 -36.3 C 270 -239.1, 612 839.7, 972 636.9" stroke="#7E9473" stroke-width="2.8" opacity="0.3"/>
+    <path d="M -72 7.9 C 270 -455.7, 612 -114.4, 972 -578" stroke="#A9663A" stroke-width="3.2" opacity="0.5"/>
+  </g>
+
+  <rect width="900" height="1200" fill="url(#hero-primary-veil)"/>
+  <rect width="900" height="1200" fill="url(#hero-primary-vignette)"/>
+  <rect width="900" height="1200" filter="url(#hero-primary-grain)" opacity="0.16" style="mix-blend-mode:multiply"/>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1200" viewBox="0 0 960 1200" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="service-balayage-pool0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C1B9D2" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#C1B9D2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="service-balayage-pool1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#BE8577" stop-opacity="0.8099999999999999"/>
+      <stop offset="100%" stop-color="#BE8577" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="service-balayage-pool2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D6B88F" stop-opacity="0.6699999999999999"/>
+      <stop offset="100%" stop-color="#D6B88F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="service-balayage-veil" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#FAF8F5" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.34"/>
+    </linearGradient>
+    <radialGradient id="service-balayage-vignette" cx="50%" cy="46%" r="72%">
+      <stop offset="55%" stop-color="#A5947F" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="service-balayage-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="service-balayage-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="48"/>
+    </filter>
+  </defs>
+
+  <rect width="960" height="1200" fill="#EDE5DA"/>
+  <circle cx="242.3" cy="835" r="566.5" fill="url(#service-balayage-pool0)"/>
+  <circle cx="676.5" cy="1010" r="698.9" fill="url(#service-balayage-pool1)"/>
+  <circle cx="319.8" cy="292" r="693.9" fill="url(#service-balayage-pool2)"/>
+
+  <ellipse cx="579.3" cy="422.6" rx="353.5" ry="431.3"
+           fill="#FFFCF7" opacity="0.5" filter="url(#service-balayage-soft)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M -76.8 1109.1 C 288 937.2, 652.8 684.9, 1036.8 513" stroke="#A9663A" stroke-width="2.1" opacity="0.3"/>
+    <path d="M -76.8 157.3 C 288 -277, 652.8 919.3, 1036.8 485" stroke="#BE8577" stroke-width="1" opacity="0.3"/>
+    <path d="M -76.8 336.2 C 288 206.6, 652.8 -6.3, 1036.8 -135.9" stroke="#D6B88F" stroke-width="2.2" opacity="0.4"/>
+    <path d="M -76.8 813.6 C 288 654.5, 652.8 1633.7, 1036.8 1474.6" stroke="#A9663A" stroke-width="2.6" opacity="0.2"/>
+    <path d="M -76.8 1126.6 C 288 697.7, 652.8 2005.5, 1036.8 1576.6" stroke="#BE8577" stroke-width="3.3" opacity="0.5"/>
+    <path d="M -76.8 946 C 288 495.7, 652.8 1664.8, 1036.8 1214.5" stroke="#D6B88F" stroke-width="1.3" opacity="0.4"/>
+    <path d="M -76.8 1012.9 C 288 859.1, 652.8 1464.7, 1036.8 1310.9" stroke="#A9663A" stroke-width="2.1" opacity="0.5"/>
+  </g>
+
+  <rect width="960" height="1200" fill="url(#service-balayage-veil)"/>
+  <rect width="960" height="1200" fill="url(#service-balayage-vignette)"/>
+  <rect width="960" height="1200" filter="url(#service-balayage-grain)" opacity="0.16" style="mix-blend-mode:multiply"/>
+</svg>

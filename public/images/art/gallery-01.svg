@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="gallery-01-pool0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#A2B597" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#A2B597" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gallery-01-pool1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D6B88F" stop-opacity="0.8099999999999999"/>
+      <stop offset="100%" stop-color="#D6B88F" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gallery-01-pool2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7E9473" stop-opacity="0.6699999999999999"/>
+      <stop offset="100%" stop-color="#7E9473" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gallery-01-veil" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#FAF8F5" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.34"/>
+    </linearGradient>
+    <radialGradient id="gallery-01-vignette" cx="50%" cy="46%" r="72%">
+      <stop offset="55%" stop-color="#A5947F" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="gallery-01-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="gallery-01-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="1200" fill="#EDE5DA"/>
+  <circle cx="266.1" cy="705.7" r="726.5" fill="url(#gallery-01-pool0)"/>
+  <circle cx="698.8" cy="805.7" r="495.3" fill="url(#gallery-01-pool1)"/>
+  <circle cx="192.3" cy="536" r="536.4" fill="url(#gallery-01-pool2)"/>
+
+  <ellipse cx="340.9" cy="782.7" rx="326.7" ry="398.6"
+           fill="#FFFCF7" opacity="0.5" filter="url(#gallery-01-soft)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M -72 528.7 C 270 163.2, 612 267.4, 972 -98.1" stroke="#A9663A" stroke-width="1" opacity="0.4"/>
+    <path d="M -72 839.1 C 270 643.1, 612 428.8, 972 232.8" stroke="#D6B88F" stroke-width="1.6" opacity="0.4"/>
+    <path d="M -72 336.3 C 270 40.7, 612 888, 972 592.4" stroke="#7E9473" stroke-width="1.4" opacity="0.4"/>
+    <path d="M -72 425.2 C 270 37.1, 612 444.6, 972 56.5" stroke="#A9663A" stroke-width="2.5" opacity="0.4"/>
+    <path d="M -72 65.7 C 270 -267.5, 612 1062.9, 972 729.7" stroke="#D6B88F" stroke-width="3.1" opacity="0.3"/>
+    <path d="M -72 1045.6 C 270 838.7, 612 1643.5, 972 1436.6" stroke="#7E9473" stroke-width="1.9" opacity="0.4"/>
+    <path d="M -72 252.6 C 270 132.5, 612 147.5, 972 27.4" stroke="#A9663A" stroke-width="1.8" opacity="0.3"/>
+  </g>
+
+  <rect width="900" height="1200" fill="url(#gallery-01-veil)"/>
+  <rect width="900" height="1200" fill="url(#gallery-01-vignette)"/>
+  <rect width="900" height="1200" filter="url(#gallery-01-grain)" opacity="0.16" style="mix-blend-mode:multiply"/>
+</svg>

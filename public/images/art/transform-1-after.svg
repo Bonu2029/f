@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="transform-1-after-pool0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#CBBFB0" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#CBBFB0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="transform-1-after-pool1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7E9473" stop-opacity="0.8099999999999999"/>
+      <stop offset="100%" stop-color="#7E9473" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="transform-1-after-pool2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D6B88F" stop-opacity="0.6699999999999999"/>
+      <stop offset="100%" stop-color="#D6B88F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="transform-1-after-veil" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#FAF8F5" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.34"/>
+    </linearGradient>
+    <radialGradient id="transform-1-after-vignette" cx="50%" cy="46%" r="72%">
+      <stop offset="55%" stop-color="#A5947F" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="transform-1-after-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="transform-1-after-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="1200" fill="#EDE5DA"/>
+  <circle cx="482.8" cy="599.8" r="682.2" fill="url(#transform-1-after-pool0)"/>
+  <circle cx="236.2" cy="742.9" r="843.8" fill="url(#transform-1-after-pool1)"/>
+  <circle cx="285.4" cy="465.2" r="850.5" fill="url(#transform-1-after-pool2)"/>
+
+  <ellipse cx="365.4" cy="745.2" rx="307.3" ry="374.9"
+           fill="#FFFCF7" opacity="0.5" filter="url(#transform-1-after-soft)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M -72 347.8 C 270 -91.2, 612 1401.8, 972 962.8" stroke="#A9663A" stroke-width="2.3" opacity="0.2"/>
+    <path d="M -72 601 C 270 168.3, 612 695.6, 972 262.9" stroke="#7E9473" stroke-width="2.2" opacity="0.3"/>
+    <path d="M -72 548.5 C 270 335.6, 612 1261.6, 972 1048.7" stroke="#D6B88F" stroke-width="2.4" opacity="0.3"/>
+    <path d="M -72 504.5 C 270 39.6, 612 1628.3, 972 1163.4" stroke="#A9663A" stroke-width="3.2" opacity="0.2"/>
+    <path d="M -72 580.1 C 270 452, 612 421.4, 972 293.3" stroke="#7E9473" stroke-width="1.9" opacity="0.4"/>
+    <path d="M -72 87.6 C 270 -375.2, 612 1010.3, 972 547.5" stroke="#D6B88F" stroke-width="1.8" opacity="0.3"/>
+    <path d="M -72 532.2 C 270 370.6, 612 459.4, 972 297.8" stroke="#A9663A" stroke-width="1.3" opacity="0.5"/>
+  </g>
+
+  <rect width="900" height="1200" fill="url(#transform-1-after-veil)"/>
+  <rect width="900" height="1200" fill="url(#transform-1-after-vignette)"/>
+  <rect width="900" height="1200" filter="url(#transform-1-after-grain)" opacity="0.16" style="mix-blend-mode:multiply"/>
+</svg>

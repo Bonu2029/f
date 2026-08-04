@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="studio-interior-pool0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C1B9D2" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#C1B9D2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="studio-interior-pool1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#BE8577" stop-opacity="0.8099999999999999"/>
+      <stop offset="100%" stop-color="#BE8577" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="studio-interior-pool2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D6B88F" stop-opacity="0.6699999999999999"/>
+      <stop offset="100%" stop-color="#D6B88F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="studio-interior-veil" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#FAF8F5" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.34"/>
+    </linearGradient>
+    <radialGradient id="studio-interior-vignette" cx="50%" cy="46%" r="72%">
+      <stop offset="55%" stop-color="#A5947F" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="studio-interior-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="studio-interior-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="800" fill="#EDE5DA"/>
+  <circle cx="741.4" cy="448" r="822.3" fill="url(#studio-interior-pool0)"/>
+  <circle cx="290" cy="334.9" r="492.1" fill="url(#studio-interior-pool1)"/>
+  <circle cx="305.2" cy="180.6" r="717.6" fill="url(#studio-interior-pool2)"/>
+
+  <ellipse cx="695.7" cy="522.7" rx="319.5" ry="389.8"
+           fill="#FFFCF7" opacity="0.5" filter="url(#studio-interior-soft)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M -96 469.3 C 360 232.2, 816 935.6, 1296 698.5" stroke="#A9663A" stroke-width="1.4" opacity="0.5"/>
+    <path d="M -96 858.8 C 360 741.5, 816 739, 1296 621.7" stroke="#BE8577" stroke-width="2" opacity="0.3"/>
+    <path d="M -96 -50.9 C 360 -235, 816 -334.5, 1296 -518.6" stroke="#D6B88F" stroke-width="3" opacity="0.6"/>
+    <path d="M -96 520.9 C 360 364.8, 816 1064.3, 1296 908.2" stroke="#A9663A" stroke-width="0.9" opacity="0.6"/>
+    <path d="M -96 205.8 C 360 124.1, 816 68.7, 1296 -13" stroke="#BE8577" stroke-width="3.2" opacity="0.5"/>
+    <path d="M -96 -45 C 360 -312.7, 816 459.8, 1296 192.1" stroke="#D6B88F" stroke-width="3.2" opacity="0.4"/>
+    <path d="M -96 99.2 C 360 -65.2, 816 -48.1, 1296 -212.5" stroke="#A9663A" stroke-width="1.2" opacity="0.4"/>
+  </g>
+
+  <rect width="1200" height="800" fill="url(#studio-interior-veil)"/>
+  <rect width="1200" height="800" fill="url(#studio-interior-vignette)"/>
+  <rect width="1200" height="800" filter="url(#studio-interior-grain)" opacity="0.16" style="mix-blend-mode:multiply"/>
+</svg>

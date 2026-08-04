@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="gallery-08-pool0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C1B9D2" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#C1B9D2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gallery-08-pool1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#BE8577" stop-opacity="0.8099999999999999"/>
+      <stop offset="100%" stop-color="#BE8577" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gallery-08-pool2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D6B88F" stop-opacity="0.6699999999999999"/>
+      <stop offset="100%" stop-color="#D6B88F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gallery-08-veil" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#FAF8F5" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.34"/>
+    </linearGradient>
+    <radialGradient id="gallery-08-vignette" cx="50%" cy="46%" r="72%">
+      <stop offset="55%" stop-color="#A5947F" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="gallery-08-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="gallery-08-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="1200" fill="#EDE5DA"/>
+  <circle cx="236.2" cy="885.8" r="767.7" fill="url(#gallery-08-pool0)"/>
+  <circle cx="158.5" cy="673.2" r="609.7" fill="url(#gallery-08-pool1)"/>
+  <circle cx="211.6" cy="599.5" r="887.1" fill="url(#gallery-08-pool2)"/>
+
+  <ellipse cx="530.8" cy="707.2" rx="354.1" ry="432"
+           fill="#FFFCF7" opacity="0.5" filter="url(#gallery-08-soft)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M -72 966.8 C 270 692.1, 612 972.8, 972 698.1" stroke="#A9663A" stroke-width="1.2" opacity="0.4"/>
+    <path d="M -72 431.6 C 270 77.6, 612 1313.7, 972 959.7" stroke="#BE8577" stroke-width="1.5" opacity="0.2"/>
+    <path d="M -72 900.4 C 270 560.5, 612 993.2, 972 653.3" stroke="#D6B88F" stroke-width="1" opacity="0.5"/>
+    <path d="M -72 928.6 C 270 713, 612 573.4, 972 357.8" stroke="#A9663A" stroke-width="3.3" opacity="0.3"/>
+    <path d="M -72 768.5 C 270 413, 612 452.6, 972 97.1" stroke="#BE8577" stroke-width="1.7" opacity="0.3"/>
+    <path d="M -72 1097.5 C 270 668.2, 612 1848.1, 972 1418.8" stroke="#D6B88F" stroke-width="2.1" opacity="0.3"/>
+    <path d="M -72 910.1 C 270 455.5, 612 1946, 972 1491.4" stroke="#A9663A" stroke-width="1" opacity="0.5"/>
+  </g>
+
+  <rect width="900" height="1200" fill="url(#gallery-08-veil)"/>
+  <rect width="900" height="1200" fill="url(#gallery-08-vignette)"/>
+  <rect width="900" height="1200" filter="url(#gallery-08-grain)" opacity="0.16" style="mix-blend-mode:multiply"/>
+</svg>

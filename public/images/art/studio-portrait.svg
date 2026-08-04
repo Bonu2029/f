@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1200" viewBox="0 0 960 1200" role="img" aria-hidden="true">
+  <defs>
+    <radialGradient id="studio-portrait-pool0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#CBBFB0" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#CBBFB0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="studio-portrait-pool1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7E9473" stop-opacity="0.8099999999999999"/>
+      <stop offset="100%" stop-color="#7E9473" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="studio-portrait-pool2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D6B88F" stop-opacity="0.6699999999999999"/>
+      <stop offset="100%" stop-color="#D6B88F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="studio-portrait-veil" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#FFFCF7" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#FAF8F5" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.34"/>
+    </linearGradient>
+    <radialGradient id="studio-portrait-vignette" cx="50%" cy="46%" r="72%">
+      <stop offset="55%" stop-color="#A5947F" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#A5947F" stop-opacity="0.42"/>
+    </radialGradient>
+    <filter id="studio-portrait-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="studio-portrait-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="48"/>
+    </filter>
+  </defs>
+
+  <rect width="960" height="1200" fill="#EDE5DA"/>
+  <circle cx="413.1" cy="598.9" r="804.5" fill="url(#studio-portrait-pool0)"/>
+  <circle cx="364.5" cy="760.8" r="860" fill="url(#studio-portrait-pool1)"/>
+  <circle cx="393.9" cy="428" r="660.8" fill="url(#studio-portrait-pool2)"/>
+
+  <ellipse cx="340.8" cy="621.3" rx="331.2" ry="404.1"
+           fill="#FFFCF7" opacity="0.5" filter="url(#studio-portrait-soft)"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M -76.8 929.1 C 288 718.1, 652.8 1616.9, 1036.8 1405.9" stroke="#A9663A" stroke-width="2.4" opacity="0.4"/>
+    <path d="M -76.8 65 C 288 -132.6, 652.8 550.4, 1036.8 352.8" stroke="#7E9473" stroke-width="2" opacity="0.4"/>
+    <path d="M -76.8 899.5 C 288 479.3, 652.8 1750, 1036.8 1329.8" stroke="#D6B88F" stroke-width="2.7" opacity="0.5"/>
+    <path d="M -76.8 310.9 C 288 84.9, 652.8 897.5, 1036.8 671.5" stroke="#A9663A" stroke-width="2.9" opacity="0.5"/>
+    <path d="M -76.8 -74.2 C 288 -234.4, 652.8 -502.1, 1036.8 -662.3" stroke="#7E9473" stroke-width="2.7" opacity="0.6"/>
+    <path d="M -76.8 851.1 C 288 484.4, 652.8 1587.5, 1036.8 1220.8" stroke="#D6B88F" stroke-width="2" opacity="0.4"/>
+    <path d="M -76.8 632.1 C 288 494.6, 652.8 532.7, 1036.8 395.2" stroke="#A9663A" stroke-width="1.4" opacity="0.5"/>
+  </g>
+
+  <rect width="960" height="1200" fill="url(#studio-portrait-veil)"/>
+  <rect width="960" height="1200" fill="url(#studio-portrait-vignette)"/>
+  <rect width="960" height="1200" filter="url(#studio-portrait-grain)" opacity="0.16" style="mix-blend-mode:multiply"/>
+</svg>
