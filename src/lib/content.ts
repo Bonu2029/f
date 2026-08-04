@@ -23,7 +23,7 @@ export const galleryFilters: { id: GalleryCategory; label: string }[] = [
 ];
 
 export const gallery: GalleryItem[] = [
-  { image: "gallery-01", caption: "Champagne balayage, loose waves", categories: ["colour"], feature: true },
+  { image: "gallery-01", caption: "In the chair, champagne balayage", categories: ["colour"], feature: true },
   { image: "gallery-02", caption: "Sheer rose nude", categories: ["nails"] },
   { image: "gallery-03", caption: "Sculpted blowout", categories: ["cuts"] },
   { image: "gallery-04", caption: "Copper tone, late light", categories: ["colour"] },

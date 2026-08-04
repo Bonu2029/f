@@ -46,13 +46,15 @@ This sentence is already appended to every prompt below. If you are writing new 
 Wide editorial interior of a luxury hair studio, a stylist mid-motion finishing a long glossy balayage blowout, client seen three-quarters from behind, tall arched window, linen curtains, sage plants, brushed copper fixtures. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 02. `hero-secondary`
+### 02. `hero-secondary` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Homepage hero — petal-shaped image overlapping the bottom-left of the arch.
 
-**Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/hero-secondary.jpg`
+**Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/hero-secondary.jpg`
 
-**Alt text already written for it** — "Close detail of freshly finished balayage, warm ribbons of colour catching the light"
+**Alt text already written for it** — "Long dimensional balayage finished in soft waves, seen from behind"
 
 **Prompt**
 
@@ -202,7 +204,7 @@ Beauty treatment room, rolled ivory towels, ceramic bowls, dried florals, a trea
 
 **Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/studio-portrait.jpg`
 
-**Alt text already written for it** — "A stylist at work with a client in the studio's main styling room"
+**Alt text already written for it** — "A stylist standing in her studio in a linen apron, brushes in the pocket"
 
 **Prompt**
 
@@ -210,7 +212,9 @@ Beauty treatment room, rolled ivory towels, ceramic bowls, dried florals, a trea
 Editorial portrait of a professional hair stylist standing in her studio, relaxed confident posture, neutral linen apron, soft window light on the face, warm cream background. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 12. `studio-interior`
+### 12. `studio-interior` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — The Studio — wide interior banner, cropped to 21:9 on the page.
 
@@ -224,7 +228,9 @@ Editorial portrait of a professional hair stylist standing in her studio, relaxe
 Salon front room interior, arched mirrors, cream boucle seating, brushed copper rail, dried pampas in a tall vessel, sunlight falling across a limewash wall. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 13. `studio-detail`
+### 13. `studio-detail` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — The Studio — small pebble-shaped still life overlapping the portrait.
 
@@ -330,13 +336,15 @@ Same hair after a shaped layered cut with a clear gloss finish, light movement a
 
 ## Gallery
 
-### 20. `gallery-01`
+### 20. `gallery-01` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery — featured tile. Filter: Colour.
 
-**Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/gallery-01.jpg`
+**Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/gallery-01.jpg`
 
-**Alt text already written for it** — "Soft champagne balayage with loose waves"
+**Alt text already written for it** — "A stylist combing through a client's champagne balayage waves at the chair"
 
 **Prompt**
 
@@ -494,10 +502,10 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 
 ## Checklist
 
-10 of 30 slots delivered. Still needed:
+14 of 30 slots delivered. Still needed:
 
 - [x] `hero-primary` — 2:3
-- [ ] `hero-secondary` — 4:5
+- [x] `hero-secondary` — 3:4
 - [ ] `hero-detail` — 1:1
 - [x] `service-color` — 4:5
 - [x] `service-balayage` — 3:4
@@ -507,15 +515,15 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 - [x] `service-nails` — 4:5
 - [x] `service-beauty` — 4:5
 - [x] `studio-portrait` — 4:5
-- [ ] `studio-interior` — 3:2
-- [ ] `studio-detail` — 1:1
+- [x] `studio-interior` — 3:2
+- [x] `studio-detail` — 1:1
 - [ ] `transform-1-before` — 3:4
 - [ ] `transform-1-after` — 3:4
 - [ ] `transform-2-before` — 3:4
 - [ ] `transform-2-after` — 3:4
 - [ ] `transform-3-before` — 3:4
 - [ ] `transform-3-after` — 3:4
-- [ ] `gallery-01` — 3:4
+- [x] `gallery-01` — 4:5
 - [ ] `gallery-02` — 1:1
 - [x] `gallery-03` — 4:5
 - [ ] `gallery-04` — 3:4

@@ -15,7 +15,7 @@
  * deleting a photo reverts that slot to its placeholder.
  * ========================================================================== */
 
-import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -98,6 +98,16 @@ if (!manifest.includes(anchor)) {
 
 manifest = manifest.replace(anchor, `${block}${anchor}`);
 writeFileSync(manifestPath, manifest, "utf8");
+
+/* next/image keys its optimised output on the request URL, not on the source
+   file's contents — so replacing a photograph at the same filename keeps
+   serving the old bytes until this cache is dropped. Silently confusing, and
+   it burned us once, so clear it every time. */
+const imageCache = resolve(root, ".next/cache/images");
+if (existsSync(imageCache)) {
+  rmSync(imageCache, { recursive: true, force: true });
+  console.log("Cleared .next/cache/images so replaced files are re-optimised.\n");
+}
 
 if (adopted.length === 0) {
   console.log("No photographic files in public/images/art — every slot is on placeholder art.");
