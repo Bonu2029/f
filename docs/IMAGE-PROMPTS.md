@@ -280,13 +280,15 @@ Hair before a colour correction, grown-out roots and uneven banding, honest docu
 Same hair after a seamless dimensional balayage, soft root melt into warm champagne ends, glossy finish, identical framing and neutral cream backdrop, three-quarter back view. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 16. `transform-2-before`
+### 16. `transform-2-before` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Transformations — second slider, BEFORE half.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/transform-2-before.jpg`
 
-**Alt text already written for it** — "Before: fine, shoulder-length hair"
+**Alt text already written for it** — "Illustrative example, before: fine hair at shoulder length"
 
 **Prompt**
 
@@ -294,13 +296,15 @@ Same hair after a seamless dimensional balayage, soft root melt into warm champa
 Fine shoulder-length hair before an extension application, neutral cream backdrop, three-quarter back view, documentary lighting. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 17. `transform-2-after`
+### 17. `transform-2-after` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Transformations — second slider, AFTER half.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/transform-2-after.jpg`
 
-**Alt text already written for it** — "After: hand-tied extensions adding length and body"
+**Alt text already written for it** — "Illustrative example, after: hand-tied extensions adding length and body"
 
 **Prompt**
 
@@ -308,13 +312,15 @@ Fine shoulder-length hair before an extension application, neutral cream backdro
 Same hair after hand-tied extensions, added length and body, blended invisibly, soft waves, identical framing and neutral cream backdrop, three-quarter back view. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 18. `transform-3-before`
+### 18. `transform-3-before` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Transformations — third slider, BEFORE half.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/transform-3-before.jpg`
 
-**Alt text already written for it** — "Before: heavy blunt length"
+**Alt text already written for it** — "Illustrative example, before: heavy blunt one-length hair"
 
 **Prompt**
 
@@ -322,13 +328,15 @@ Same hair after hand-tied extensions, added length and body, blended invisibly, 
 Heavy blunt long hair before a cut and gloss, neutral cream backdrop, three-quarter view, documentary lighting. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 19. `transform-3-after`
+### 19. `transform-3-after` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Transformations — third slider, AFTER half.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/transform-3-after.jpg`
 
-**Alt text already written for it** — "After: a shaped cut with a clear gloss finish"
+**Alt text already written for it** — "Illustrative example, after: a shaped layered cut with a clear gloss finish"
 
 **Prompt**
 
@@ -386,13 +394,15 @@ Sheer rose nude manicure, hand resting on cream linen, close macro, delicate. ed
 Sculpted blowout with deep body and bend, hair in motion, backlit. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 23. `gallery-04`
+### 23. `gallery-04` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery tile. Filter: Colour.
 
 **Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/gallery-04.jpg`
 
-**Alt text already written for it** — "Copper-toned colour catching afternoon light"
+**Alt text already written for it** — "Sandy blonde balayage finished in soft waves, seen from behind"
 
 **Prompt**
 
@@ -506,7 +516,7 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 
 ## Checklist
 
-16 of 30 slots delivered. Still needed:
+21 of 30 slots delivered. Still needed:
 
 - [x] `hero-primary` — 2:3
 - [x] `hero-secondary` — 3:4
@@ -523,14 +533,14 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 - [x] `studio-detail` — 1:1
 - [x] `transform-1-before` — 3:4
 - [x] `transform-1-after` — 3:4
-- [ ] `transform-2-before` — 3:4
-- [ ] `transform-2-after` — 3:4
-- [ ] `transform-3-before` — 3:4
-- [ ] `transform-3-after` — 3:4
+- [x] `transform-2-before` — 3:4
+- [x] `transform-2-after` — 3:4
+- [x] `transform-3-before` — 3:4
+- [x] `transform-3-after` — 3:4
 - [x] `gallery-01` — 4:5
 - [ ] `gallery-02` — 1:1
 - [x] `gallery-03` — 4:5
-- [ ] `gallery-04` — 3:4
+- [x] `gallery-04` — 3:4
 - [ ] `gallery-05` — 4:3
 - [ ] `gallery-06` — 4:5
 - [ ] `gallery-07` — 1:1

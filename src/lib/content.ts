@@ -26,7 +26,7 @@ export const gallery: GalleryItem[] = [
   { image: "gallery-01", caption: "In the chair, champagne balayage", categories: ["colour"], feature: true },
   { image: "gallery-02", caption: "Sheer rose nude", categories: ["nails"] },
   { image: "gallery-03", caption: "Sculpted blowout", categories: ["cuts"] },
-  { image: "gallery-04", caption: "Copper tone, late light", categories: ["colour"] },
+  { image: "gallery-04", caption: "Sandy balayage, soft waves", categories: ["colour"] },
   { image: "gallery-05", caption: "The colour bar", categories: ["studio", "colour"] },
   { image: "gallery-06", caption: "Precision blunt cut", categories: ["cuts"], feature: true },
   { image: "gallery-07", caption: "Treatment room detail", categories: ["nails", "studio"] },

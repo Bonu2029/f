@@ -53,8 +53,9 @@ export default function Transformations() {
             </SplitLines>
             <Reveal variant="rise" delay={0.1}>
               <p className="mt-6 max-w-[35rem] text-[length:var(--text-lede)] leading-[1.7] text-graphite-soft">
-                What a colour correction actually changes — a root melt built to
-                grow out softly instead of banding again.
+                Three techniques and what each one actually changes — colour
+                rebuilt to grow out softly, length added invisibly, weight turned
+                into movement.
               </p>
             </Reveal>
 
