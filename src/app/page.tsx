@@ -1,6 +1,7 @@
 import Preloader from "@/components/sections/Preloader";
 import SmoothScroll from "@/components/motion/SmoothScroll";
 import Cursor from "@/components/motion/Cursor";
+import DecorObserver from "@/components/motion/DecorObserver";
 import Nav from "@/components/layout/Nav";
 import Footer from "@/components/layout/Footer";
 import MobileBookBar from "@/components/layout/MobileBookBar";
@@ -27,6 +28,7 @@ export default async function Home() {
       <Preloader />
       <SmoothScroll />
       <Cursor />
+      <DecorObserver />
       <Nav />
 
       <main id="main">

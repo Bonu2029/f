@@ -55,13 +55,18 @@ function ServiceBlock({ service, index }: { service: Service; index: number }) {
     >
       {/* --------------------------------------------------------- media --- */}
       <div className={`relative ${flipped ? "lg:order-2" : ""}`}>
-        {/* Decorative shape the image overlaps */}
+        {/* Decorative shape the image overlaps. Static radius — animating
+            border-radius on a blurred element repaints it every frame. */}
         <div
           aria-hidden
-          className="animate-morph absolute -inset-6 -z-10 opacity-70 lg:-inset-10"
+          className="absolute -inset-6 -z-10 opacity-70 lg:-inset-10"
           style={{
             background: `radial-gradient(circle at 40% 35%, ${ACCENT_HEX[service.accent]}, transparent 68%)`,
             filter: "blur(28px)",
+            borderRadius:
+              index % 2 === 0
+                ? "42% 58% 55% 45% / 48% 42% 58% 52%"
+                : "58% 42% 38% 62% / 38% 58% 42% 62%",
           }}
         />
 

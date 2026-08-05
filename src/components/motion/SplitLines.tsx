@@ -8,6 +8,7 @@ import {
   useIsoLayoutEffect,
   prefersReducedMotion,
 } from "@/lib/gsap";
+import { useNearViewport } from "@/lib/useNearViewport";
 
 type Props = {
   children: ReactNode;
@@ -37,8 +38,13 @@ export default function SplitLines({
   start = "top 84%",
 }: Props) {
   const ref = useRef<HTMLElement>(null);
+  // The hero headline must split on mount; everything else waits its turn so
+  // SplitText isn't rewriting a dozen headings during hydration.
+  const near = useNearViewport(ref);
+  const ready = immediate || near;
 
   useIsoLayoutEffect(() => {
+    if (!ready) return;
     registerGsap();
     const el = ref.current;
     if (!el) return;
@@ -84,7 +90,7 @@ export default function SplitLines({
       split?.revert();
       ctx.revert();
     };
-  }, [mode, delay, stagger, immediate, start]);
+  }, [ready, mode, delay, stagger, immediate, start]);
 
   return (
     <Tag ref={ref} className={`will-reveal ${className}`}>

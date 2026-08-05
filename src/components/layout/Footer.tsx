@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="relative isolate overflow-hidden bg-cream pt-[clamp(4rem,8vw,7rem)]">
       {/* Soft moving texture — two slow gradient fields, no JS */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div aria-hidden data-decor className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="animate-drift-a absolute -left-40 top-[-8rem] h-[34rem] w-[34rem] rounded-full"
           style={{

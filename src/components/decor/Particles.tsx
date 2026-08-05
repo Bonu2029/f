@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /**
  * Floating light motes. Deterministic positions (no Math.random at render) so
@@ -14,9 +14,19 @@ export default function Particles({
   count?: number;
   className?: string;
 }) {
+  /* Each mote is its own composited layer with a glow. A few dozen of them is
+     free on a laptop and expensive on a phone, so phones get a third of them.
+     Resolved after mount so the server and client markup still agree. */
+  const [budget, setBudget] = useState(count);
+  useEffect(() => {
+    const small = window.matchMedia("(max-width: 767px)").matches;
+    const slow = (navigator.hardwareConcurrency ?? 8) <= 4;
+    if (small || slow) setBudget(Math.max(4, Math.round(count / 3)));
+  }, [count]);
+
   const motes = useMemo(
     () =>
-      Array.from({ length: count }, (_, i) => {
+      Array.from({ length: budget }, (_, i) => {
         // Golden-ratio scatter — even coverage without clustering.
         const x = ((i * 61.803) % 100).toFixed(2);
         const y = ((i * 37.507 + 11) % 100).toFixed(2);
@@ -27,12 +37,13 @@ export default function Particles({
         const tone = i % 3 === 0 ? "#D9A273" : i % 3 === 1 ? "#E6C6BD" : "#EFE0CB";
         return { x, y, size, delay, duration, drift, tone, i };
       }),
-    [count],
+    [budget],
   );
 
   return (
     <div
       aria-hidden
+      data-decor
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
     >
       {motes.map((m) => (

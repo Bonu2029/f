@@ -37,6 +37,7 @@ export default function Marquee() {
   return (
     <div
       aria-hidden
+      data-decor
       className="relative overflow-hidden border-y border-taupe/50 bg-ivory py-[clamp(1.5rem,3vw,2.75rem)]"
     >
       <div ref={ref} className="mask-fade-x flex w-max animate-marquee will-change-transform">

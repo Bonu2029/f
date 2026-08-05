@@ -10,9 +10,10 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/optimize-images.mjs && next build",
     "start": "next start",
-    "build:static": "node scripts/build-static.mjs",
+    "build:static": "node scripts/optimize-images.mjs && node scripts/build-static.mjs",
+    "images:optimize": "node scripts/optimize-images.mjs",
     "typecheck": "tsc --noEmit",
     "images:placeholders": "node scripts/generate-placeholders.mjs",
     "images:adopt": "node scripts/adopt-images.mjs",

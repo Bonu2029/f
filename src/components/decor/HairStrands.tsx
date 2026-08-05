@@ -54,6 +54,13 @@ export default function HairStrands({
       }
 
       // Each strand breathes on its own clock so the field never pulses.
+      // Skipped on phones: six ever-running SVG tweens behind everything else
+      // was frame time spent on something barely visible at that size.
+      const light =
+        window.matchMedia("(max-width: 767px)").matches ||
+        (navigator.hardwareConcurrency ?? 8) <= 4;
+      if (light) return;
+
       paths.forEach((path, i) => {
         gsap.to(path, {
           y: i % 2 === 0 ? 26 : -22,

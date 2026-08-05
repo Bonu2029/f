@@ -44,7 +44,10 @@ export default function Preloader() {
         },
       });
 
-      tl.set(".pl-mark", { opacity: 0, y: 26, filter: "blur(10px)" })
+      // Kept deliberately short. The first cut held scrolling for 4.5s, which
+      // reads as a slow site rather than as a considered entrance — the whole
+      // sequence now clears in well under two.
+      tl.set(".pl-mark", { opacity: 0, y: 20, filter: "blur(8px)" })
         .set(".pl-rule", { scaleX: 0, transformOrigin: "center" })
         .set(".pl-strands", { opacity: 0 })
 
@@ -52,40 +55,37 @@ export default function Preloader() {
           opacity: 1,
           y: 0,
           filter: "blur(0px)",
-          duration: 1.5,
+          duration: 0.7,
           ease: "silk",
         })
-        .to(".pl-rule", { scaleX: 1, duration: 1.2, ease: "drape" }, "-=0.9")
-        .to(".pl-strands", { opacity: 1, duration: 1.2 }, "-=1.0")
-
-        // Hold a beat — the pause is what makes it feel expensive.
-        .to({}, { duration: 0.45 })
+        .to(".pl-rule", { scaleX: 1, duration: 0.6, ease: "drape" }, "-=0.45")
+        .to(".pl-strands", { opacity: 1, duration: 0.5 }, "-=0.5")
 
         .to(".pl-mark, .pl-rule", {
           opacity: 0,
-          y: -18,
-          filter: "blur(8px)",
-          duration: 0.8,
+          y: -14,
+          filter: "blur(6px)",
+          duration: 0.4,
           ease: "power2.in",
         })
         .to(
           ".pl-panel-top",
-          { yPercent: -101, duration: 1.35, ease: "drape" },
-          "-=0.35",
+          { yPercent: -101, duration: 0.7, ease: "drape" },
+          "-=0.2",
         )
         .to(
           ".pl-panel-bottom",
-          { yPercent: 101, duration: 1.35, ease: "drape" },
+          { yPercent: 101, duration: 0.7, ease: "drape" },
           "<",
         )
-        .to(el, { autoAlpha: 0, duration: 0.3 }, "-=0.35");
+        .to(el, { autoAlpha: 0, duration: 0.2 }, "-=0.25");
     }, el);
 
     // Safety net: never trap the page if an animation frame is dropped.
     const failsafe = window.setTimeout(() => {
       window.dispatchEvent(new Event("massiel:unlock-scroll"));
       setDone(true);
-    }, 8000);
+    }, 3500);
 
     return () => {
       window.clearTimeout(failsafe);

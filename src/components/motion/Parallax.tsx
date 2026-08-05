@@ -2,6 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 import { gsap, registerGsap, useIsoLayoutEffect, prefersReducedMotion } from "@/lib/gsap";
+import { useNearViewport } from "@/lib/useNearViewport";
 
 type Props = {
   children: ReactNode;
@@ -21,8 +22,10 @@ export default function Parallax({
   rotate = 0,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const ready = useNearViewport(ref);
 
   useIsoLayoutEffect(() => {
+    if (!ready) return;
     registerGsap();
     const el = ref.current;
     if (!el || prefersReducedMotion()) return;
@@ -43,7 +46,7 @@ export default function Parallax({
     }, el);
 
     return () => ctx.revert();
-  }, [speed, zoom, rotate]);
+  }, [ready, speed, zoom, rotate]);
 
   return (
     <div ref={ref} className={className} style={{ willChange: "transform" }}>

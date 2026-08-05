@@ -11,18 +11,38 @@ type Blob = {
   blur?: string;
 };
 
+/**
+ * Soft gradient fields.
+ *
+ * These previously also ran `animate-morph`, which tweens `border-radius`.
+ * Animating a non-composited property on an element carrying a 70–90px blur
+ * forces the browser to re-rasterise the whole blurred surface every frame —
+ * with seventeen of them on the page it was the single largest cause of the
+ * scroll jank. They now animate transform only, which the compositor handles
+ * on its own thread, and the organic shape is baked in as a static radius.
+ */
 export default function Blobs({ blobs }: { blobs: Blob[] }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      aria-hidden
+      data-decor
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+    >
       {blobs.map((b, i) => (
         <div
           key={i}
-          className={`absolute ${b.size} ${b.className} ${
+          className={`blob absolute ${b.size} ${b.className} ${
             b.anim === "b" ? "animate-drift-b" : "animate-drift-a"
-          } animate-morph`}
+          }`}
           style={{
             background: b.color,
-            filter: `blur(${b.blur ?? "70px"})`,
+            // Set as a variable so the stylesheet can dial it back on phones,
+            // where a 90px blur costs far more than it is worth.
+            ["--blob-blur" as string]: b.blur ?? "70px",
+            borderRadius:
+              i % 2 === 0
+                ? "42% 58% 55% 45% / 48% 42% 58% 52%"
+                : "58% 42% 38% 62% / 38% 58% 42% 62%",
             animationDelay: `${i * -6}s`,
           }}
         />

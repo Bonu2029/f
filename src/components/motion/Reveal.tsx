@@ -2,6 +2,7 @@
 
 import { useRef, type ReactNode, type ElementType } from "react";
 import { gsap, ScrollTrigger, registerGsap, useIsoLayoutEffect, prefersReducedMotion } from "@/lib/gsap";
+import { useNearViewport } from "@/lib/useNearViewport";
 
 /**
  * Reveal variants. The brief asks that no two sections enter the same way, so
@@ -39,8 +40,10 @@ export default function Reveal({
   childSelector = ":scope > *",
 }: Props) {
   const ref = useRef<HTMLElement>(null);
+  const ready = useNearViewport(ref);
 
   useIsoLayoutEffect(() => {
+    if (!ready) return;
     registerGsap();
     const el = ref.current;
     if (!el) return;
@@ -137,7 +140,7 @@ export default function Reveal({
       ctx.revert();
       ScrollTrigger.refresh();
     };
-  }, [variant, delay, start, childSelector]);
+  }, [ready, variant, delay, start, childSelector]);
 
   return (
     <Tag ref={ref} className={`will-reveal ${className}`}>

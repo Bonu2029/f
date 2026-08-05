@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { ASPECT_RATIO, image as slotFor } from "@/lib/images";
 
 type Frame = "petal" | "leaf" | "arch" | "pebble" | "soft" | "none";
@@ -12,12 +11,31 @@ const FRAME_CLASS: Record<Frame, string> = {
   none: "",
 };
 
+/** Must match the widths emitted by scripts/optimize-images.mjs. */
+const WIDTHS = [480, 768, 1200];
+
+/**
+ * Photographs ship with responsive derivatives beside them. Serving the
+ * original to every device meant a 390px phone downloading 1500px artwork —
+ * roughly four times the pixels it can show.
+ *
+ * A native <img> is used rather than next/image: the static export target has
+ * no optimiser behind it, so next/image was emitting a single full-size source
+ * anyway. This way both build targets behave identically and the srcset is
+ * real in both.
+ */
+function buildSrcSet(src: string): string | undefined {
+  if (!src.endsWith(".webp")) return undefined; // placeholder SVGs have no derivatives
+  const base = src.replace(/\.webp$/, "");
+  return WIDTHS.map((w) => `${base}-${w}.webp ${w}w`).join(", ");
+}
+
 type Props = {
   /** Slot id from src/lib/images.ts */
   slot: string;
   frame?: Frame;
   className?: string;
-  /** Wrapper sizing hint for next/image. */
+  /** Tells the browser how wide this renders, so it can pick from the srcset. */
   sizes?: string;
   priority?: boolean;
   /** Zoom the art on hover of the nearest `.group` ancestor. */
@@ -28,11 +46,6 @@ type Props = {
   decorative?: boolean;
 };
 
-/**
- * Every image on the site goes through here, so art direction — framing,
- * grain, the warm inner light — stays identical whether the source is a
- * generated placeholder or a real photograph.
- */
 export default function Art({
   slot,
   frame = "soft",
@@ -44,23 +57,24 @@ export default function Art({
   decorative = false,
 }: Props) {
   const art = slotFor(slot);
-  const isVector = art.src.endsWith(".svg");
+  const srcSet = buildSrcSet(art.src);
 
   return (
     <div
       className={`relative overflow-hidden bg-shell ${FRAME_CLASS[frame]} ${className}`}
       style={{ aspectRatio: aspect ?? ASPECT_RATIO[art.aspect] }}
     >
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={art.src}
+        srcSet={srcSet}
+        sizes={srcSet ? sizes : undefined}
         alt={decorative ? "" : art.alt}
-        fill
-        sizes={sizes}
-        priority={priority}
-        loading={priority ? undefined : "lazy"}
-        unoptimized={isVector}
+        loading={priority ? "eager" : "lazy"}
+        decoding={priority ? "sync" : "async"}
+        fetchPriority={priority ? "high" : "auto"}
         aria-hidden={decorative || undefined}
-        className={`object-cover ${
+        className={`absolute inset-0 h-full w-full object-cover ${
           hoverZoom
             ? "transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
             : ""
