@@ -53,9 +53,12 @@ for (const file of sources) {
   const meta = await sharp(srcPath).metadata();
 
   for (const width of WIDTHS) {
-    // Never upscale — a 1:1 crop at 1254px has no business becoming 1200 twice.
-    if (meta.width && meta.width <= width) continue;
-
+    // Every width in WIDTHS must exist on disk, because the srcset advertises
+    // all of them unconditionally. Skipping the ones wider than the source
+    // left 25 of 31 `-1200.webp` files missing, so browsers picked a candidate
+    // that 404'd and the image simply did not appear. `withoutEnlargement`
+    // still prevents actual upscaling — the file is just written at the
+    // source's own width.
     const outPath = resolve(artDir, `${id}-${width}.webp`);
     if (existsSync(outPath) && statSync(outPath).mtimeMs >= srcStat.mtimeMs) {
       skipped += 1;
