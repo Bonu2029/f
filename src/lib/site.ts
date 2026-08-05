@@ -30,12 +30,12 @@ export const site = {
   url: env("NEXT_PUBLIC_SITE_URL", "https://massielbeautysalon.com"),
 
   address: {
-    street: env("NEXT_PUBLIC_ADDRESS_STREET", "128 N 8th St"),
+    street: env("NEXT_PUBLIC_ADDRESS_STREET", "132 N Eighth St"),
     locality: env("NEXT_PUBLIC_ADDRESS_CITY", "Allentown"),
     region: env("NEXT_PUBLIC_ADDRESS_REGION", "PA"),
     postalCode: env("NEXT_PUBLIC_ADDRESS_POSTAL", "18101"),
     country: "US",
-    /** Registry-sourced. Re-confirm the suite/unit number with the client. */
+    /** Confirmed by the client. */
     verified: true,
   },
 
@@ -63,7 +63,7 @@ export const site = {
     writeReviewUrl: env("NEXT_PUBLIC_GOOGLE_REVIEW_URL", ""),
   },
 
-  parking: "Street parking on N 8th St, plus public lots within a short walk.",
+  parking: "Street parking on N Eighth St, plus public lots within a short walk.",
 } as const;
 
 export type DayHours = {

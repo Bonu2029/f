@@ -82,20 +82,12 @@ export default function Visit() {
                   title={`Map showing ${site.name} at ${formattedAddress}`}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  className="relative h-[clamp(20rem,44vw,32rem)] w-full border-0 bg-transparent grayscale-[35%] sepia-[18%] contrast-[0.95] transition-all duration-700 hover:grayscale-0 hover:sepia-0"
+                  className="relative h-[clamp(20rem,44vw,32rem)] w-full border-0 bg-transparent"
                 />
 
-                {/* Animated marker — decorative, layered over the embed */}
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full"
-                >
-                  <span className="relative flex h-14 w-14 items-center justify-center">
-                    <span className="absolute h-14 w-14 animate-ping rounded-full bg-copper/25" />
-                    <span className="absolute h-8 w-8 rounded-full bg-copper/20 backdrop-blur" />
-                    <span className="relative h-3 w-3 rounded-full bg-copper shadow-[0_0_18px_rgba(154,90,50,0.7)]" />
-                  </span>
-                </span>
+                {/* No decorative pin overlay — the Google embed draws its own
+                    marker at the real location, and a second one floating at
+                    the centre of the frame pointed somewhere else. */}
 
                 {/* Address plate */}
                 <div className="glass-deep absolute bottom-4 left-4 right-4 flex flex-wrap items-center gap-4 rounded-2xl p-4 sm:left-6 sm:right-auto sm:max-w-[22rem] sm:p-5">
