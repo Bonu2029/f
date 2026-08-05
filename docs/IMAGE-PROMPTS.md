@@ -444,7 +444,9 @@ Colour bar at rest, ceramic bowls and tint brushes arranged neatly, foils, soft 
 Precision blunt cut with a clean line, glossy dark hair, minimal styling, plain cream backdrop. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 26. `gallery-07`
+### 26. `gallery-07` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery tile. Filters: Nails & Beauty, The Studio.
 
@@ -490,7 +492,9 @@ Hand-tied extensions blended into natural lengths, sectioned to show the invisib
 Soft romantic updo finished with a single brushed copper pin, loose face-framing pieces, neutral backdrop. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
-### 29. `gallery-10`
+### 29. `gallery-10` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Gallery tile. Filter: The Studio.
 
@@ -504,11 +508,45 @@ Soft romantic updo finished with a single brushed copper pin, loose face-framing
 Studio window seat, linen cushion, dried florals in a ceramic vessel, dappled sunlight, quiet corner. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
 ```
 
+### 30. `gallery-11` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
+
+**Where it appears** — —
+
+**Aspect ratio** `3:4`  ·  **Minimum size** 1200 × 1600px  ·  **Save as** `public/images/art/gallery-11.jpg`
+
+**Alt text already written for it** — "Hand-tied extensions sectioned to show how the join sits against the natural root"
+
+**Prompt**
+
+```text
+Hand-tied extensions with the top section pinned into a half-up bun to reveal the row of wefts against the natural root, blended lengths falling below, soft light. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
+```
+
+### 31. `gallery-12` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
+
+**Where it appears** — —
+
+**Aspect ratio** `4:5`  ·  **Minimum size** 1280 × 1600px  ·  **Save as** `public/images/art/gallery-12.jpg`
+
+**Alt text already written for it** — "A soft romantic updo finished with a hammered copper pin"
+
+**Prompt**
+
+```text
+Soft romantic updo, loosely twisted and pinned with a single hammered copper disc, face-framing pieces left out, seen from behind. editorial beauty campaign photography, soft diffused natural window light, warm cream and champagne palette with dusty rose and sage accents, brushed copper details, matte ivory walls, 35mm film grain, shallow depth of field, calm luxurious mood, no text, no logos, no harsh contrast, no neon
+```
+
 ---
 
 ## Booking
 
-### 30. `booking-ambient`
+### 32. `booking-ambient` ✅ delivered
+
+> Already filled with a real photograph. The prompt below is kept for reference — only regenerate if you want to replace it.
 
 **Where it appears** — Booking — decorative banner at the top of the live summary card.
 
@@ -526,7 +564,7 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 
 ## Checklist
 
-26 of 30 slots delivered. Still needed:
+31 of 32 slots delivered. Still needed:
 
 - [x] `hero-primary` — 2:3
 - [x] `hero-secondary` — 3:4
@@ -553,8 +591,10 @@ Soft abstract salon ambience, out-of-focus cream interior with a warm copper hig
 - [x] `gallery-04` — 3:4
 - [x] `gallery-05` — 4:3
 - [x] `gallery-06` — 4:5
-- [ ] `gallery-07` — 1:1
+- [x] `gallery-07` — 1:1
 - [x] `gallery-08` — 3:4
 - [x] `gallery-09` — 4:5
-- [ ] `gallery-10` — 3:2
-- [ ] `booking-ambient` — 4:5
+- [x] `gallery-10` — 3:2
+- [x] `gallery-11` — 3:4
+- [x] `gallery-12` — 4:5
+- [x] `booking-ambient` — 4:5

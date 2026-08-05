@@ -33,6 +33,8 @@ export const gallery: GalleryItem[] = [
   { image: "gallery-08", caption: "Copper tone, late light", categories: ["colour"] },
   { image: "gallery-09", caption: "Body, set and finished", categories: ["cuts"] },
   { image: "gallery-10", caption: "Window seat", categories: ["studio"], feature: true },
+  { image: "gallery-11", caption: "Extensions, at the join", categories: ["cuts", "colour"] },
+  { image: "gallery-12", caption: "Soft updo, copper pin", categories: ["cuts"] },
 ];
 
 /* --- Transformations ------------------------------------------------------ */
