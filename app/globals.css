@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --header-h: 76px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ivory text-ink font-sans antialiased;
+    font-feature-settings: 'ss01', 'cv01';
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-ink;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: #cfe8de;
+    color: #39443f;
+  }
+
+  /* Visible, consistent focus for keyboard users */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid #5f8f7b;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  input,
+  select,
+  textarea {
+    color-scheme: light;
+  }
+}
+
+@layer components {
+  .container-luma {
+    @apply mx-auto w-full max-w-[1200px] px-5 sm:px-8;
+  }
+
+  .container-narrow {
+    @apply mx-auto w-full max-w-[860px] px-5 sm:px-8;
+  }
+
+  .surface {
+    @apply rounded-3xl border border-line bg-white shadow-soft;
+  }
+
+  .surface-quiet {
+    @apply rounded-3xl border border-line/80 bg-pearl/60;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-accent;
+  }
+
+  .lede {
+    @apply text-lg leading-relaxed text-muted sm:text-xl;
+  }
+
+  .link-underline {
+    @apply underline decoration-sage decoration-2 underline-offset-4 transition-colors hover:decoration-accent;
+  }
+
+  .hairline {
+    @apply h-px w-full bg-line;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .grain {
+    background-image: radial-gradient(
+      rgba(57, 68, 63, 0.045) 0.5px,
+      transparent 0.5px
+    );
+    background-size: 4px 4px;
+  }
+
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+  }
+}
+
+/* Respect the operating-system reduced-motion preference everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Range inputs used by the estimate + builder tools */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #cfe8de, #cfe3f3);
+  outline: none;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid #5f8f7b;
+  box-shadow: 0 4px 12px -4px rgba(57, 68, 63, 0.4);
+  cursor: pointer;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid #5f8f7b;
+  cursor: pointer;
+}
