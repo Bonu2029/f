@@ -58,9 +58,9 @@ export function SectionHeading({
   lede?: ReactNode;
   align?: 'left' | 'center';
   className?: string;
-  level?: 2 | 3;
+  level?: 1 | 2 | 3;
 }) {
-  const Heading = (level === 2 ? 'h2' : 'h3') as ElementType;
+  const Heading = `h${level}` as ElementType;
   return (
     <div
       className={cn(
@@ -70,7 +70,14 @@ export function SectionHeading({
       )}
     >
       {eyebrow ? <p className="eyebrow mb-3">{eyebrow}</p> : null}
-      <Heading className="text-balance text-3xl leading-[1.15] sm:text-4xl md:text-[2.75rem]">
+      <Heading
+        className={cn(
+          'text-balance leading-[1.12]',
+          level === 1
+            ? 'text-4xl sm:text-5xl lg:text-[3.4rem]'
+            : 'text-3xl sm:text-4xl md:text-[2.75rem]',
+        )}
+      >
         {title}
       </Heading>
       {lede ? <p className="lede mt-5 text-pretty">{lede}</p> : null}
