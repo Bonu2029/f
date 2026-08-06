@@ -100,8 +100,8 @@ export function ComparisonSlider({
           className="absolute inset-0 z-20 h-full w-full cursor-ew-resize appearance-none bg-transparent opacity-0"
         />
 
-        <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-3 py-1 text-[11px] text-muted backdrop-blur-sm">
-          Drag or use arrow keys · demonstration image
+        <span className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-3 py-1 text-[11px] text-muted backdrop-blur-sm">
+          Drag or use arrow keys
         </span>
       </div>
       {caption ? (

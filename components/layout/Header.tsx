@@ -136,7 +136,8 @@ export function Header() {
               >
                 Customer Login
               </Link>
-              <Button href="/booking" size="sm" className="hidden sm:inline-flex">
+              {/* Booking stays reachable at every width — most customers book from a phone. */}
+              <Button href="/booking" size="sm">
                 Book Now
               </Button>
               <button
