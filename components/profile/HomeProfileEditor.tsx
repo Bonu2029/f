@@ -138,7 +138,8 @@ export function HomeProfileEditor() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[240px_1fr] lg:gap-10">
-      <nav aria-label="Profile sections" className="lg:sticky lg:top-28 lg:self-start">
+      {/* min-w-0 keeps the horizontally scrolling chip row from widening the grid */}
+      <nav aria-label="Profile sections" className="min-w-0 lg:sticky lg:top-28 lg:self-start">
         <ul className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
           {sections.map((section) => (
             <li key={section.id} className="flex-none lg:flex-auto">
@@ -174,32 +175,35 @@ export function HomeProfileEditor() {
         initial={reduce ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="rounded-[2rem] border border-line bg-white p-6 shadow-soft sm:p-8"
+        className="min-w-0 rounded-[2rem] border border-line bg-white p-6 shadow-soft sm:p-8"
       >
         {active === 'layout' ? (
           <Panel title="Home layout" body="The shape of the home, described once.">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Home nickname" htmlFor="nickname" hint="Helpful if you have more than one property.">
+              <Field
+                className="sm:col-span-2"
+                label="Home nickname"
+                htmlFor="nickname"
+                hint="Helpful if you have more than one property."
+              >
                 <TextInput
                   id="nickname"
                   value={profile.nickname}
                   onChange={(event) => set('nickname', event.target.value)}
                 />
               </Field>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Counter
-                  label="Bedrooms"
-                  value={profile.bedrooms}
-                  onChange={(value) => set('bedrooms', value)}
-                  max={10}
-                />
-                <Counter
-                  label="Bathrooms"
-                  value={profile.bathrooms}
-                  onChange={(value) => set('bathrooms', value)}
-                  max={10}
-                />
-              </div>
+              <Counter
+                label="Bedrooms"
+                value={profile.bedrooms}
+                onChange={(value) => set('bedrooms', value)}
+                max={10}
+              />
+              <Counter
+                label="Bathrooms"
+                value={profile.bathrooms}
+                onChange={(value) => set('bathrooms', value)}
+                max={10}
+              />
             </div>
 
             <p className="eyebrow mt-8">Rooms in this home</p>
