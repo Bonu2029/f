@@ -169,6 +169,27 @@ export default function HomePage() {
         </Container>
       </Section>
 
+      {/* Full-width editorial band */}
+      <Reveal>
+        <div className="relative">
+          <EditorialImage
+            id="home-modes"
+            aspect="aspect-[16/9] sm:aspect-[21/9]"
+            rounded="rounded-none"
+            className="border-x-0"
+            showLabel={false}
+          />
+          <div className="absolute inset-0 flex items-end">
+            <Container className="pb-8 sm:pb-12">
+              <p className="max-w-xl rounded-2xl bg-white/85 p-5 font-display text-xl leading-snug text-ink backdrop-blur-sm sm:text-2xl">
+                The details most people notice last are the ones we set up first:
+                folded linens, cleared surfaces, a door that opens onto order.
+              </p>
+            </Container>
+          </div>
+        </div>
+      </Reveal>
+
       {/* How it works */}
       <Section tone="plain">
         <Container>
