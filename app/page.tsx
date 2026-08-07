@@ -40,6 +40,9 @@ const personalizationInputs = [
   'Preferred cleaning style',
 ];
 
+const bandCopy =
+  'The details most people notice last are the ones we set up first: folded linens, cleared surfaces, a door that opens onto order.';
+
 const modeTones: Record<string, string> = {
   mint: 'bg-mint/40',
   airy: 'bg-airy/40',
@@ -81,7 +84,9 @@ export default function HomePage() {
             </Reveal>
 
             <Reveal delay={0.1}>
-              <EditorialImage id="home-reset-editorial" aspect="aspect-[4/5] sm:aspect-[3/2] lg:aspect-[4/5]" />
+              {/* Portrait photograph — keeping a 4:5 frame at every width avoids
+                  cropping the bench and the light on the wall above it. */}
+              <EditorialImage id="home-reset-editorial" aspect="aspect-[4/5]" />
             </Reveal>
           </div>
 
@@ -174,20 +179,27 @@ export default function HomePage() {
         <div className="relative">
           <EditorialImage
             id="home-modes"
-            aspect="aspect-[16/9] sm:aspect-[21/9]"
+            aspect="aspect-[4/3] sm:aspect-[21/9]"
             rounded="rounded-none"
             className="border-x-0"
             showLabel={false}
+            sizes="100vw"
           />
-          <div className="absolute inset-0 flex items-end">
-            <Container className="pb-8 sm:pb-12">
-              <p className="max-w-xl rounded-2xl bg-white/85 p-5 font-display text-xl leading-snug text-ink backdrop-blur-sm sm:text-2xl">
-                The details most people notice last are the ones we set up first:
-                folded linens, cleared surfaces, a door that opens onto order.
-              </p>
+          {/* The photograph keeps its clear space on the right, so the overlay
+              sits there — and drops below the image entirely on small screens. */}
+          <div className="pointer-events-none absolute inset-0 hidden items-end sm:flex">
+            <Container className="pb-8 lg:pb-12">
+              <div className="flex justify-end">
+                <p className="max-w-md rounded-2xl bg-white/88 p-5 font-display text-xl leading-snug text-ink backdrop-blur-sm lg:text-2xl">
+                  {bandCopy}
+                </p>
+              </div>
             </Container>
           </div>
         </div>
+        <Container className="py-7 sm:hidden">
+          <p className="font-display text-xl leading-snug text-ink">{bandCopy}</p>
+        </Container>
       </Reveal>
 
       {/* How it works */}

@@ -90,10 +90,16 @@ renders the photograph; a slot without one renders a labelled placeholder. To
 ship a photo, drop it in `public/images/` and set `src` on that slot — nothing
 else changes.
 
-Five photographs are in place: the homepage, services, how-it-works, about and
-trust & safety heroes. The remaining nineteen slots — service detail heroes, the
-homepage editorial images and the before/after pairs — are still placeholders,
-and their prompts are ready to hand to a photographer or image model.
+Ten photographs are in place: the homepage, services, how-it-works, about,
+trust & safety, locations, membership and contact heroes, plus the homepage
+entryway editorial and the full-width modes band. Fourteen slots are still
+placeholders — the membership preview on the homepage, the five service detail
+heroes, the seven before/after pairs and the dashboard report stand-in — and
+their prompts are ready to hand to a photographer or image model.
+
+`sizes` on `<EditorialImage>` must describe how wide the image actually renders.
+It defaults to a half-column hero; the full-bleed band passes `sizes="100vw"` so
+the browser does not download a source that is too small for it.
 
 Source images were resized to 1600px wide and encoded as quality-82 mozjpeg
 (~120–210 KB each). `next/image` serves AVIF/WebP from there, so keep new assets

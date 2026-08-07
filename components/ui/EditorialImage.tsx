@@ -22,6 +22,7 @@ export function EditorialImage({
   priority = false,
   rounded = 'rounded-3xl',
   showLabel = true,
+  sizes = '(max-width: 768px) 100vw, 50vw',
 }: {
   id: string;
   className?: string;
@@ -29,6 +30,8 @@ export function EditorialImage({
   priority?: boolean;
   rounded?: string;
   showLabel?: boolean;
+  /** Must describe the rendered width — full-bleed images need "100vw". */
+  sizes?: string;
 }) {
   const slot = getImage(id);
 
@@ -44,7 +47,7 @@ export function EditorialImage({
           alt={slot.alt}
           fill
           priority={priority}
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes={sizes}
           className="object-cover"
         />
       </div>

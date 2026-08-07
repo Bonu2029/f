@@ -34,17 +34,19 @@ export const imageSlots: ImageSlot[] = [
     id: 'home-reset-editorial',
     label: 'Homepage — home reset editorial',
     tone: 'champagne',
-    alt: 'A calm entryway with a bench, folded throw and a small tray for keys',
+    alt: 'A calm entryway with a light oak bench, a folded cream throw, a stone tray holding keys and a pair of shoes set squarely beneath',
     prompt:
       'Editorial photograph of a calm residential entryway: pale plaster wall, light oak bench with a neatly folded cream throw, a small ceramic tray holding keys, a pair of shoes set squarely beneath the bench, soft daylight from a side window, warm ivory and champagne beige palette, no people, no readable text or brand marks, quiet luxury magazine styling, vertical composition.',
+    src: '/images/home-reset-editorial.jpg',
   },
   {
     id: 'home-modes',
     label: 'Homepage — cleaning modes band',
     tone: 'airy',
-    alt: 'Folded towels and a stack of fresh linens on a pale shelf',
+    alt: 'Folded white and sage towels stacked on a pale shelf beside a blank-labelled glass bottle and a sprig of eucalyptus',
     prompt:
       'Close editorial still life of freshly folded white and sage towels stacked on a pale wooden shelf beside a small glass bottle of unscented cleaner with a blank label, soft directional daylight, warm white background, minimal styling, no text, no logos, no hands, 50mm macro feel, horizontal composition.',
+    src: '/images/home-modes.jpg',
   },
   {
     id: 'home-membership',
@@ -134,25 +136,28 @@ export const imageSlots: ImageSlot[] = [
     id: 'locations-hero',
     label: 'Locations hero',
     tone: 'airy',
-    alt: 'A quiet residential street with morning light through trees',
+    alt: 'A quiet tree-lined residential street at morning, sunlight filtering through the canopy onto pale sidewalks and hydrangea beds',
     prompt:
       'Editorial photograph of a quiet residential street at morning: soft light filtering through street trees onto pale sidewalks and low front gardens, no readable street signs, no license plates, no people, no text, gentle haze, warm neutral grading, horizontal composition.',
+    src: '/images/locations-hero.jpg',
   },
   {
     id: 'membership-hero',
     label: 'Membership hero',
     tone: 'lavender',
-    alt: 'A serene reading corner with an armchair and a soft blanket',
+    alt: 'A serene reading corner with a cream armchair, a soft lavender throw and cushion, and a marble side table holding a ceramic cup',
     prompt:
       'Editorial photograph of a serene reading corner: a pale upholstered armchair, a soft folded blanket, a small side table with a ceramic cup, tall window with sheer curtain behind, warm ivory with soft lavender shadows, no people, no text, no logos, quiet luxury styling, horizontal composition.',
+    src: '/images/membership-hero.jpg',
   },
   {
     id: 'contact-hero',
     label: 'Contact hero',
     tone: 'mint',
-    alt: 'A clean desk surface with a notebook and a glass of water by a window',
+    alt: 'A sunlit sill with a closed blank-covered notebook, a glass of water and a small sage vase holding a single white stem',
     prompt:
       'Editorial photograph of a clean pale desk surface beside a window: a closed notebook with a blank cover, a glass of water, a small vase with a single stem, soft daylight and a long clean shadow, warm ivory and mint tones, no people, no text, no screens, horizontal composition.',
+    src: '/images/contact-hero.jpg',
   },
   {
     id: 'ba-kitchen',
