@@ -25,9 +25,10 @@ export const imageSlots: ImageSlot[] = [
     id: 'home-hero',
     label: 'Homepage hero',
     tone: 'mint',
-    alt: 'Morning light crossing a bright, uncluttered living room with linen upholstery and a low wooden table',
+    alt: 'Morning light crossing a bright living room with a cream linen sofa, a slender potted tree and a low wooden table holding eucalyptus',
     prompt:
       'Editorial interior photograph of a bright, uncluttered living room in warm ivory and soft sage tones, early morning sunlight raking across a linen sofa and pale oak floor, sheer curtains diffusing the light, a low wooden coffee table with a ceramic vase of eucalyptus, faint dust motes visible in the light beam, no people, no text, no logos, natural color grading, shallow depth of field, 35mm, horizontal composition with generous empty space on the left for headline text.',
+    src: '/images/home-hero.jpg',
   },
   {
     id: 'home-reset-editorial',
@@ -57,9 +58,10 @@ export const imageSlots: ImageSlot[] = [
     id: 'services-hero',
     label: 'Services index hero',
     tone: 'mint',
-    alt: 'A bright kitchen with clear counters and a bowl of lemons',
+    alt: 'A bright kitchen with sage-green cabinets, clear pale stone counters and a bowl of lemons',
     prompt:
       'Editorial photograph of a bright modern kitchen with clear pale stone counters, matte sage lower cabinets, warm white uppers, a shallow bowl of lemons, brushed brass tap catching daylight, no clutter, no people, no visible brand names or text, soft natural light from a window on the right, horizontal composition with room for an overlay on the left.',
+    src: '/images/services-hero.jpg',
   },
   {
     id: 'svc-standard-hero',
@@ -105,25 +107,28 @@ export const imageSlots: ImageSlot[] = [
     id: 'how-it-works-hero',
     label: 'How It Works hero',
     tone: 'airy',
-    alt: 'Sunlight moving across a clean kitchen counter through a window',
+    alt: 'Window-frame shadows falling across a clean pale stone counter, with a glass of water and a folded cloth',
     prompt:
       'Editorial photograph of sunlight moving across a clean, empty kitchen counter, window frame shadow falling across pale stone, a single glass of water and a folded cloth at the edge of frame, warm ivory and airy blue reflections, no people, no text, no products with labels, horizontal composition with generous negative space.',
+    src: '/images/how-it-works-hero.jpg',
   },
   {
     id: 'about-hero',
     label: 'About hero',
     tone: 'champagne',
-    alt: 'A sunlit dining nook with a wooden table and fresh flowers',
+    alt: 'A sunlit dining nook with a round wooden table, a jug of white flowers and a sheer curtain glowing with backlight',
     prompt:
       'Editorial photograph of a sunlit dining nook: round pale wood table, two simple chairs, a small jug of fresh white flowers, warm plaster wall, sheer curtain glowing with backlight, warm ivory and champagne palette, no people, no text, no logos, gentle film grain, horizontal composition.',
+    src: '/images/about-hero.jpg',
   },
   {
     id: 'trust-hero',
     label: 'Trust & Safety hero',
     tone: 'lavender',
-    alt: 'A front door with the light on and a clean stone step',
+    alt: 'A sage-green front door with the porch lantern lit above a clean stone step and a planted pot',
     prompt:
       'Editorial photograph of a residential front door in soft sage green with a brushed handle, clean stone step, small planted pot beside the frame, early evening light, calm and secure feeling, no house numbers, no text, no people, no signage, vertical-friendly horizontal composition.',
+    src: '/images/trust-hero.jpg',
   },
   {
     id: 'locations-hero',

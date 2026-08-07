@@ -164,7 +164,7 @@ export function Hero() {
             </motion.div>
 
             <motion.p
-              className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted"
+              className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted"
               initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.34 }}
@@ -173,9 +173,7 @@ export function Hero() {
                 <Icon name="shield" size={16} className="text-accent" />
                 Background-checked professionals
               </span>
-              <span aria-hidden="true" className="text-line">·</span>
               <span>Personalized preferences</span>
-              <span aria-hidden="true" className="text-line">·</span>
               <span>Satisfaction support</span>
             </motion.p>
           </div>
@@ -186,9 +184,11 @@ export function Hero() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           >
+            {/* The hero photograph is landscape, so the desktop crop stays square
+                rather than forcing a portrait frame that would cut the room in half. */}
             <EditorialImage
               id="home-hero"
-              aspect="aspect-[4/5] sm:aspect-[5/4] lg:aspect-[4/5]"
+              aspect="aspect-[5/4] lg:aspect-square"
               priority
               className="shadow-lift"
             />

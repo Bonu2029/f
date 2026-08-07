@@ -84,10 +84,20 @@ these before launch:
 
 ## Images
 
-Photography is not included. Every visual slot is registered in
-`lib/content/images.ts` with its alt text, tone and an art-direction prompt, and
-renders as a labelled placeholder until a real asset exists. To ship a photo,
-drop it in `public/` and set `src` on that slot — nothing else changes.
+Every visual slot is registered in `lib/content/images.ts` with its alt text,
+tone and the art-direction prompt used to commission it. A slot with a `src`
+renders the photograph; a slot without one renders a labelled placeholder. To
+ship a photo, drop it in `public/images/` and set `src` on that slot — nothing
+else changes.
+
+Five photographs are in place: the homepage, services, how-it-works, about and
+trust & safety heroes. The remaining nineteen slots — service detail heroes, the
+homepage editorial images and the before/after pairs — are still placeholders,
+and their prompts are ready to hand to a photographer or image model.
+
+Source images were resized to 1600px wide and encoded as quality-82 mozjpeg
+(~120–210 KB each). `next/image` serves AVIF/WebP from there, so keep new assets
+at similar dimensions rather than dropping in multi-megabyte originals.
 
 ## Accessibility and motion
 
