@@ -42,7 +42,17 @@ export function EditorialImage({
     return null;
   }
 
-  const src = variant === 'before' ? (slot.beforeSrc ?? slot.src) : slot.src;
+  // A before/after slot is only usable once both frames exist. Rendering a real
+  // photograph against a placeholder would present one state as if it were the
+  // other, so a half-delivered pair falls back to placeholders on both sides.
+  const isPair = slot.beforeSrc !== undefined;
+  const ready = isPair ? Boolean(slot.src && slot.beforeSrc) : Boolean(slot.src);
+
+  const src = !ready
+    ? undefined
+    : variant === 'before'
+      ? slot.beforeSrc
+      : slot.src;
   const alt = variant === 'before' ? (slot.beforeAlt ?? slot.alt) : slot.alt;
 
   if (src) {

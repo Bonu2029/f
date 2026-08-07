@@ -90,17 +90,31 @@ renders the photograph; a slot without one renders a labelled placeholder. To
 ship a photo, drop it in `public/images/` and set `src` on that slot — nothing
 else changes.
 
-Eighteen photographs are in place: all eight page heroes, all five service
-detail heroes, the homepage entryway editorial, the full-width modes band, the
-homepage membership preview, and the kitchen and bathroom before/after pairs.
-Six slots are still placeholders — five before/after pairs and the dashboard
-report stand-in.
+Twenty slots are complete: all eight page heroes, all five service detail
+heroes, the homepage entryway editorial, the full-width modes band, the homepage
+membership preview, and the kitchen, bathroom, living room and move-out
+before/after pairs.
+
+Four slots are outstanding:
+
+- `ba-bedroom` — the **before** frame is in place; the after frame is missing,
+  so the slot still renders placeholders (see below)
+- `ba-turnover`, `ba-deep-kitchen` — both frames needed
+- `dashboard-report` — the non-identifying report stand-in
 
 Before/after slots hold two files: `src` is the cleaned result and `beforeSrc`
 the starting state. Both frames must be shot from a locked-off tripod with
 identical framing and lighting; if the camera moves between them the comparison
-slider visibly jumps as it is dragged. Until a slot has both frames,
-`<ComparisonSlider>` falls back to desaturating the single image it has.
+slider visibly jumps as it is dragged.
+
+**A pair renders only when both frames exist.** A slot holding just one of the
+two keeps showing placeholders on both sides, because pairing a real photograph
+with a placeholder would present one state as if it were the other. Delivering
+the missing frame and adding its path is all that is needed to switch a slot on.
+
+`scripts/check-pairs.mjs` compares the two frames of every complete pair and
+reports how far apart they are, which catches a moved camera before it reaches
+the page.
 
 `sizes` on `<EditorialImage>` must describe how wide the image actually renders.
 It defaults to a half-column hero; the full-bleed band passes `sizes="100vw"` so
@@ -114,6 +128,12 @@ check the slot's aspect still suits the photograph:
 node scripts/optimize-image.mjs ~/photos/kitchen.jpg svc-airbnb-hero
 node scripts/optimize-image.mjs ~/photos/band.jpg home-modes --width 1920
 node scripts/optimize-image.mjs ~/photos/street.jpg locations-hero --quality 76
+
+# before/after frames use the -before suffix on the same slot name
+node scripts/optimize-image.mjs ~/photos/bedroom-messy.jpg ba-bedroom-before
+node scripts/optimize-image.mjs ~/photos/bedroom-clean.jpg ba-bedroom
+
+node scripts/check-pairs.mjs --seams   # then look at scratch/seam-*.jpg
 ```
 
 `next/image` serves AVIF/WebP derivatives from the result, so the file on disk

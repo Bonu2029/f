@@ -28,8 +28,8 @@ export function ComparisonSlider({
   const [position, setPosition] = useState(52);
   const id = useId();
   const slot = getImage(imageId);
-  /** With only one frame available, the before state has to be simulated. */
-  const simulated = !slot?.beforeSrc;
+  /** Both frames are needed for a real comparison; otherwise it is simulated. */
+  const simulated = !(slot?.src && slot?.beforeSrc);
 
   return (
     <figure className={cn('w-full', className)}>

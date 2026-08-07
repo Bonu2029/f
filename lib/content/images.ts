@@ -9,8 +9,9 @@
  * <EditorialImage> component renders the photograph instead of the placeholder.
  *
  * Before/after slots carry two frames: `src` is the cleaned result and
- * `beforeSrc` the starting state. Until both exist, <ComparisonSlider> simulates
- * the before state by desaturating the single image it has.
+ * `beforeSrc` the starting state. A pair is only rendered once BOTH frames
+ * exist — a half-delivered pair keeps showing placeholders, because pairing a
+ * real photograph with a placeholder would present one state as the other.
  */
 
 export type ImageTone = 'mint' | 'airy' | 'champagne' | 'lavender' | 'pearl';
@@ -200,25 +201,36 @@ export const imageSlots: ImageSlot[] = [
     id: 'ba-living',
     label: 'Before/After — living room',
     tone: 'pearl',
-    alt: 'Living room comparison, demonstration image',
+    alt: 'The same living room after a reset: cushions straightened, the throw folded over the chaise, the coffee table cleared to a single vase and the rug vacuumed',
+    beforeAlt:
+      'A living room in everyday use: cushions askew, a throw bunched across the chaise, and the coffee table covered with a mug, an open magazine, bowls and books',
     prompt:
       'A matched pair of editorial photographs of the same living room from an identical camera position. Frame A: cushions askew, throw blanket bunched, items scattered on the coffee table, dusty surfaces. Frame B: the same room reset — cushions straightened, throw folded, table clear with a single ceramic vase, floors vacuumed with visible clean lines in the rug. Warm neutral palette, soft daylight, no people, no text, horizontal composition, identical framing.',
+    src: '/images/ba-living.jpg',
+    beforeSrc: '/images/ba-living-before.jpg',
   },
   {
     id: 'ba-moveout',
     label: 'Before/After — move-out apartment',
     tone: 'champagne',
-    alt: 'Empty apartment comparison, demonstration image',
+    alt: 'The same empty room after cleaning: walls bright and spot-cleaned, baseboards spotless, the closet cleared and the wood floor gleaming',
+    beforeAlt:
+      'An empty room after a move-out: dingy walls, dust along the baseboards, a scuffed and dulled wood floor and debris in the open closet',
     prompt:
       'A matched pair of editorial photographs of the same empty apartment room from an identical camera position. Frame A: post-move state — scuffed floor, dust along baseboards, marks on the wall, an empty closet with debris. Frame B: the same room fully cleaned — floor gleaming, baseboards spotless, walls spot-cleaned, closet empty and wiped. Pale neutral palette, daylight from an uncovered window, no furniture, no people, no text, horizontal composition, identical framing.',
+    src: '/images/ba-moveout.jpg',
+    beforeSrc: '/images/ba-moveout-before.jpg',
   },
   {
     id: 'ba-bedroom',
     label: 'Before/After — bedroom',
     tone: 'lavender',
-    alt: 'Bedroom comparison, demonstration image',
+    alt: 'A bedroom reset with crisp linens neatly made, the chair cleared and the floor vacuumed',
+    beforeAlt:
+      'A bedroom at the end of the day: the bed unmade, clothes draped over the armchair, slippers on the rug and a cluttered nightstand',
     prompt:
       'A matched pair of editorial photographs of the same bedroom from an identical camera position. Frame A: unmade bed, clothes over a chair, cluttered nightstand. Frame B: the same bedroom reset — crisp linens neatly made, chair clear, nightstand holding only a lamp and a glass of water, floor vacuumed. Warm ivory with soft lavender shadows, morning light, no people, no text, horizontal composition, identical framing.',
+    beforeSrc: '/images/ba-bedroom-before.jpg',
   },
   {
     id: 'ba-turnover',
