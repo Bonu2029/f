@@ -90,20 +90,32 @@ renders the photograph; a slot without one renders a labelled placeholder. To
 ship a photo, drop it in `public/images/` and set `src` on that slot — nothing
 else changes.
 
-Ten photographs are in place: the homepage, services, how-it-works, about,
-trust & safety, locations, membership and contact heroes, plus the homepage
-entryway editorial and the full-width modes band. Fourteen slots are still
-placeholders — the membership preview on the homepage, the five service detail
-heroes, the seven before/after pairs and the dashboard report stand-in — and
-their prompts are ready to hand to a photographer or image model.
+Fifteen photographs are in place: all eight page heroes, the homepage entryway
+editorial, the full-width modes band, the homepage membership preview and four
+of the five service detail heroes. Nine slots are still placeholders — the
+Airbnb turnover hero, the seven before/after pairs and the dashboard report
+stand-in — and their prompts are ready to hand to a photographer or image model.
+
+The before/after pairs need both frames shot from a locked-off tripod with
+identical framing and lighting. If the camera moves between frames, the
+comparison slider visibly jumps as it is dragged.
 
 `sizes` on `<EditorialImage>` must describe how wide the image actually renders.
 It defaults to a half-column hero; the full-bleed band passes `sizes="100vw"` so
 the browser does not download a source that is too small for it.
 
-Source images were resized to 1600px wide and encoded as quality-82 mozjpeg
-(~120–210 KB each). `next/image` serves AVIF/WebP from there, so keep new assets
-at similar dimensions rather than dropping in multi-megabyte originals.
+Use `scripts/optimize-image.mjs` to prepare a source file — it resizes, strips
+metadata and encodes to mozjpeg, then prints the resulting ratio so you can
+check the slot's aspect still suits the photograph:
+
+```bash
+node scripts/optimize-image.mjs ~/photos/kitchen.jpg svc-airbnb-hero
+node scripts/optimize-image.mjs ~/photos/band.jpg home-modes --width 1920
+node scripts/optimize-image.mjs ~/photos/street.jpg locations-hero --quality 76
+```
+
+`next/image` serves AVIF/WebP derivatives from the result, so the file on disk
+only needs to be a good master — never drop in a multi-megabyte original.
 
 ## Accessibility and motion
 

@@ -52,9 +52,10 @@ export const imageSlots: ImageSlot[] = [
     id: 'home-membership',
     label: 'Homepage — membership preview',
     tone: 'lavender',
-    alt: 'A peaceful bedroom with crisp bedding and morning light on the wall',
+    alt: 'A peaceful bedroom with white and soft lavender linen bedding, a rectangle of morning light on the plaster wall, and a nightstand holding a glass of water and a blank-covered book',
     prompt:
       'Editorial photograph of a peaceful bedroom with crisp white and soft lavender bedding, a single linen cushion, pale plaster walls, morning light falling in a soft rectangle across the wall and duvet, minimal nightstand with a glass of water and a small book with a blank cover, no people, no text, no logos, calm quiet-luxury styling, horizontal composition.',
+    src: '/images/home-membership.jpg',
   },
   {
     id: 'services-hero',
@@ -69,33 +70,37 @@ export const imageSlots: ImageSlot[] = [
     id: 'svc-standard-hero',
     label: 'Standard Cleaning hero',
     tone: 'pearl',
-    alt: 'A tidy living area with cushions straightened and floors clear',
+    alt: 'A tidy living area with a neutral sofa, straightened cushions, a folded throw over the arm and a wool rug on a clear floor',
     prompt:
       'Editorial interior photograph of a tidy everyday living area: neutral sofa with cushions straightened, a soft wool rug, clear pale floor, folded throw over the sofa arm, small stack of magazines with blank covers, warm ivory light, no people, no text, no logos, calm realistic styling, horizontal composition.',
+    src: '/images/svc-standard-hero.jpg',
   },
   {
     id: 'svc-deep-hero',
     label: 'Deep Cleaning hero',
     tone: 'airy',
-    alt: 'Detail of a clean baseboard meeting a pale wood floor in low light',
+    alt: 'Close detail of a spotless white baseboard meeting a pale oak floor, with low raking daylight across the grain',
     prompt:
       'Close editorial detail photograph of a spotless white baseboard meeting a pale oak floor, low raking daylight revealing clean edges and grain, soft shadow gradient, warm neutral palette, extremely minimal, no people, no cleaning products in frame, no text, horizontal composition, shallow depth of field.',
+    src: '/images/svc-deep-hero.jpg',
   },
   {
     id: 'svc-move-hero',
     label: 'Move-In / Move-Out hero',
     tone: 'pearl',
-    alt: 'An empty room with bare floors and light from two tall windows',
+    alt: 'An empty room with bare pale wood floors, two tall windows casting rectangles of light, and an open door onto an empty hallway',
     prompt:
       'Editorial photograph of a completely empty residential room with bare pale wood floors, freshly cleaned white walls, two tall windows casting overlapping rectangles of daylight on the floor, a single open door to an empty hallway, no furniture, no people, no boxes, no text, quiet architectural composition, horizontal.',
+    src: '/images/svc-move-hero.jpg',
   },
   {
     id: 'svc-recurring-hero',
     label: 'Recurring Cleaning hero',
     tone: 'mint',
-    alt: 'An organized open shelf with neatly arranged everyday objects',
+    alt: 'An organized open shelving unit holding ceramic bowls, folded linens, a small potted plant and blank-spined books',
     prompt:
       'Editorial photograph of an organized open shelving unit in a bright home: neatly spaced ceramic bowls, folded linens, a small potted plant, books with blank spines, pale wood and warm white palette, soft even daylight, no people, no readable text, calm minimal styling, horizontal composition.',
+    src: '/images/svc-recurring-hero.jpg',
   },
   {
     id: 'svc-airbnb-hero',
