@@ -23,6 +23,7 @@ export function EditorialImage({
   rounded = 'rounded-3xl',
   showLabel = true,
   sizes = '(max-width: 768px) 100vw, 50vw',
+  variant = 'after',
 }: {
   id: string;
   className?: string;
@@ -32,6 +33,8 @@ export function EditorialImage({
   showLabel?: boolean;
   /** Must describe the rendered width — full-bleed images need "100vw". */
   sizes?: string;
+  /** Selects the frame on before/after slots. Ignored by single-image slots. */
+  variant?: 'before' | 'after';
 }) {
   const slot = getImage(id);
 
@@ -39,12 +42,15 @@ export function EditorialImage({
     return null;
   }
 
-  if (slot.src) {
+  const src = variant === 'before' ? (slot.beforeSrc ?? slot.src) : slot.src;
+  const alt = variant === 'before' ? (slot.beforeAlt ?? slot.alt) : slot.alt;
+
+  if (src) {
     return (
       <div className={cn('relative overflow-hidden', rounded, aspect, className)}>
         <Image
-          src={slot.src}
-          alt={slot.alt}
+          src={src}
+          alt={alt}
           fill
           priority={priority}
           sizes={sizes}
@@ -57,7 +63,7 @@ export function EditorialImage({
   return (
     <div
       role="img"
-      aria-label={slot.alt}
+      aria-label={alt}
       className={cn(
         'relative overflow-hidden border border-line bg-gradient-to-br',
         toneStyles[slot.tone],

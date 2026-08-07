@@ -9,6 +9,8 @@ export type ServiceDetail = {
   summary: string;
   metaTitle: string;
   metaDescription: string;
+  /** Written out rather than derived, so proper nouns keep their case. */
+  bookLabel: string;
   heroImageId: string;
   bestFor: string[];
   included: { group: string; items: string[] }[];
@@ -29,6 +31,7 @@ export const services: ServiceDetail[] = [
     headline: 'The visit that keeps a home in rhythm.',
     summary:
       'A full pass through the rooms you use most: surfaces, floors, kitchen, bathrooms and the small resets that make a home feel settled again.',
+    bookLabel: 'Book a standard cleaning',
     metaTitle: 'Standard Cleaning',
     metaDescription:
       'A maintenance cleaning visit covering surfaces, floors, kitchen, bathrooms and general reset — built around your saved preferences.',
@@ -111,6 +114,7 @@ export const services: ServiceDetail[] = [
     headline: 'For everything a routine visit passes by.',
     summary:
       'Detailed, slower work on buildup, edges, frames and fixtures — the reset that gives a home a clean baseline to maintain.',
+    bookLabel: 'Book a deep cleaning',
     metaTitle: 'Deep Cleaning',
     metaDescription:
       'A detailed cleaning visit covering baseboards, door frames, fixtures, buildup removal and hard-to-reach areas throughout the home.',
@@ -193,6 +197,7 @@ export const services: ServiceDetail[] = [
     headline: 'An empty property, returned to a clean baseline.',
     summary:
       'Cabinets, closets, baseboards, bathrooms and floors handled end to end — for the day a property changes hands.',
+    bookLabel: 'Book a move-in or move-out clean',
     metaTitle: 'Move-In & Move-Out Cleaning',
     metaDescription:
       'Empty-home cleaning covering cabinets, drawers, closets, baseboards, bathrooms and floors, with appliance interiors available as add-ons.',
@@ -273,6 +278,7 @@ export const services: ServiceDetail[] = [
     headline: 'A plan we keep, so you never re-explain your home.',
     summary:
       'Weekly, biweekly, every four weeks or a custom rhythm — with your saved plan, preferences and rotating detail focus applied every visit.',
+    bookLabel: 'Start a recurring plan',
     metaTitle: 'Recurring Cleaning',
     metaDescription:
       'Weekly, biweekly or every-four-week cleaning with a saved plan, preferred scheduling, rotating detail focus and member pricing.',
@@ -351,6 +357,7 @@ export const services: ServiceDetail[] = [
     headline: 'Guest-ready, documented, and on the clock.',
     summary:
       'A reset built for hosting: linens coordinated, supplies restocked, photo confirmation sent and anything missing or damaged reported before the next check-in.',
+    bookLabel: 'Book a turnover clean',
     metaTitle: 'Airbnb & Rental Turnover Cleaning',
     metaDescription:
       'Short-term rental turnover cleaning with linen coordination, restocking checklists, photo confirmation and damage or missing-item reporting.',

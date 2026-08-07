@@ -28,6 +28,8 @@ export function ComparisonSlider({
   const [position, setPosition] = useState(52);
   const id = useId();
   const slot = getImage(imageId);
+  /** With only one frame available, the before state has to be simulated. */
+  const simulated = !slot?.beforeSrc;
 
   return (
     <figure className={cn('w-full', className)}>
@@ -41,22 +43,24 @@ export function ComparisonSlider({
           className="border-0"
         />
 
-        {/* Before state, clipped to the handle position */}
+        {/* Before state. The layer stays full size and is revealed with a
+            clip-path, so both frames keep the same scale and stay registered
+            with each other however far the handle travels. Constraining this
+            layer's width instead would squeeze the before image as it moves. */}
         <div
-          className="absolute inset-0 overflow-hidden"
-          style={{ width: `${position}%` }}
+          className="absolute inset-0"
+          style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
           aria-hidden="true"
         >
-          <div className="absolute inset-0 h-full w-full">
-            <EditorialImage
-              id={imageId}
-              aspect="absolute inset-0 h-full w-full"
-              rounded="rounded-none"
-              showLabel={false}
-              className="border-0 saturate-[0.55] brightness-[0.94]"
-            />
-            <div className="absolute inset-0 bg-ink/[0.07]" />
-          </div>
+          <EditorialImage
+            id={imageId}
+            variant="before"
+            aspect="absolute inset-0 h-full w-full"
+            rounded="rounded-none"
+            showLabel={false}
+            className={cn('border-0', simulated && 'saturate-[0.55] brightness-[0.94]')}
+          />
+          {simulated ? <div className="absolute inset-0 bg-ink/[0.07]" /> : null}
         </div>
 
         <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
@@ -84,6 +88,14 @@ export function ComparisonSlider({
             </svg>
           </span>
         </div>
+
+        {/* Dragging cannot convey the comparison to a screen reader, so both
+            states are described in text rather than left to the visuals. */}
+        {slot?.beforeAlt ? (
+          <p className="sr-only">
+            {`Before: ${slot.beforeAlt}. After: ${slot.alt}.`}
+          </p>
+        ) : null}
 
         <label htmlFor={id} className="sr-only">
           {`Reveal the cleaned result${slot ? ` — ${slot.label}` : ''}`}

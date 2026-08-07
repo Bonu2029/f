@@ -7,6 +7,10 @@
  *
  * When a real asset arrives, set `src` to its path in /public and the
  * <EditorialImage> component renders the photograph instead of the placeholder.
+ *
+ * Before/after slots carry two frames: `src` is the cleaned result and
+ * `beforeSrc` the starting state. Until both exist, <ComparisonSlider> simulates
+ * the before state by desaturating the single image it has.
  */
 
 export type ImageTone = 'mint' | 'airy' | 'champagne' | 'lavender' | 'pearl';
@@ -18,6 +22,9 @@ export type ImageSlot = {
   label: string;
   prompt: string;
   src?: string;
+  /** Before/after pairs only — must be shot from an identical camera position. */
+  beforeSrc?: string;
+  beforeAlt?: string;
 };
 
 export const imageSlots: ImageSlot[] = [
@@ -106,9 +113,10 @@ export const imageSlots: ImageSlot[] = [
     id: 'svc-airbnb-hero',
     label: 'Airbnb Turnover hero',
     tone: 'champagne',
-    alt: 'A guest bedroom staged with fresh linens and folded towels at the foot of the bed',
+    alt: 'A guest bedroom staged for arrival with crisp white bedding, a linen runner, and two folded towels with olive sprigs at the foot of the bed',
     prompt:
       'Editorial photograph of a guest bedroom staged for arrival: crisp white bedding with hotel-style folded corners, two folded towels with a sprig of greenery at the foot of the bed, warm champagne and ivory palette, bedside carafe and glass, soft afternoon light through a linen curtain, no people, no text, no logos, horizontal composition.',
+    src: '/images/svc-airbnb-hero.jpg',
   },
   {
     id: 'how-it-works-hero',
@@ -168,17 +176,25 @@ export const imageSlots: ImageSlot[] = [
     id: 'ba-kitchen',
     label: 'Before/After — kitchen',
     tone: 'mint',
-    alt: 'Kitchen counter comparison, demonstration image',
+    alt: 'The same kitchen island after cleaning: the stone counter cleared and polished, the cooktop wiped and a bowl of lemons on the back counter',
+    beforeAlt:
+      'A kitchen island in everyday use: crumbs and a used plate on the counter, a cafetière, a mug, a glass and a bunched tea towel',
     prompt:
       'A matched pair of editorial photographs of the same kitchen counter and stovetop from an identical camera position and identical lighting. Frame A: everyday use — crumbs, a few dishes, cluttered counter, dull surfaces. Frame B: the same counter fully cleaned, clear, polished stone, appliances wiped, a small bowl of lemons added. Warm ivory palette, natural daylight, no people, no readable brand names or text, horizontal composition, identical framing between the two frames.',
+    src: '/images/ba-kitchen.jpg',
+    beforeSrc: '/images/ba-kitchen-before.jpg',
   },
   {
     id: 'ba-bathroom',
     label: 'Before/After — bathroom',
     tone: 'airy',
-    alt: 'Bathroom vanity and shower comparison, demonstration image',
+    alt: 'The same bathroom after cleaning: shower glass clear and streak-free, the vanity cleared and polished, and two folded white towels set on the counter',
+    beforeAlt:
+      'A bathroom with water spots across the shower glass, a cluttered vanity holding bottles and a hairbrush, and a used cloth on the counter',
     prompt:
       'A matched pair of editorial photographs of the same bathroom vanity and shower glass from an identical camera position. Frame A: water spots on glass, cluttered vanity, dull chrome. Frame B: the same space clear and cleaned, glass streak-free, chrome polished, two folded white towels added. Soft airy blue and warm white palette, daylight from a frosted window, no people, no readable labels or text, horizontal composition, identical framing.',
+    src: '/images/ba-bathroom.jpg',
+    beforeSrc: '/images/ba-bathroom-before.jpg',
   },
   {
     id: 'ba-living',

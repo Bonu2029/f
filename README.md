@@ -90,15 +90,17 @@ renders the photograph; a slot without one renders a labelled placeholder. To
 ship a photo, drop it in `public/images/` and set `src` on that slot — nothing
 else changes.
 
-Fifteen photographs are in place: all eight page heroes, the homepage entryway
-editorial, the full-width modes band, the homepage membership preview and four
-of the five service detail heroes. Nine slots are still placeholders — the
-Airbnb turnover hero, the seven before/after pairs and the dashboard report
-stand-in — and their prompts are ready to hand to a photographer or image model.
+Eighteen photographs are in place: all eight page heroes, all five service
+detail heroes, the homepage entryway editorial, the full-width modes band, the
+homepage membership preview, and the kitchen and bathroom before/after pairs.
+Six slots are still placeholders — five before/after pairs and the dashboard
+report stand-in.
 
-The before/after pairs need both frames shot from a locked-off tripod with
-identical framing and lighting. If the camera moves between frames, the
-comparison slider visibly jumps as it is dragged.
+Before/after slots hold two files: `src` is the cleaned result and `beforeSrc`
+the starting state. Both frames must be shot from a locked-off tripod with
+identical framing and lighting; if the camera moves between them the comparison
+slider visibly jumps as it is dragged. Until a slot has both frames,
+`<ComparisonSlider>` falls back to desaturating the single image it has.
 
 `sizes` on `<EditorialImage>` must describe how wide the image actually renders.
 It defaults to a half-column hero; the full-bleed band passes `sizes="100vw"` so

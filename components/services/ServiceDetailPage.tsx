@@ -70,7 +70,7 @@ export function ServiceDetailPage({ service }: { service: ServiceDetail }) {
               <p className="lede mt-6 max-w-xl text-pretty">{service.summary}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button href="/booking" size="lg">
-                  Book {service.name.split(' ')[0].toLowerCase()} cleaning
+                  {service.bookLabel}
                 </Button>
                 <Button href="/instant-estimate" variant="secondary" size="lg">
                   Get an estimate
