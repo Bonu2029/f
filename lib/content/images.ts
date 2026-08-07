@@ -230,23 +230,32 @@ export const imageSlots: ImageSlot[] = [
       'A bedroom at the end of the day: the bed unmade, clothes draped over the armchair, slippers on the rug and a cluttered nightstand',
     prompt:
       'A matched pair of editorial photographs of the same bedroom from an identical camera position. Frame A: unmade bed, clothes over a chair, cluttered nightstand. Frame B: the same bedroom reset — crisp linens neatly made, chair clear, nightstand holding only a lamp and a glass of water, floor vacuumed. Warm ivory with soft lavender shadows, morning light, no people, no text, horizontal composition, identical framing.',
+    src: '/images/ba-bedroom.jpg',
     beforeSrc: '/images/ba-bedroom-before.jpg',
   },
   {
     id: 'ba-turnover',
     label: 'Before/After — rental turnover',
     tone: 'champagne',
-    alt: 'Short-term rental turnover comparison, demonstration image',
+    alt: 'The same rental living space made guest-ready: surfaces cleared, cushions staged and a tray of folded towels with a sprig of greenery on the coffee table',
+    beforeAlt:
+      'A rental living space after check-out: wine glasses and used tumblers on the coffee table, cushions displaced and a towel left over the armchair',
     prompt:
       'A matched pair of editorial photographs of the same short-term rental living space from an identical camera position. Frame A: post-checkout — used glasses on the table, cushions displaced, towels left on a chair. Frame B: the same space guest-ready — surfaces cleared and polished, cushions staged, fresh folded towels with greenery, a welcome tray with blank-labelled items. Warm champagne and ivory palette, afternoon light, no people, no readable text or branding, horizontal composition, identical framing.',
+    src: '/images/ba-turnover.jpg',
+    beforeSrc: '/images/ba-turnover-before.jpg',
   },
   {
     id: 'ba-deep-kitchen',
     label: 'Before/After — deep clean detail',
     tone: 'mint',
-    alt: 'Oven and range detail comparison, demonstration image',
+    alt: 'The same range after degreasing: grates dark and matte-clean, the cooktop surface clear and the stone backsplash returned to an even finish',
+    beforeAlt:
+      'A range with cooking residue baked onto the burner grates and grease streaks running down the stone backsplash',
     prompt:
       'A matched pair of close editorial detail photographs of the same range and backsplash from an identical camera position. Frame A: cooking residue on the backsplash, dull burner grates, grease film. Frame B: the same surfaces fully degreased, grates dark and matte-clean, backsplash tile bright and streak-free. Neutral warm palette, soft directional light, no people, no cleaning products in frame, no text, horizontal composition, identical framing.',
+    src: '/images/ba-deep-kitchen.jpg',
+    beforeSrc: '/images/ba-deep-kitchen-before.jpg',
   },
   {
     id: 'dashboard-report',

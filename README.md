@@ -90,17 +90,12 @@ renders the photograph; a slot without one renders a labelled placeholder. To
 ship a photo, drop it in `public/images/` and set `src` on that slot — nothing
 else changes.
 
-Twenty slots are complete: all eight page heroes, all five service detail
-heroes, the homepage entryway editorial, the full-width modes band, the homepage
-membership preview, and the kitchen, bathroom, living room and move-out
-before/after pairs.
+Twenty-three of the twenty-four slots are complete: all eight page heroes, all
+five service detail heroes, the homepage entryway editorial, the full-width
+modes band, the homepage membership preview, and all seven before/after pairs.
 
-Four slots are outstanding:
-
-- `ba-bedroom` — the **before** frame is in place; the after frame is missing,
-  so the slot still renders placeholders (see below)
-- `ba-turnover`, `ba-deep-kitchen` — both frames needed
-- `dashboard-report` — the non-identifying report stand-in
+One slot is outstanding: `dashboard-report`, the deliberately non-identifying
+stand-in for a customer-approved completion photo in the cleaning report.
 
 Before/after slots hold two files: `src` is the cleaned result and `beforeSrc`
 the starting state. Both frames must be shot from a locked-off tripod with
