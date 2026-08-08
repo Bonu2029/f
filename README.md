@@ -90,12 +90,13 @@ renders the photograph; a slot without one renders a labelled placeholder. To
 ship a photo, drop it in `public/images/` and set `src` on that slot — nothing
 else changes.
 
-Twenty-three of the twenty-four slots are complete: all eight page heroes, all
-five service detail heroes, the homepage entryway editorial, the full-width
-modes band, the homepage membership preview, and all seven before/after pairs.
+All twenty-four slots carry real photography: eight page heroes, five service
+detail heroes, the homepage entryway editorial, the full-width modes band, the
+homepage membership preview, seven before/after pairs and the dashboard report
+stand-in. No placeholders remain on any route.
 
-One slot is outstanding: `dashboard-report`, the deliberately non-identifying
-stand-in for a customer-approved completion photo in the cleaning report.
+The placeholder path in `<EditorialImage>` is still live and still needed — it
+covers any slot added later, and the half-pair guard below depends on it.
 
 Before/after slots hold two files: `src` is the cleaned result and `beforeSrc`
 the starting state. Both frames must be shot from a locked-off tripod with
@@ -141,6 +142,14 @@ form controls, descriptive validation messages, one `h1` per page and correct
 heading order. Status changes are announced through live regions. Every
 animation checks `prefers-reduced-motion`, and a global CSS fallback disables
 the rest.
+
+Components read that preference through `useReducedMotion` in `lib/motion.ts`,
+**not** directly from framer-motion. Framer's hook reports `false` during server
+rendering and the real value on the first client render, which made every
+reduced-motion visitor hit a hydration mismatch and re-render the page — several
+components branch on it structurally. The wrapper returns `false` until after
+mount so the first client render matches the server. Nothing animates in that
+gap because the CSS fallback has already zeroed every duration.
 
 ## Integrations
 

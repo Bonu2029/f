@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/motion';
 import { useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { rooms, type RoomId } from '@/lib/content/rooms';

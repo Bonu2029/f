@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/motion';
 import { useMemo, useState } from 'react';
 import { Calendar, TimeSlotSelector, arrivalWindows } from './Calendar';
 import { RoomSelector } from './RoomSelector';

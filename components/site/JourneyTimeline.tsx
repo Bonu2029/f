@@ -1,6 +1,7 @@
 'use client';
 
-import { motion, useReducedMotion, useScroll, useSpring } from 'framer-motion';
+import { motion, useScroll, useSpring } from 'framer-motion';
+import { useReducedMotion } from '@/lib/motion';
 import { useRef } from 'react';
 import { journeySteps } from '@/lib/content/general';
 

@@ -261,9 +261,10 @@ export const imageSlots: ImageSlot[] = [
     id: 'dashboard-report',
     label: 'Cleaning report — sample photo slot',
     tone: 'pearl',
-    alt: 'Placeholder for a customer-approved completed-room photograph',
+    alt: 'A finished living area: cushions straightened, surfaces clear and fresh vacuum lines across a pale rug — a deliberately non-identifying stand-in for a customer-approved completion photo',
     prompt:
       'Editorial photograph of a finished, freshly cleaned room corner — clear surfaces, straightened cushions, vacuum lines on a light rug, soft daylight. Deliberately generic and non-identifying: no personal items, no photographs on walls, no mail, no people, no text. Warm neutral palette, horizontal composition. Used only as a demonstration stand-in for customer-approved report photos.',
+    src: '/images/dashboard-report.jpg',
   },
 ];
 

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/motion';
 import { useEffect, useRef, useState } from 'react';
 import { Logo } from './Logo';
 import { Button } from '@/components/ui/Button';

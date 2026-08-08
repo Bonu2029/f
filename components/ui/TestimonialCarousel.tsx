@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/motion';
 import { useState } from 'react';
 import { PlaceholderTag } from './Primitives';
 import { testimonials } from '@/lib/content/general';
