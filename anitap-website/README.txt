@@ -167,3 +167,25 @@ NEW CLOSING CTA section (.finale) sits between the FAQ and the contact form.
 
 Same rule as v13 applies throughout: the destination sets the price, the shape
 never does.
+
+--- UPDATE (v15) ---
+  showcase-howitworks.jpg -> the How It Works section (#how), which is now a
+     two-column band: the photo on one side, three steps on the other.
+
+  The photo carries its own "1 Choose a Shape / 2 We Design It / 3 Tap & Open"
+  callouts, so the section was rebuilt from four steps to three to match it —
+  a page reading "four steps" beside a photo captioned "three simple steps"
+  would have contradicted itself. Nothing was dropped: sending your details and
+  approving the preview both live in step 2 now.
+     Old: Choose your product / Send your details / Approve your design / Receive and tap
+     New: Choose a shape / We design it / Tap and open
+  Heading changed from "From idea to tap in four steps" to "Three simple steps".
+
+  Painted out of the photo before use: the "AniTap" logo lockup, the "How It
+  Works" headline, the "Three simple steps to connect and impress." sub-line and
+  the "AniTap | NFC Powered" footer. The three step callouts were kept, since
+  the section text is now written to match them.
+
+DEPLOYING: drag the whole anitap-website folder (or unzip anitap-website.zip and
+drag the folder inside it) onto netlify.com/drop. index.html must sit at the top
+level of what you drop, with assets/ beside it.

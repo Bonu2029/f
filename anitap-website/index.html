@@ -500,6 +500,16 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
 @media(max-width:900px){.dest-cards{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.dest-cards{grid-template-columns:1fr;max-width:440px;margin-left:auto;margin-right:auto}}
 
+/* ── How It Works band ──────────────────────────────────── */
+.how-band{display:grid;grid-template-columns:1.04fr .96fr;gap:50px;align-items:center}
+.how-shot{border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-lg);background:var(--light)}
+.how-shot img{width:100%;height:auto;display:block}
+.how-steps{display:flex;flex-direction:column;gap:14px;margin-top:24px}
+.how-steps .how-step{display:flex;gap:16px;align-items:flex-start;padding:20px 22px}
+.how-steps .how-num{flex:none;width:42px;height:42px;font-size:1.15rem;margin-bottom:0;border-radius:12px}
+.how-steps .how-step h4{font-size:1.1rem;margin-bottom:5px}
+@media(max-width:940px){.how-band{grid-template-columns:1fr;gap:32px}.how-shot{max-width:560px;margin:0 auto}}
+
 /* ── Closing call to action ─────────────────────────────── */
 .finale{background:var(--bg)}
 .finale-band{display:grid;grid-template-columns:1fr .84fr;gap:46px;align-items:center;background:linear-gradient(135deg,#F5F3FF,#FDFDFF);border:1.5px solid var(--line);border-radius:32px;padding:54px;box-shadow:var(--shadow-lg)}
@@ -829,12 +839,23 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
 
 <section class="how" id="how">
   <div class="wrap">
-    <div class="shead reveal"><span class="eyebrow">How It Works</span><h2>From idea to tap in four steps</h2></div>
-    <div class="how-grid">
-      <div class="how-step reveal"><div class="how-num">1</div><h4>Choose your product</h4><p>Pick a card or a smart card and what it should open.</p></div>
-      <div class="how-step reveal"><div class="how-num">2</div><h4>Send your details</h4><p>Upload your logo, links, colors, and business info.</p></div>
-      <div class="how-step reveal"><div class="how-num">3</div><h4>Approve your design</h4><p>We design it custom and send a preview to approve.</p></div>
-      <div class="how-step reveal"><div class="how-num">4</div><h4>Receive and tap</h4><p>We program, test, and ship it ready to use.</p></div>
+    <div class="how-band">
+      <div class="how-shot reveal">
+        <img src="assets/showcase-howitworks.jpg" alt="Three steps shown on a marble desk: blank AniTap cards in two shapes, a finished Luna Atelier tap-to-follow card, and a phone opening the Luna Atelier Instagram profile" loading="lazy" width="1254" height="1004">
+      </div>
+      <div class="reveal">
+        <span class="eyebrow">How It Works</span>
+        <h2 style="font-size:clamp(2rem,3.8vw,2.9rem);margin:12px 0 12px">Three simple steps</h2>
+        <p class="muted">From picking a shape to handing a customer something that just works — we do the design, the programming and the testing in between.</p>
+        <div class="how-steps">
+          <div class="how-step"><div class="how-num">1</div><div><h4>Choose a shape</h4><p>Pick the format and finish that fit your brand, and tell us what the card should open. Every shape carries the same chip.</p></div></div>
+          <div class="how-step"><div class="how-num">2</div><div><h4>We design it</h4><p>Send your logo, colors and links. We design it custom and email you a preview to approve before anything is printed — no design fee.</p></div></div>
+          <div class="how-step"><div class="how-num">3</div><div><h4>Tap and open</h4><p>We program it, test it and ship it ready to use. One tap opens exactly what you chose, and you can change the link later without reprinting.</p></div></div>
+        </div>
+        <div class="hero-cta" style="margin-top:26px">
+          <button class="btn btn-primary" onclick="openCustomizer('business')">Start Step One <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
