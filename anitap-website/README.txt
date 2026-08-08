@@ -189,3 +189,36 @@ never does.
 DEPLOYING: drag the whole anitap-website folder (or unzip anitap-website.zip and
 drag the folder inside it) onto netlify.com/drop. index.html must sit at the top
 level of what you drop, with assets/ beside it.
+
+--- UPDATE (v16) ---
+LUNA ATELIER REMOVED EVERYWHERE. It appeared in ten places; all are now gone.
+
+Deleted assets:
+  case-luna.jpg, dest-instagram-square.jpg, dest-instagram-stand.jpg,
+  dest-instagram-standard.jpg, showcase-smartpage.jpg, showcase-howitworks.jpg
+
+Replacements:
+  PRODUCTS "NFC Business Card" photo  -> case-velvet.jpg (Velvet Bloom)
+  PORTFOLIO "Luna Atelier" entry      -> "Ivory Lane Boutique" on ex-ivory.jpg
+  dest-instagram-round.jpg            -> Petal & Pine round card (from ex-petal.jpg)
+  "Tap for a Smart Page" card         -> dest-profile-standard.jpg (Alex Morgan)
+  showcase-social.jpg                 -> recropped below the Luna card, so it now
+                                         shows only Olive & Oak (Facebook) and
+                                         Paws & Polish (TikTok). Because that crop
+                                         also dropped the poster's only Instagram
+                                         example, the social panel's photo slot is
+                                         now a 3-image grid: the recropped shot
+                                         across the top, with the Petal & Pine and
+                                         Glow Muse Instagram coasters beneath it.
+  How It Works                        -> the photo is gone (Luna was in two of its
+                                         three steps and on the phone). The section
+                                         is back to a plain three-step grid; the
+                                         three steps themselves are unchanged.
+
+*** STILL NEEDED: Instagram destination art for a non-Luna brand in the standard,
+square and stand shapes. All four Instagram photos were Luna, and the only other
+Instagram cards in the library (Petal & Pine, Glow Muse) are both round. So
+DEST_ART_SHAPES.instagram is now ["round"], and picking Instagram on any other
+shape shows the builder's "Photo example coming soon for this shape" placeholder.
+Drop in dest-instagram-standard.jpg / -square.jpg / -stand.jpg and add those
+shapes back to DEST_ART_SHAPES.instagram to close the gap. ***
