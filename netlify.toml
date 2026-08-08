@@ -1,0 +1,34 @@
+# Configuration for a Git-connected Netlify deploy of the full Next.js app.
+# This keeps server-side image optimization (AVIF/WebP), which the static export
+# in `npm run build:static` cannot do.
+#
+# For a drag-and-drop deploy instead, run `npm run build:static` and upload the
+# `out/` folder — it ships with its own netlify.toml carrying just the headers.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Fingerprinted build assets never change under a given name.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
