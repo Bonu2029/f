@@ -470,6 +470,48 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
 .tab-note{font-size:.84rem;color:var(--text-2);margin:-12px 0 26px;text-align:center}
 @media(max-width:520px){.price-tabs{flex-direction:column;width:100%;border-radius:var(--r-sm)}.price-tabs button{border-radius:12px}}
 
+/* ── Industry banner in Examples ────────────────────────── */
+.ex-hero{border-radius:var(--r);overflow:hidden;margin-bottom:32px;box-shadow:var(--shadow-lg);background:var(--light)}
+.ex-hero img{width:100%;height:auto;display:block}
+
+/* ── Destinations ───────────────────────────────────────── */
+.dests{background:var(--card)}
+.demo-band{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;margin-bottom:58px}
+.demo-media{border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-lg);background:var(--light)}
+.demo-media img{width:100%;height:auto;display:block}
+.demo-copy h3{font-size:clamp(1.7rem,3.2vw,2.4rem);margin:12px 0 14px}
+.demo-copy>p{color:var(--text-2);font-size:1.02rem;max-width:52ch;margin-bottom:22px}
+@media(max-width:940px){.demo-band{grid-template-columns:1fr;gap:30px;margin-bottom:44px}.demo-media{max-width:560px;margin:0 auto}}
+.dest-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.dcard{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s}
+.dcard:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+.dcard-img{aspect-ratio:1/1;overflow:hidden;background:var(--light)}
+.dcard-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.dcard:hover .dcard-img img{transform:scale(1.05)}
+.dcard-body{padding:22px 24px 26px}
+.dcard-body h4{font-size:1.18rem;margin-bottom:7px}
+.dcard-body p{font-size:.9rem;color:var(--text-2)}
+.dcard.list{background:var(--light);border-color:transparent;padding:30px 26px;justify-content:center}
+.dcard.list:hover{transform:none;box-shadow:var(--shadow)}
+.dcard.list h4{font-size:1.18rem;margin-bottom:6px}
+.dcard.list>p{font-size:.9rem;color:var(--text-2);margin-bottom:16px}
+.dlist{list-style:none;padding:0;margin:0 0 22px;display:flex;flex-wrap:wrap;gap:8px}
+.dlist li{font-size:.78rem;font-weight:600;color:var(--indigo);background:var(--card);border:1px solid var(--line);padding:7px 12px;border-radius:999px}
+@media(max-width:900px){.dest-cards{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.dest-cards{grid-template-columns:1fr;max-width:440px;margin-left:auto;margin-right:auto}}
+
+/* ── Closing call to action ─────────────────────────────── */
+.finale{background:var(--bg)}
+.finale-band{display:grid;grid-template-columns:1fr .84fr;gap:46px;align-items:center;background:linear-gradient(135deg,#F5F3FF,#FDFDFF);border:1.5px solid var(--line);border-radius:32px;padding:54px;box-shadow:var(--shadow-lg)}
+.finale-copy h2{font-size:clamp(2rem,4vw,3rem);margin:12px 0 14px}
+.finale-copy>p{color:var(--text-2);font-size:1.05rem;max-width:44ch;margin-bottom:26px}
+.finale-img{border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-lg)}
+.finale-img img{width:100%;height:auto;display:block}
+.finale-trust{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:26px}
+.finale-trust div{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:500;color:var(--text-2)}
+.finale-trust svg{width:16px;height:16px;color:var(--indigo);flex:none}
+@media(max-width:940px){.finale-band{grid-template-columns:1fr;gap:32px;padding:38px 26px}.finale-img{max-width:460px;margin:0 auto;order:2}}
+
 /* ── Customizer price hint ─────────────────────────────── */
 .cz-price-hint{display:flex;align-items:center;gap:10px;background:var(--light);border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:.84rem;color:var(--text)}
 .cz-price-hint b{font-family:var(--display);font-weight:700;color:var(--indigo)}
@@ -542,6 +584,9 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
       <span class="eyebrow">Examples</span>
       <h2>Made for every business</h2>
       <p>Explore custom NFC card examples designed for different industries, goals, and customer experiences.</p>
+    </div>
+    <div class="ex-hero reveal">
+      <img src="assets/showcase-industries.jpg" alt="Six industry NFC cards: Harbor Nails Studio, Olive &amp; Oak Café, Petals Floral Studio, Bright Smiles Dental Care, a house-shaped Homestead Real Estate tag and a brushed metal Built Right Home Services card" loading="lazy" width="1122" height="805">
     </div>
     <div class="ex-filters reveal" id="exFilters" role="group" aria-label="Filter examples by industry"></div>
     <div class="ex-grid" id="exGrid"></div>
@@ -668,6 +713,63 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
   </div>
 </section>
 
+<!-- WHAT HAPPENS WHEN THEY TAP -->
+<section class="dests" id="destinations">
+  <div class="wrap">
+    <div class="shead center reveal">
+      <span class="eyebrow">How A Tap Works</span>
+      <h2>One tap, any destination</h2>
+      <p>Your card opens whatever you point it at, straight in the phone's own browser. No app to download, no code to type, nothing for your customer to figure out.</p>
+    </div>
+
+    <div class="demo-band reveal">
+      <div class="demo-media">
+        <img src="assets/showcase-menu-demo.jpg" alt="Two-step demo: a phone taps the Olive &amp; Oak Café NFC card on a marble counter, then instantly opens the café's espresso menu" loading="lazy" width="1122" height="1006">
+      </div>
+      <div class="demo-copy">
+        <span class="eyebrow">Example &middot; Digital Menu</span>
+        <h3>Tap. Open. <span class="grad-text">Order.</span></h3>
+        <p>A customer sits down, holds their phone near the card, and your menu is on screen before a server reaches the table. Change a price or pull a special and the card keeps working — you're updating the page, not reprinting the card.</p>
+        <ul class="spot-feats">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Opens in about a second</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>No app on either side</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>QR backup for older phones</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Update the link any time</li>
+        </ul>
+        <div class="hero-cta">
+          <button class="btn btn-primary" onclick="openCustomizer('business','Menu')">Build a Menu Card <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dest-cards">
+      <article class="dcard reveal">
+        <div class="dcard-img"><img src="assets/showcase-directions.jpg" alt="A Lavender &amp; Co. Boutique tap-for-directions stand beside a phone showing the driving route to the shop" loading="lazy" width="1254" height="1254"></div>
+        <div class="dcard-body">
+          <h4>Tap for Directions</h4>
+          <p>Opens your exact pin in Maps with the route already drawn. Ideal for hotel desks, event tables and anywhere people ask "how do I get there?"</p>
+        </div>
+      </article>
+      <article class="dcard reveal">
+        <div class="dcard-img"><img src="assets/showcase-smartpage.jpg" alt="A phone showing the Luna Atelier smart page with website, reviews, booking, directions and Instagram buttons, next to an AniTap smart card" loading="lazy" width="1254" height="1254"></div>
+        <div class="dcard-body">
+          <h4>Tap for a Smart Page</h4>
+          <p>One card, every link. Website, reviews, booking, directions and socials on a single custom page you can edit whenever you like.</p>
+        </div>
+      </article>
+      <article class="dcard list reveal">
+        <h4>And plenty more</h4>
+        <p>Pick any one of these when you build your card — the price depends on the destination, never on the shape.</p>
+        <ul class="dlist">
+          <li>Google Reviews</li><li>Instagram</li><li>TikTok</li><li>Facebook</li><li>Website</li>
+          <li>Menu</li><li>Booking</li><li>Directions</li><li>Phone</li><li>Email</li><li>WhatsApp</li><li>Smart Profile</li>
+        </ul>
+        <button class="btn btn-primary btn-block" onclick="openCustomizer('business')">Build Your Card <svg class="arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </article>
+    </div>
+  </div>
+</section>
+
 <section class="web" id="websites">
   <div class="wrap">
     <div class="web-band reveal">
@@ -741,6 +843,31 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
   <div class="wrap">
     <div class="shead center reveal"><span class="eyebrow">FAQ</span><h2>Questions, answered</h2></div>
     <div class="faq-list" id="faqList"></div>
+  </div>
+</section>
+
+<!-- CLOSING CALL TO ACTION -->
+<section class="finale">
+  <div class="wrap">
+    <div class="finale-band reveal">
+      <div class="finale-copy">
+        <span class="eyebrow">The Final Tap</span>
+        <h2>Ready to <span class="grad-text">tap?</span></h2>
+        <p>Custom NFC products for modern businesses — designed around your brand, programmed, tested and shipped ready to use.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" onclick="openCustomizer('business','Google Reviews')">Get Started <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button class="btn btn-secondary" onclick="scrollTo2('#contact')">Talk to Us First</button>
+        </div>
+        <div class="finale-trust">
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>No monthly fee</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>No design fee</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Preview before we print</div>
+        </div>
+      </div>
+      <div class="finale-img">
+        <img src="assets/showcase-brand.jpg" alt="AniTap product range on a lavender desk: a Tap to Connect counter sign, purple and white NFC cards, branded packaging and a phone showing the AniTap website" loading="lazy" width="1122" height="1402">
+      </div>
+    </div>
   </div>
 </section>
 

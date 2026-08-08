@@ -137,3 +137,33 @@ NEW SECTIONS AND IMAGES — four photos added to assets/:
   Added favicon, Open Graph / Twitter card tags and theme-color.
   Fixed: bundle cards printed "undefined" under the price; the header overflowed
   the viewport below ~400px wide.
+
+--- UPDATE (v14) ---
+Five more photos added, each placed where it does work rather than in a gallery:
+
+  showcase-industries.jpg -> banner directly under the existing "Made for every
+     business" heading in #examples. Cropped below the poster headline, so the
+     six industry cards and their category pills carry the section.
+
+  showcase-menu-demo.jpg  -> the two-step tap demo in the new #destinations
+     section. Cropped to the two numbered photo panels; the poster headline and
+     the "Slide 9 of 10" deck footer were cut off.
+
+  showcase-directions.jpg -> "Tap for Directions" card in #destinations.
+  showcase-smartpage.jpg  -> "Tap for a Smart Page" card in #destinations.
+     Both were already clean square product shots and are used uncropped.
+
+  showcase-brand.jpg      -> the new closing call-to-action band above #contact.
+     The poster's whole left column (the "Ready to Tap?" headline, the sub copy,
+     the non-clickable "Get Started" button and the handwritten note) was painted
+     out and the lavender background rebuilt behind it, so the section headline
+     and buttons beside it are the real, working ones.
+
+NEW SECTION #destinations ("One tap, any destination") holds the menu demo band
+plus a three-card row: Directions, Smart Page, and a "plenty more" card listing
+every destination with a Build Your Card button.
+
+NEW CLOSING CTA section (.finale) sits between the FAQ and the contact form.
+
+Same rule as v13 applies throughout: the destination sets the price, the shape
+never does.
