@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AniTap — Google review cards for local businesses</title>
+<meta name="description" content="A card on your counter. Your customer taps it with their phone. Your Google review page opens instantly. $30 per card. Made and delivered by Ani.">
+<meta name="theme-color" content="#4F46E5">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="AniTap — Get more Google reviews">
+<meta property="og:description" content="One card on your counter. Your customer taps it. Your review page opens. $30 per card.">
+<meta property="og:image" content="card-tap.jpg">
+<meta property="og:image:alt" content="A phone tapping an AniTap NFC card on a shop counter.">
+<meta property="og:site_name" content="AniTap">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AniTap — Get more Google reviews">
+<meta name="twitter:description" content="One card on your counter. Your customer taps it. Your review page opens. $30 per card.">
+<meta name="twitter:image" content="card-tap.jpg">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234F46E5'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M28 44a10 10 0 0 1 10-10'/%3E%3Cpath d='M28 33a21 21 0 0 1 21-21'/%3E%3C/g%3E%3Ccircle cx='27' cy='23' r='4' fill='%23fff'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --indigo:#4F46E5;
+    --violet:#7C3AED;
+    --tint:#EEF2FF;
+    --bg:#FAFAFF;
+    --card:#FFFFFF;
+    --text:#1F2937;
+    --muted:#6B7280;
+    --border:#E5E7EB;
+    --radius:16px;
+    --grad:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%);
+    --shadow:0 1px 2px rgba(31,41,55,.04), 0 12px 32px rgba(79,70,229,.08);
+    --shadow-lg:0 2px 4px rgba(31,41,55,.04), 0 24px 56px rgba(79,70,229,.14);
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:17px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{display:block;max-width:100%}
+  a{color:inherit}
+
+  h1,h2,h3,.wordmark{
+    font-family:"Outfit","Inter",system-ui,sans-serif;
+    font-weight:800;
+    letter-spacing:-0.03em;
+    line-height:1.08;
+    margin:0;
+  }
+  h2{font-size:30px}
+  h3{font-size:18px;font-weight:700;letter-spacing:-0.015em;line-height:1.3}
+  p{margin:0}
+
+  .wrap{width:100%;max-width:1080px;margin:0 auto;padding:0 20px}
+  .narrow{max-width:640px;margin-left:auto;margin-right:auto}
+  section{padding:56px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:15px;line-height:1.5}
+
+  :focus-visible{outline:3px solid var(--indigo);outline-offset:3px;border-radius:6px}
+
+  /* ---------- header ---------- */
+  .site-header{
+    position:sticky;top:0;z-index:50;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+  }
+  .site-header .wrap{
+    display:flex;align-items:center;justify-content:space-between;
+    height:60px;
+  }
+  .wordmark{
+    font-size:22px;color:var(--indigo);text-decoration:none;letter-spacing:-0.04em;
+  }
+  .header-link{
+    font-size:16px;font-weight:600;color:var(--indigo);text-decoration:none;
+    padding:8px 4px;
+  }
+  .header-link:hover{text-decoration:underline}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;
+    min-height:56px;
+    padding:16px 24px;
+    border-radius:var(--radius);
+    font-family:"Outfit","Inter",sans-serif;
+    font-size:18px;font-weight:700;letter-spacing:-0.01em;
+    text-decoration:none;text-align:center;
+    transition:transform .15s ease, box-shadow .2s ease, background-color .2s ease;
+  }
+  .btn-primary{
+    background:var(--grad);
+    color:#fff;
+    box-shadow:0 8px 20px rgba(79,70,229,.28);
+  }
+  .btn-primary:hover{box-shadow:0 10px 26px rgba(79,70,229,.34)}
+  .btn-secondary{
+    background:#fff;
+    color:var(--indigo);
+    border:2px solid var(--indigo);
+  }
+  .btn-secondary:hover{background:var(--tint)}
+  .btn:active{transform:scale(.975)}
+  .btn svg{flex:none}
+
+  .under-btn{margin-top:12px;text-align:center;font-size:15px;color:var(--muted)}
+
+  /* ---------- hero ---------- */
+  .hero{padding-top:36px;padding-bottom:44px}
+  .hero h1{font-size:clamp(36px,10.5vw,46px)}
+  .hero .sub{margin-top:16px;font-size:18px;color:var(--muted);max-width:34ch}
+  .hero-media{
+    position:relative;
+    margin:28px 0 28px;
+    border-radius:22px;
+    overflow:hidden;
+    background:var(--tint);
+    box-shadow:var(--shadow-lg);
+    aspect-ratio:4/5;
+  }
+  .hero-media::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(160deg,rgba(79,70,229,.10),rgba(124,58,237,0) 45%);
+    pointer-events:none;
+  }
+  .hero-media img{width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+  .hero-cta{max-width:460px;margin:0 auto}
+
+  /* ---------- how it works ---------- */
+  .steps{display:grid;gap:14px;margin-top:26px}
+  .step{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px;
+    display:flex;gap:16px;align-items:flex-start;
+  }
+  .num{
+    flex:none;
+    width:38px;height:38px;border-radius:50%;
+    background:var(--grad);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Outfit",sans-serif;font-weight:700;font-size:17px;
+  }
+  .step p{font-weight:500;padding-top:6px}
+
+  /* ---------- why ---------- */
+  .band{background:var(--tint)}
+  .checks{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:16px}
+  .checks li{display:flex;gap:12px;align-items:flex-start}
+  .checks svg{flex:none;margin-top:3px}
+
+  /* ---------- the card ---------- */
+  .shot{
+    border-radius:22px;overflow:hidden;background:var(--tint);
+    box-shadow:var(--shadow-lg);aspect-ratio:4/3;margin-bottom:28px;
+  }
+  .shot img{width:100%;height:100%;object-fit:cover}
+  .panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:24px 22px;
+    margin-top:22px;
+  }
+  .panel ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+  .panel li{display:flex;gap:12px;align-items:flex-start}
+  .panel svg{flex:none;margin-top:3px}
+  .price{
+    font-family:"Outfit",sans-serif;font-weight:800;letter-spacing:-0.03em;
+    font-size:34px;line-height:1.1;margin-top:24px;
+  }
+  .price span{font-size:18px;font-weight:600;color:var(--muted);letter-spacing:-0.01em}
+  .panel .btn{margin-top:20px}
+
+  /* ---------- about ---------- */
+  .about{display:grid;gap:22px;justify-items:center;text-align:center}
+  .avatar{
+    width:132px;height:132px;border-radius:50%;overflow:hidden;flex:none;
+    background:var(--tint);
+    border:4px solid #fff;
+    box-shadow:var(--shadow-lg);
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;object-position:50% 26%}
+  .about p{margin-top:14px;color:var(--muted)}
+
+  /* ---------- footer ---------- */
+  footer{
+    background:#fff;border-top:1px solid var(--border);
+    padding:36px 0 44px;
+  }
+  .foot-links{
+    list-style:none;margin:16px 0 0;padding:0;
+    display:flex;flex-direction:column;gap:10px;font-size:17px;
+  }
+  .foot-links a{color:var(--indigo);font-weight:600;text-decoration:none}
+  .foot-links a:hover{text-decoration:underline}
+  .copyright{margin-top:24px;font-size:14px;color:var(--muted)}
+
+  /* ---------- motion ---------- */
+  .js .reveal{opacity:0;transform:translateY(18px)}
+  .js .reveal.in{
+    opacity:1;transform:none;
+    transition:opacity .4s ease-out, transform .4s ease-out;
+  }
+  .js .reveal.in > .stag > *{animation:rise .4s ease-out backwards}
+  .js .reveal.in > .stag > *:nth-child(1){animation-delay:.06s}
+  .js .reveal.in > .stag > *:nth-child(2){animation-delay:.14s}
+  .js .reveal.in > .stag > *:nth-child(3){animation-delay:.22s}
+  .js .reveal.in > .stag > *:nth-child(4){animation-delay:.30s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  @media (prefers-reduced-motion: reduce){
+    .js .reveal,.js .reveal.in{opacity:1;transform:none;transition:none}
+    .js .reveal.in > .stag > *{animation:none}
+    .btn{transition:none}
+    .btn:active{transform:none}
+    *{scroll-behavior:auto!important}
+  }
+
+  /* ---------- desktop ---------- */
+  @media (min-width:820px){
+    section{padding:80px 0}
+    h2{font-size:38px}
+    body{font-size:17px}
+
+    .hero{padding-top:72px;padding-bottom:84px}
+    .hero .wrap{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:"copy media" "cta media";
+      grid-template-rows:auto auto;
+      column-gap:64px;row-gap:0;
+      align-content:center;
+    }
+    .hero-copy{grid-area:copy;max-width:none;align-self:end}
+    .hero-cta{grid-area:cta;margin:32px 0 0;align-self:start}
+    .hero-media{grid-area:media;align-self:center;margin:0;aspect-ratio:4/5;max-height:580px}
+    .hero h1{font-size:52px}
+    .hero .sub{font-size:19px;max-width:26ch}
+
+    .center-d{text-align:center}
+
+    .steps{grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:34px auto 0}
+    .step{flex-direction:column;gap:16px;padding:28px}
+    .step p{padding-top:0;font-size:18px}
+
+    .checks{grid-template-columns:repeat(3,1fr);gap:32px;max-width:960px;margin:30px auto 0}
+    .checks li{font-size:17px}
+
+    .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+    .shot{margin-bottom:0;aspect-ratio:5/4}
+    .panel{margin-top:22px}
+    .btn{width:auto;min-width:320px}
+    .under-btn{text-align:left}
+    .price{font-size:38px}
+
+    .about{
+      grid-template-columns:auto 1fr;gap:36px;
+      justify-items:start;text-align:left;align-items:center;
+    }
+    .avatar{width:168px;height:168px}
+
+    .foot-links{flex-direction:row;flex-wrap:wrap;gap:12px 32px}
+    .foot-links li{white-space:nowrap}
+  }
+</style>
+</head>
+
+<body>
+<script>document.documentElement.className+=" js";</script>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="wordmark" href="#top">AniTap</a>
+    <a class="header-link" href="sms:+12678608496?&amp;body=Hi%20Ani%2C%20I%20want%20a%20Google%20review%20card">Text me</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- 1. HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy reveal">
+        <h1>Get more Google reviews.</h1>
+        <p class="sub">One card on your counter. Your customer taps it. Your review page opens.</p>
+      </div>
+
+      <div class="hero-media reveal">
+        <img src="card-tap.jpg" alt="A customer holding a phone up to an AniTap card on a shop counter, with a five-star review page open on the screen." width="1127" height="1400">
+      </div>
+
+      <div class="hero-cta reveal">
+        <a class="btn btn-primary" href="sms:+12678608496?&amp;body=Hi%20Ani%2C%20I%20want%20a%20Google%20review%20card">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.8L3 21l1.9-5A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/></svg>
+          Text me to order — $30
+        </a>
+        <p class="under-btn">No app. No subscription. Works with every phone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. HOW IT WORKS -->
+  <section>
+    <div class="wrap reveal">
+      <h2 class="center-d">How it works</h2>
+      <div class="steps stag">
+        <div class="step">
+          <div class="num" aria-hidden="true">1</div>
+          <p>Put the card on your counter</p>
+        </div>
+        <div class="step">
+          <div class="num" aria-hidden="true">2</div>
+          <p>Your customer taps it with their phone</p>
+        </div>
+        <div class="step">
+          <div class="num" aria-hidden="true">3</div>
+          <p>Your Google review page opens</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. WHY REVIEWS MATTER -->
+  <section class="band">
+    <div class="wrap reveal">
+      <h2 class="center-d">More reviews means more customers.</h2>
+      <ul class="checks stag">
+        <li>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>Businesses with more reviews rank higher on Google Maps</span>
+        </li>
+        <li>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>Most people read reviews before choosing where to go</span>
+        </li>
+        <li>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>Asking out loud is awkward — a card on the counter is not</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 4. THE CARD -->
+  <section>
+    <div class="wrap reveal">
+      <div class="card-grid">
+        <div class="shot">
+          <img src="card-counter.jpg" alt="A white AniTap review card standing in a clear holder on a counter next to a card terminal." width="1406" height="1122">
+        </div>
+
+        <div class="narrow" style="margin:0">
+          <h2>What you get.</h2>
+          <div class="panel">
+            <ul>
+              <li>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                <span>Your business name and logo printed on the card</span>
+              </li>
+              <li>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                <span>Programmed to open your Google review page</span>
+              </li>
+              <li>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                <span>Ready to use out of the box — nothing to set up</span>
+              </li>
+              <li>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                <span>Works on iPhone and Android</span>
+              </li>
+            </ul>
+
+            <p class="price">$30 <span>per card.</span></p>
+
+            <a class="btn btn-primary" href="sms:+12678608496?&amp;body=Hi%20Ani%2C%20I%20want%20a%20Google%20review%20card">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.8L3 21l1.9-5A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4Z"/></svg>
+              Text me to order — $30
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. WEBSITES -->
+  <section class="band">
+    <div class="wrap narrow reveal">
+      <h2>I also build websites for local businesses.</h2>
+      <p class="sub muted" style="margin-top:14px">A simple, fast homepage that gets you calls. From $100.</p>
+
+      <div class="panel">
+        <ul>
+          <li>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Your photos, services and hours</span>
+          </li>
+          <li>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Tap-to-call and tap-for-directions buttons</span>
+          </li>
+          <li>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Links to your Google reviews</span>
+          </li>
+          <li>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Live in 48 hours</span>
+          </li>
+        </ul>
+
+        <a class="btn btn-secondary" href="sms:+12678608496?&amp;body=Hi%20Ani%2C%20I%20want%20a%20website%20for%20my%20business">
+          Text me about a website
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. ABOUT -->
+  <section>
+    <div class="wrap narrow reveal">
+      <div class="about">
+        <div class="avatar">
+          <img src="ani.jpg" alt="Ani, the founder of AniTap." width="628" height="1400">
+        </div>
+        <div>
+          <h2>Hi, I'm Ani.</h2>
+          <p>I make Google review cards and websites for local businesses in Pennsylvania, New Jersey and New York. Everything is made by me, and I deliver in person or by mail. Text me any time and I'll answer.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap narrow">
+    <p class="wordmark" style="font-size:22px;color:var(--indigo)">AniTap</p>
+    <ul class="foot-links">
+      <li><a href="tel:+12678608496">+1 267 860 8496</a></li>
+      <li><a href="mailto:anitapofficials@gmail.com">anitapofficials@gmail.com</a></li>
+      <li><a href="https://www.instagram.com/anitapofficials/" target="_blank" rel="noopener">@ANITAPOFFICIALS</a></li>
+    </ul>
+    <p class="copyright">© <span id="yr">2026</span> AniTap. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  (function () {
+    var items = document.querySelectorAll('.reveal');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reduce || !('IntersectionObserver' in window)) {
+      for (var i = 0; i < items.length; i++) items[i].classList.add('in');
+      return;
+    }
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+
+    items.forEach(function (el) { io.observe(el); });
+  })();
+</script>
+</body>
+</html>
