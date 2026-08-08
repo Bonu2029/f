@@ -7,10 +7,33 @@ Tagline: *Your home, beautifully reset.*
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm run build      # production build
-npm run typecheck  # tsc --noEmit
+npm run dev           # http://localhost:3000
+npm run build         # production build
+npm run build:static  # static export to out/, for drag-and-drop hosting
+npm run typecheck     # tsc --noEmit
 ```
+
+## Deploying
+
+Every route is statically prerendered — no API routes, server actions,
+middleware or database — so the site ships either way:
+
+**Git-connected Netlify** (recommended). `netlify.toml` in the repository root
+drives it: `npm run build`, publish `.next`, with `@netlify/plugin-nextjs`. This
+keeps `next/image` optimization, so the JPEGs are served as AVIF/WebP at the
+size each layout actually needs.
+
+**Drag and drop.** `npm run build:static` writes a self-contained `out/` folder —
+zip it and drop it on https://app.netlify.com/drop. Static export cannot run the
+image optimizer, so `next/image` falls back to `unoptimized` and the source
+JPEGs are served as-is. They are 100–300 KB each, which is acceptable but
+measurably heavier than the optimized path.
+
+The export is opt-in through the `STATIC_EXPORT` env var, so the default build
+keeps full Next.js capability for whenever the backend is connected.
+
+Set the real domain in `lib/site.ts` before deploying: it drives canonical URLs,
+Open Graph tags and `sitemap.xml`, and currently points at a placeholder.
 
 ## Routes
 
