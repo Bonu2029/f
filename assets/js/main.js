@@ -54,7 +54,7 @@
   /* ---------- Reveal on scroll (with a gentle stagger per group) ---------- */
   var revealItems = $$('.reveal');
 
-  $$('.cards, .features, .reviews').forEach(function (group) {
+  $$('.cards, .features, .reviews, .gallery').forEach(function (group) {
     $$('.reveal', group).forEach(function (el, i) {
       el.style.setProperty('--stagger', (i % 4) * 0.07 + 's');
     });

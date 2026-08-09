@@ -20,8 +20,8 @@ assets/img/           photography
 
 ## Sections
 
-Hero · Services & prices · Why choose us · About · Before & after · Patient reviews ·
-Book an appointment · Location · Footer.
+Hero · Services & prices · Why choose us · About · Inside the clinic · Before & after ·
+Patient reviews · Book an appointment · Location · Footer.
 
 ## Things you will want to change
 
