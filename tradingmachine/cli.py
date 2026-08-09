@@ -169,6 +169,9 @@ def cmd_backtest(args: argparse.Namespace) -> int:
                 },
                 fh,
                 indent=2,
+                # Fail loudly rather than emitting Infinity/NaN, which are not
+                # valid JSON and break every strict parser downstream.
+                allow_nan=False,
             )
         print(f"\nwrote {args.json}")
 

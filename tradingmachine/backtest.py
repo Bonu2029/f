@@ -30,6 +30,13 @@ from .strategies.base import Strategy
 SECONDS_PER_YEAR = 31_557_600
 
 
+def json_safe(value):
+    """Replace inf/NaN with None so the result survives strict JSON encoders."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 # --------------------------------------------------------------------------- #
 # metrics
 # --------------------------------------------------------------------------- #
@@ -58,7 +65,14 @@ class Metrics:
     bars: int = 0
 
     def as_dict(self) -> dict:
-        return self.__dict__.copy()
+        """JSON-safe view.
+
+        `profit_factor` is legitimately infinite when a run had winners and no
+        losers, but JSON has no infinity — `json.dump` happily writes a bare
+        `Infinity` token that every strict parser (including every browser)
+        rejects. Non-finite values become None here; consumers render that as ∞.
+        """
+        return {k: json_safe(v) for k, v in self.__dict__.items()}
 
     def report(self) -> str:
         lines = [

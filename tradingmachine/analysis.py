@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .backtest import Backtester, Metrics
+from .backtest import Backtester, Metrics, json_safe
 from .data import get_candles
 from .models import Candle
 from .risk import RiskConfig
@@ -59,7 +59,9 @@ class Leg:
         )
 
     def as_dict(self) -> dict:
-        return self.__dict__.copy()
+        # Profit factor is infinite with winners and no losers; JSON cannot
+        # encode that, so it travels as None (rendered as ∞ downstream).
+        return {k: json_safe(v) for k, v in self.__dict__.items()}
 
 
 @dataclass
