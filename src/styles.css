@@ -1,0 +1,812 @@
+/* Design tokens lifted from the app's look: near-black canvas, slightly
+   lifted cards, indigo primary, green/red for direction. */
+
+:root {
+  --bg: #000000;
+  --surface: #121216;
+  --surface-2: #1c1c21;
+  --surface-3: #26262d;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
+
+  --text: #ffffff;
+  --muted: #8e8e96;
+  --muted-2: #5c5c66;
+
+  --indigo: #5b5bf5;
+  --indigo-2: #7a7aff;
+  --indigo-dim: rgba(91, 91, 245, 0.16);
+  --up: #23c55e;
+  --down: #f4503c;
+  --gold: #f5b301;
+
+  --r-sm: 10px;
+  --r: 16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: 64px;
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter,
+    Roboto, Helvetica, Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: #0a0a0c;
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
+
+/* ── Phone frame ─────────────────────────────────────────────────
+   On a desktop browser the app sits inside a phone shell so it reads
+   like the iOS app; on a real phone it just fills the screen. */
+
+.shell {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 520px) and (min-height: 720px) {
+  .shell {
+    background: radial-gradient(circle at 50% 0%, #1d1d3a 0%, #08080b 60%);
+  }
+  .phone {
+    height: min(920px, 94vh);
+    border-radius: 44px;
+    border: 1px solid #2a2a33;
+    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
+  }
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 18px);
+}
+
+.scroll::-webkit-scrollbar {
+  width: 0;
+}
+
+/* ── Type ────────────────────────────────────────────────────────── */
+
+.h1 {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+.h2 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+.h3 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.body {
+  font-size: 15px;
+  font-weight: 500;
+}
+.small {
+  font-size: 13px;
+  font-weight: 500;
+}
+.tiny {
+  font-size: 11px;
+  font-weight: 600;
+}
+.muted {
+  color: var(--muted);
+}
+.up {
+  color: var(--up);
+}
+.down {
+  color: var(--down);
+}
+.mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Layout helpers ──────────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: center;
+}
+.between {
+  justify-content: space-between;
+}
+.gap4 { gap: 4px; }
+.gap6 { gap: 6px; }
+.gap8 { gap: 8px; }
+.gap10 { gap: 10px; }
+.gap12 { gap: 12px; }
+.gap16 { gap: 16px; }
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.pad {
+  padding: 0 16px;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+
+.appbar {
+  padding: calc(var(--safe-top) + 12px) 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.bell {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+}
+
+.bell-dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--down);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--bg);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+
+.btn {
+  height: 52px;
+  border-radius: var(--r);
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.btn:active {
+  transform: scale(0.975);
+}
+.btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.btn-primary {
+  background: var(--indigo);
+  color: #fff;
+  box-shadow: 0 8px 26px rgba(91, 91, 245, 0.32);
+}
+.btn-white {
+  background: #fff;
+  color: #000;
+}
+.btn-green {
+  background: var(--up);
+  color: #04210f;
+}
+.btn-red {
+  background: var(--down);
+  color: #fff;
+}
+.btn-ghost {
+  background: var(--surface-2);
+  color: #fff;
+}
+.btn-sm {
+  height: 40px;
+  font-size: 15px;
+  padding: 0 16px;
+  border-radius: 12px;
+}
+.btn-block {
+  width: 100%;
+}
+
+.deposit-btn {
+  height: 52px;
+  padding: 0 26px;
+  border-radius: 16px;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 10px 30px rgba(91, 91, 245, 0.4);
+}
+
+/* ── Cards ───────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--surface);
+  border-radius: var(--r);
+  padding: 14px;
+}
+.card-2 {
+  background: var(--surface-2);
+  border-radius: var(--r);
+  padding: 14px;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  gap: 4px;
+  padding: 0 12px;
+}
+
+.tab {
+  position: relative;
+  padding: 12px 10px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tab.active {
+  color: #fff;
+}
+.tab.active::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: -1px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--indigo);
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 3px;
+}
+.chip {
+  padding: 5px 11px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.chip.active {
+  background: var(--surface-3);
+  color: #fff;
+}
+
+.pct-chip {
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+.pct-chip:active {
+  background: var(--surface-3);
+}
+
+/* ── Token rows ──────────────────────────────────────────────────── */
+
+.trow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  text-align: left;
+}
+.trow:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tavatar {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex: none;
+  overflow: hidden;
+}
+
+.verified {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--indigo);
+  border: 2px solid var(--bg);
+  display: grid;
+  place-items: center;
+}
+
+.mc-tag {
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Stacked holder avatars, as on the token rows. */
+.stack {
+  display: flex;
+  align-items: center;
+}
+.stack > * {
+  margin-left: -7px;
+  border: 1.5px solid var(--bg);
+}
+.stack > *:first-child {
+  margin-left: 0;
+}
+.mini-av {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  flex: none;
+}
+.stack-more {
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* ── Top-trades strip ────────────────────────────────────────────── */
+
+.strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 0 16px 4px;
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar {
+  display: none;
+}
+.trade-card {
+  flex: none;
+  width: 172px;
+  background: var(--surface);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.trade-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  background: var(--surface-2);
+}
+.trade-card-bot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+}
+
+/* ── Feed ────────────────────────────────────────────────────────── */
+
+.feed-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.embed {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.react-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.react-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+.react-btn.on {
+  color: var(--indigo-2);
+}
+
+/* ── Leaderboard ─────────────────────────────────────────────────── */
+
+.rank-badge {
+  width: 22px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  flex: none;
+}
+.you-card {
+  margin: 12px 16px;
+  background: var(--surface);
+  border-radius: var(--r);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rank-pill {
+  align-self: flex-start;
+  background: var(--indigo);
+  color: #fff;
+  border-radius: 7px;
+  padding: 2px 8px;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-block;
+}
+
+/* ── Sheets / modals ─────────────────────────────────────────────── */
+
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 40;
+  animation: fade 0.18s ease;
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  background: #0d0d10;
+  border-top-left-radius: var(--r-xl);
+  border-top-right-radius: var(--r-xl);
+  border-top: 1px solid var(--line);
+  max-height: 94%;
+  display: flex;
+  flex-direction: column;
+  animation: rise 0.26s cubic-bezier(0.2, 0.9, 0.25, 1);
+  padding-bottom: var(--safe-bottom);
+}
+.sheet-full {
+  top: 0;
+  border-radius: 0;
+  max-height: 100%;
+}
+.grabber {
+  width: 38px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  margin: 8px auto 4px;
+  flex: none;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Keypad ──────────────────────────────────────────────────────── */
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.key {
+  height: 62px;
+  font-size: 27px;
+  font-weight: 500;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+}
+.key:active {
+  background: var(--surface-2);
+}
+
+.amount {
+  font-size: 62px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  text-align: center;
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────── */
+
+.tabbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--tabbar-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  display: flex;
+  align-items: center;
+  background: rgba(8, 8, 10, 0.92);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid var(--line);
+  z-index: 30;
+}
+.tabbar-item {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--muted-2);
+  font-size: 10px;
+  font-weight: 600;
+}
+.tabbar-item.active {
+  color: #fff;
+}
+
+/* ── Toast ───────────────────────────────────────────────────────── */
+
+.toast-wrap {
+  position: absolute;
+  top: calc(var(--safe-top) + 8px);
+  left: 10px;
+  right: 10px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: rgba(28, 28, 33, 0.97);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--line-2);
+  border-radius: 18px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+  animation: drop 0.3s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+@keyframes drop {
+  from {
+    transform: translateY(-130%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ── Misc ────────────────────────────────────────────────────────── */
+
+.divider {
+  height: 1px;
+  background: var(--line);
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  width: 100%;
+  text-align: left;
+}
+.list-item:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.switch {
+  width: 50px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--surface-3);
+  position: relative;
+  transition: background 0.18s ease;
+  flex: none;
+}
+.switch.on {
+  background: var(--up);
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+.switch.on::after {
+  transform: translateX(20px);
+}
+
+.input {
+  width: 100%;
+  height: 50px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  color: #fff;
+  padding: 0 14px;
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--indigo);
+}
+
+.badge-demo {
+  background: var(--indigo-dim);
+  color: var(--indigo-2);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.empty {
+  text-align: center;
+  padding: 54px 32px;
+  color: var(--muted);
+}
+
+.section-title {
+  padding: 18px 16px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--up);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
