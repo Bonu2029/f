@@ -1,0 +1,5 @@
+# Core: nothing. Data, indicators, backtesting, paper trading, journal, and
+# alerts all run on the Python 3.11+ standard library alone.
+#
+# Optional — only needed to place real orders on a real exchange:
+# ccxt>=4.2.0

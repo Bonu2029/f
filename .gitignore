@@ -1,0 +1,14 @@
+# runtime artifacts — never commit trading state or credentials
+config.toml
+state.json
+*.db
+*.csv
+*.log
+.env
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
