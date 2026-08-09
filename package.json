@@ -3,11 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Solo demo clone of the fomo crypto trading app — single local user, simulated market, no real user data.",
+  "description": "Solo build of the fomo crypto app — one local user, live CoinGecko market data, paper trading.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "build:single": "node scripts/build-single.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

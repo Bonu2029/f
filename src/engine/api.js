@@ -40,7 +40,11 @@ let backoffUntil = 0;
  * cooldown, and stale cache is served rather than failing the UI.
  */
 export async function get(path, { ttl = 60000, params = {} } = {}) {
-  const qs = new URLSearchParams(params).toString();
+  // The key goes in the query string, not a header: CoinGecko's CORS policy
+  // doesn't allow the x-cg-demo-api-key header, and adding it would turn every
+  // request into a preflight that fails — including from a file:// page.
+  const withKey = apiKey ? { ...params, x_cg_demo_api_key: apiKey } : params;
+  const qs = new URLSearchParams(withKey).toString();
   const url = `${BASE}${path}${qs ? `?${qs}` : ""}`;
 
   const hit = cache.get(url);
@@ -55,9 +59,9 @@ export async function get(path, { ttl = 60000, params = {} } = {}) {
 
   const req = (async () => {
     try {
-      const headers = { accept: "application/json" };
-      if (apiKey) headers["x-cg-demo-api-key"] = apiKey;
-      const res = await fetch(url, { headers });
+      // No custom request headers — anything beyond a simple GET would
+      // trigger a CORS preflight that CoinGecko rejects.
+      const res = await fetch(url);
 
       if (res.status === 429) {
         backoffUntil = Date.now() + 60000;

@@ -1,0 +1,33 @@
+fomo — solo build
+=================
+
+FASTEST WAY (no install):
+  Double-click  fomo.html
+  That's the whole app in one file. It runs in your browser and pulls live
+  prices from CoinGecko.
+
+ON YOUR PHONE:
+  AirDrop / email fomo.html to yourself and open it in Safari or Chrome.
+  (To get a proper home-screen app icon, use the dev-server route below and
+  choose Share -> Add to Home Screen.)
+
+TO EDIT THE CODE:
+  Install Node.js from nodejs.org, then in this folder run:
+      npm install
+      npm run dev
+  Open the http://localhost:5173 link it prints. The second "Network" link
+  works on your phone if it's on the same Wi-Fi.
+
+  After changing code, rebuild the single file with:
+      npm run build:single
+
+WHAT'S REAL:
+  Prices, market caps, charts and logos are live from CoinGecko.
+  Trades are paper trades - no real money, no exchange, no wallet.
+  The traders on the Feed and Leaderboard are invented for the demo;
+  no real person's data is in this app.
+
+Your portfolio and alerts are saved in that browser's local storage, so open
+it in the same browser each time. Settings -> Reset demo data starts over.
+
+Full details in README.md
