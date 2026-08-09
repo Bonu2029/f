@@ -9,9 +9,11 @@ no numpy, no pandas, no API keys needed to run everything except live orders.
 
 ```bash
 python -m tradingmachine init                    # write config.toml
-python -m tradingmachine scan                    # current signals, trades nothing
+python -m tradingmachine serve                   # ← the desk, in your browser
+python -m tradingmachine screen tech             # scan a universe for setups
+python -m tradingmachine analyze NVDA            # does this setup have an edge?
+python -m tradingmachine buy AAPL                # risk-sized, stop attached
 python -m tradingmachine backtest --limit 2000   # test on real history
-python -m tradingmachine run                     # paper trading loop
 ```
 
 ---
@@ -33,6 +35,40 @@ week cannot end you. Finding the edge is still your job.
 Anyone selling you a bot with a guaranteed win rate is selling you the bot, not
 the edge.
 
+**One thing it deliberately will not do** is tell you whether a specific trade
+will win. Nothing can. What `analyze` gives you instead is the *base rate*: when
+this strategy took this kind of setup on this symbol before, how often did it
+work and by how much — measured on old data, then re-measured on recent data the
+first measurement never saw. That is a real, decision-useful number. A
+confidence percentage on the next trade would not be.
+
+---
+
+## The desk
+
+```bash
+python -m tradingmachine serve
+```
+
+Opens a local dashboard at `http://127.0.0.1:8787` — the sit-down-and-work
+surface:
+
+- **Account bar** — equity, cash, buying power, open P&L, and whether the market
+  is actually open, straight from your broker.
+- **Positions** — live P&L per position, with a Close button on each row.
+- **Screener** — pick a universe (`megacap`, `tech`, `etfs`, `crypto`, …), an
+  interval, and a strategy; get every symbol ranked by what the strategy likes.
+- **Edge** — one click backtests that exact strategy on that symbol's own
+  history and grades it, out-of-sample check included.
+- **Buy / Short** — opens an order ticket showing quantity, stop, target, and
+  the exact dollar risk *before* anything is sent. Nothing leaves without a
+  confirmation.
+
+Safety, because this endpoint can move money: it binds to **loopback only**, and
+every order request must carry a session token minted at startup and embedded in
+the page. Without that token, any website open in another tab could POST an
+order to your localhost while you browse.
+
 ---
 
 ## Install
@@ -43,7 +79,7 @@ paper trading.
 ```bash
 git clone <this repo> && cd f
 python -m tradingmachine init
-python -m unittest discover -s tests    # 131 tests
+python -m unittest discover -s tests    # 170 tests
 ```
 
 Optional, for live exchange orders only:
@@ -58,21 +94,39 @@ pip install ccxt
 
 | Command | What it does |
 |---|---|
+| `serve` | The desk dashboard in your browser |
+| `screen` | Scan a universe and rank what the strategy likes |
+| `analyze` | Historical edge for a symbol, with an out-of-sample check |
+| `buy` / `sell` | Place a risk-sized order with a stop attached at the broker |
+| `close` | Flatten a position |
+| `account` | Brokerage balance, buying power, market status |
+| `positions` | Open positions with live P&L |
 | `init` | Write a commented starter `config.toml` |
-| `scan` | Evaluate every symbol right now and print signals. Trades nothing. |
+| `scan` | Evaluate your configured symbols. Trades nothing. |
 | `backtest` | Run the strategy over historical bars, with costs, and report metrics |
-| `run` | The live loop. Paper by default. |
-| `status` | Account equity, open positions, stops, journal stats |
+| `run` | The automated loop. Paper by default. |
+| `status` | Equity, open positions, stops, journal stats |
 | `journal` | Recent trades; `--export trades.csv` |
 | `feeds` | List data sources; `--test AAPL` to check connectivity |
 | `strategies` | List available strategies |
 
 ```bash
-python -m tradingmachine scan --symbols BTC-USD ETH-USD SPY EURUSD=X --interval 1h
+python -m tradingmachine screen tech --interval 1d --signals
+python -m tradingmachine screen etfs,crypto --top 40
+python -m tradingmachine analyze NVDA AAPL SPY --interval 1d
+python -m tradingmachine buy AAPL                 # risk-sized from your account
+python -m tradingmachine buy AAPL --qty 25        # your size, warns about risk
+python -m tradingmachine buy TSLA --from-signal   # let the strategy pick the side
 python -m tradingmachine backtest --symbols AAPL --interval 1d --limit 800 --trades 20
-python -m tradingmachine run --once            # a single cycle, then exit
 python -m tradingmachine journal --export trades.csv
 ```
+
+### Universes
+
+`megacap`, `stocks`, `etfs`, `equity`, `crypto`, `forex`, `futures`, `indices`,
+`everything`, plus sectors: `tech`, `comms`, `financials`, `healthcare`,
+`consumer`, `energy`, `industrials`, `materials`, `reits`. Combine them or mix in
+tickers: `screen "tech,etfs,TSLA"`.
 
 ---
 
@@ -185,29 +239,46 @@ halts, partial fills, or a market regime that has never happened before.
 
 ---
 
-## Going live (read this twice)
+## Connecting a broker
 
-Live trading is off behind **three independent switches**, all of which must be
+US stocks and ETFs go through **Alpaca**. Their paper account is free, needs no
+funding, and matches orders against the real tape — strictly better practice
+than a local simulation, because you get their rejections, their market-hours
+rules, and their fill behaviour.
+
+1. Sign up at [alpaca.markets](https://alpaca.markets)
+2. Generate **paper** API keys
+3. Export them and start the desk:
+
+```bash
+export ALPACA_KEY_ID=...
+export ALPACA_SECRET_KEY=...
+python -m tradingmachine serve
+```
+
+That's it — screening, analysis, and paper orders all work now. Crypto goes
+through ccxt instead (`execution.broker = "ccxt"`).
+
+### Going live (read this twice)
+
+Real money is off behind **three independent switches**, all of which must be
 set. A single typo cannot arm it.
 
 1. `account.mode = "live"` in `config.toml`
 2. `execution.confirm_live = true` **and** `execution.dry_run = false`
-3. `TM_API_KEY` / `TM_API_SECRET` set in the environment
+3. Live-account API keys in the environment (paper and live keys are different)
 
-Then `run` still asks you to type `LIVE` at the prompt.
+Then every order still asks you to type `LIVE` at the prompt, and the dashboard
+turns red.
 
-```bash
-export TM_API_KEY=...
-export TM_API_SECRET=...
-python -m tradingmachine run
-```
-
-With keys set but `dry_run = true`, every order is logged instead of sent — the
-correct way to shake out a config before risking anything.
+With `dry_run = true`, orders are logged instead of sent — the correct way to
+shake out a config before risking anything.
 
 Order of operations that will save you money: **backtest → paper for weeks →
-exchange testnet → live with money you can lose.** Skipping straight to step
-four is the most expensive shortcut in trading.
+live with money you can lose.** Skipping straight to the end is the most
+expensive shortcut in trading. Note also that US pattern-day-trader rules
+restrict accounts under $25,000 to three day trades per five days; the desk
+shows your day-trade count so you don't trip it by accident.
 
 ---
 
@@ -254,14 +325,19 @@ tradingmachine/
   strategies/      trend, meanrev, breakout, ensemble + registry
   risk.py          Sizing, stops, exposure caps, daily loss, kill switch
   portfolio.py     Cash, positions, closed trades, equity
-  broker/          PaperBroker (costs) and CcxtBroker (live, triple-gated)
+  broker/          Paper, Alpaca (stocks), ccxt (crypto)
+  universe.py      Named baskets: sectors, ETFs, crypto, forex, futures
+  screener.py      Concurrent multi-symbol scan and ranking
+  analysis.py      Historical edge with an out-of-sample split
+  desk.py          Plan → review → execute, shared by the CLI and the web UI
+  server.py        The local dashboard and its JSON API
   backtest.py      Event-driven backtester and metrics
-  engine.py        The live loop, with crash-safe state checkpointing
+  engine.py        The automated loop, with crash-safe state checkpointing
   journal.py       SQLite record of signals, fills, trades, equity
   notify.py        Console, Discord, Telegram, Slack
   config.py        TOML loading with strict validation
   cli.py           The command line
-tests/             131 tests
+tests/             170 tests
 ```
 
 ---

@@ -67,6 +67,12 @@ class TradingEngine:
     def _make_broker(self) -> Broker:
         ex = self.config.execution
         if self.config.is_live_mode:
+            if ex.broker == "alpaca":
+                from .broker.alpaca import AlpacaBroker
+
+                return AlpacaBroker(
+                    paper=False, confirm_live=ex.confirm_live, dry_run=ex.dry_run
+                )
             return CcxtBroker(
                 ex.exchange,
                 confirm_live=ex.confirm_live,

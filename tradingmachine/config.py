@@ -44,6 +44,8 @@ class CostConfig:
 
 @dataclass
 class ExecutionConfig:
+    #: "alpaca" for US stocks/ETFs, "ccxt" for crypto exchanges.
+    broker: str = "alpaca"
     exchange: str = "binance"
     confirm_live: bool = False
     dry_run: bool = True
@@ -140,6 +142,12 @@ def validate(cfg: AppConfig, source: str = "<config>") -> None:
     if cfg.costs.fee_bps < 0 or cfg.costs.slippage_bps < 0:
         problems.append("costs must not be negative")
 
+    if cfg.execution.broker not in ("alpaca", "ccxt"):
+        problems.append(
+            f"execution.broker {cfg.execution.broker!r} must be 'alpaca' (US "
+            "stocks and ETFs) or 'ccxt' (crypto exchanges)"
+        )
+
     if not isinstance(cfg.strategy, dict) or "name" not in cfg.strategy:
         problems.append("[strategy] must define a 'name'")
 
@@ -216,11 +224,17 @@ fee_bps      = 5.0       # 0.05% per side
 slippage_bps = 5.0
 
 [execution]
-exchange     = "binance"
+broker       = "alpaca"  # "alpaca" = US stocks/ETFs, "ccxt" = crypto exchanges
+exchange     = "binance" # which crypto exchange, when broker = "ccxt"
 confirm_live = false     # must be true AND dry_run false to send real orders
-dry_run      = true
+dry_run      = false     # true = log orders instead of sending them
 testnet      = false
 poll_seconds = 0         # 0 = derive from interval
+
+# Alpaca keys come from the environment, never this file:
+#   export ALPACA_KEY_ID=...  ALPACA_SECRET_KEY=...
+# With account.mode = "paper" (above) the desk uses Alpaca's PAPER endpoint,
+# which matches real orders against the real tape using fake money.
 
 [notify]
 console = true

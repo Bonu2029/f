@@ -257,6 +257,206 @@ def cmd_journal(args: argparse.Namespace) -> int:
     return 0
 
 
+def _desk(args: argparse.Namespace):
+    from .desk import Desk
+
+    return Desk(_load(args.config))
+
+
+def cmd_account(args: argparse.Namespace) -> int:
+    snap = _desk(args).account_snapshot()
+    if not snap["connected"]:
+        print(f"\nnot connected: {snap['error']}\n")
+        print("Free paper-trading keys take about two minutes:")
+        print("  1. sign up at https://alpaca.markets")
+        print("  2. generate PAPER api keys")
+        print("  3. export ALPACA_KEY_ID=...  ALPACA_SECRET_KEY=...\n")
+        return 1
+
+    tag = "LIVE — REAL MONEY" if snap["live"] else "paper"
+    print(f"\nvenue        {snap['venue']}  [{tag}]")
+    print(f"equity       {snap['equity']:,.2f}")
+    print(f"cash         {snap['cash']:,.2f}")
+    print(f"buying power {snap['buying_power']:,.2f}")
+    print(f"unrealized   {snap['unrealized']:+,.2f}")
+    print(f"exposure     {snap['exposure']:,.2f}")
+    print(f"market       {'OPEN' if snap['market_open'] else 'closed'} — {snap['market_note']}")
+    if snap["pattern_day_trader"]:
+        print(f"PDT flagged  {snap['daytrade_count']} day trades counted")
+    print(f"positions    {len(snap['positions'])}\n")
+    return 0
+
+
+def cmd_positions(args: argparse.Namespace) -> int:
+    snap = _desk(args).account_snapshot()
+    if not snap["connected"]:
+        print(f"not connected: {snap['error']}")
+        return 1
+    if not snap["positions"]:
+        print("\nno open positions\n")
+        return 0
+
+    print(f"\n{'symbol':<10}{'side':<7}{'qty':>10}{'entry':>12}{'last':>12}"
+          f"{'value':>13}{'P&L':>12}{'P&L %':>9}")
+    print("-" * 85)
+    for p in snap["positions"]:
+        print(
+            f"{p['symbol']:<10}{p['side']:<7}{p['qty']:>10g}{p['avg_entry']:>12,.2f}"
+            f"{p['price']:>12,.2f}{p['market_value']:>13,.2f}"
+            f"{p['unrealized_pl']:>+12,.2f}{p['unrealized_plpc']:>+8.2f}%"
+        )
+    print("-" * 85)
+    print(f"{'total':<10}{'':<7}{'':>10}{'':>12}{'':>12}{snap['exposure']:>13,.2f}"
+          f"{snap['unrealized']:>+12,.2f}\n")
+    return 0
+
+
+def cmd_screen(args: argparse.Namespace) -> int:
+    from .screener import screen, summarize
+    from .universe import resolve, universe_names
+
+    cfg = _load(args.config)
+    if args.list:
+        print("\nuniverses: " + ", ".join(universe_names()) + "\n")
+        return 0
+
+    try:
+        strategy = build_strategy({"name": args.strategy} if args.strategy else cfg.strategy)
+    except StrategyError as exc:
+        print(f"strategy error: {exc}", file=sys.stderr)
+        return 2
+
+    symbols = resolve(args.universe)
+    interval = args.interval or cfg.market.interval
+    print(f"\nscanning {len(symbols)} symbols @ {interval} with {strategy.name}...")
+
+    rows = screen(
+        symbols, strategy, interval, args.limit,
+        workers=args.workers, signals_only=args.signals, progress=len(symbols) > 30,
+    )
+    s = summarize(rows)
+
+    print(f"\n{'symbol':<9}{'class':<12}{'last':>11}{'1d':>8}{'ATR%':>7}"
+          f"{'RSI':>5}{'ADX':>5}  {'signal':<7}{'conv':>5}  reason")
+    print("-" * 104)
+    shown = rows[: args.top] if args.top else rows
+    for c in shown:
+        if c.error:
+            print(f"{c.symbol:<9}{c.asset_class:<12}{'—':>11}  {c.error[:60]}")
+            continue
+        mark = {Side.LONG: "LONG", Side.SHORT: "SHORT", Side.FLAT: "flat"}[c.side]
+        print(
+            f"{c.symbol:<9}{c.asset_class:<12}{c.price:>11,.2f}{c.change_pct:>+7.2f}%"
+            f"{c.atr_pct:>6.1f}%{(c.rsi or 0):>5.0f}{(c.adx or 0):>5.0f}  "
+            f"{mark:<7}{c.strength:>5.0%}  {c.reason[:38]}"
+        )
+    print("-" * 104)
+    print(f"{s['scanned']} scanned · {s['long']} long · {s['short']} short · "
+          f"{s['flat']} flat · {s['errors']} errors")
+    print("Signals only — nothing was traded. Check an idea with "
+          "`analyze <SYMBOL>` before you act on it.\n")
+    return 0
+
+
+def cmd_analyze(args: argparse.Namespace) -> int:
+    from .analysis import edge_report
+
+    cfg = _load(args.config)
+    try:
+        strategy = build_strategy({"name": args.strategy} if args.strategy else cfg.strategy)
+    except StrategyError as exc:
+        print(f"strategy error: {exc}", file=sys.stderr)
+        return 2
+
+    interval = args.interval or cfg.market.interval
+    for symbol in args.symbols:
+        try:
+            rep = edge_report(
+                symbol.upper(), strategy, interval, args.limit,
+                risk=cfg.risk, cash=cfg.account.starting_cash,
+                fee_bps=cfg.costs.fee_bps, slippage_bps=cfg.costs.slippage_bps,
+            )
+        except DataError as exc:
+            print(f"\n{symbol}: data error — {exc}\n")
+            continue
+        print()
+        print(rep.report())
+    print()
+    return 0
+
+
+def _trade(args: argparse.Namespace, side: Side) -> int:
+    from .desk import DeskError
+
+    desk = _desk(args)
+    try:
+        plan = (
+            desk.plan_from_signal(args.symbol)
+            if args.from_signal
+            else desk.plan(args.symbol, side, qty=args.qty)
+        )
+    except DeskError as exc:
+        print(f"\ncannot plan this trade: {exc}\n", file=sys.stderr)
+        return 1
+
+    live = desk.is_live
+    print(f"\n{'*** LIVE — REAL MONEY ***' if live else 'PAPER ORDER'}")
+    print(plan.describe())
+
+    if not args.yes:
+        want = "LIVE" if live else "yes"
+        reply = input(f"\ntype {want} to send: ").strip()
+        if reply != want:
+            print("cancelled — nothing was sent.")
+            return 1
+
+    try:
+        result = desk.execute(plan, bracket=not args.no_bracket)
+    except DeskError as exc:
+        print(f"\norder failed: {exc}\n", file=sys.stderr)
+        return 1
+
+    print(f"\nfilled {result['qty']:g} {result['symbol']} @ {result['price']:,.2f}")
+    print(f"  stop {result['stop']:,.2f}"
+          + (f"  target {result['target']:,.2f}" if result["target"] else ""))
+    print(f"  {result['note']}\n")
+    return 0
+
+
+def cmd_buy(args: argparse.Namespace) -> int:
+    return _trade(args, Side.LONG)
+
+
+def cmd_sell(args: argparse.Namespace) -> int:
+    return _trade(args, Side.SHORT)
+
+
+def cmd_close(args: argparse.Namespace) -> int:
+    from .desk import DeskError
+
+    desk = _desk(args)
+    if not args.yes:
+        reply = input(f"close the entire {args.symbol.upper()} position? [yes/no] ").strip()
+        if reply != "yes":
+            print("cancelled.")
+            return 1
+    try:
+        desk.close(args.symbol)
+    except DeskError as exc:
+        print(f"close failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"closed {args.symbol.upper()}")
+    return 0
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    from .server import serve
+
+    cfg = _load(args.config)
+    serve(cfg, host=args.host, port=args.port, open_browser=not args.no_browser)
+    return 0
+
+
 def cmd_feeds(args: argparse.Namespace) -> int:
     print("\nregistered feeds:")
     for name, feed in available_feeds().items():
@@ -344,6 +544,57 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--limit", type=int, default=20)
     sp.add_argument("--export", help="write trades to this CSV path")
     sp.set_defaults(func=cmd_journal)
+
+    # ---- desk: screening, analysis, and real orders ---------------------- #
+    sp = sub.add_parser("screen", help="scan a universe and rank what the strategy likes")
+    sp.add_argument("universe", nargs="?", default="megacap",
+                    help="basket name (megacap, tech, etfs, crypto...) or tickers")
+    sp.add_argument("--interval")
+    sp.add_argument("--strategy")
+    sp.add_argument("--limit", type=int, default=400, help="bars per symbol")
+    sp.add_argument("--top", type=int, default=25, help="rows to print (0 = all)")
+    sp.add_argument("--signals", action="store_true", help="hide symbols with no signal")
+    sp.add_argument("--workers", type=int, default=8)
+    sp.add_argument("--list", action="store_true", help="list universe names and exit")
+    sp.set_defaults(func=cmd_screen)
+
+    sp = sub.add_parser("analyze", help="historical edge for a symbol, with an out-of-sample check")
+    sp.add_argument("symbols", nargs="+")
+    sp.add_argument("--interval")
+    sp.add_argument("--strategy")
+    sp.add_argument("--limit", type=int, default=750)
+    sp.set_defaults(func=cmd_analyze)
+
+    sp = sub.add_parser("account", help="brokerage balance and market status")
+    sp.set_defaults(func=cmd_account)
+
+    sp = sub.add_parser("positions", help="open positions at the broker with live P&L")
+    sp.set_defaults(func=cmd_positions)
+
+    for name, fn, helptext in (
+        ("buy", cmd_buy, "buy a symbol, risk-sized, with a stop attached"),
+        ("sell", cmd_sell, "short a symbol, risk-sized, with a stop attached"),
+    ):
+        sp = sub.add_parser(name, help=helptext)
+        sp.add_argument("symbol")
+        sp.add_argument("--qty", type=float, help="override the risk-based size")
+        sp.add_argument("--from-signal", action="store_true", dest="from_signal",
+                        help="let the strategy choose the side")
+        sp.add_argument("--no-bracket", action="store_true",
+                        help="skip the broker-side stop (not recommended)")
+        sp.add_argument("--yes", action="store_true", help="skip the confirmation")
+        sp.set_defaults(func=fn)
+
+    sp = sub.add_parser("close", help="flatten a position at the broker")
+    sp.add_argument("symbol")
+    sp.add_argument("--yes", action="store_true")
+    sp.set_defaults(func=cmd_close)
+
+    sp = sub.add_parser("serve", help="run the desk dashboard in your browser")
+    sp.add_argument("--host", default="127.0.0.1")
+    sp.add_argument("--port", type=int, default=8787)
+    sp.add_argument("--no-browser", action="store_true")
+    sp.set_defaults(func=cmd_serve)
 
     sp = sub.add_parser("feeds", help="list data feeds and test a symbol")
     sp.add_argument("--test", help="symbol to fetch as a connectivity check")
