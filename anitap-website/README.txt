@@ -255,3 +255,41 @@ TWO DEAD BUTTONS NOW WORK. Both previously did nothing a customer could use:
   configured nothing opens, which is why the on-screen confirmation and the cart
   note always show the address and phone number as plain readable text too.
   Replace checkout() with Stripe when you're ready; the rest can stay.
+
+--- UPDATE (v18) ---
+ONLINE BUYING REMOVED. Nothing on the site takes an order or a payment now;
+every path ends in an email to CONTACT.email.
+
+Deleted outright: the header cart button and counter, the whole cart drawer,
+the promo-code box (and CONFIG.promo), shipping/subtotal/total cart rows, the
+Checkout button, and the JS behind all of it (cart, renderCart, updateCartCount,
+updateCartTotals, removeItem, applyPromo, checkout, openCart, closeCart,
+isCartOpen). The empty `stripe:""` field on every tier and bundle is gone too.
+
+What replaced it:
+  Configurator footer  "Add to Cart" + "Buy Now"  ->  a single "Email This Order"
+    button. emailOrder() turns the whole configuration into a message: product,
+    shape, destination, finish, quantity, design style, business name, category,
+    whatever destination fields were filled in, any add-ons, and the estimated
+    total broken into cards + add-ons + shipping.
+  Tier cards           "Buy Now"  ->  per-card tiers say "Build Yours" and open
+    the configurator; packages and bundles say "Email to Order" and open a
+    pre-filled email naming that package and its listed price.
+  Header               cart icon  ->  an "Email Us" button. It only fits beside
+    nine nav links above 1150px; below that the mobile menu carries Email Us and
+    a Call or Text button instead.
+
+Wording that implied instant purchase was changed: "Shop Products" -> "See
+Products", "Shop Review/Social Cards" -> "Build Review/Social Cards",
+"Customize & Order" -> "Build & Email Order", and the order summary's "Total" is
+now "Estimated total" with a note that nothing is charged on the site.
+
+Header note: nav links and the header buttons are now white-space:nowrap, so
+they can no longer wrap to two or three lines. To make room for Email Us the
+"Contact" link was dropped from the desktop nav (it is still in the mobile menu
+and the footer, and the Email Us button covers the same need). The nav-links
+breakpoint moved from 1000px to 1099px.
+
+TO SELL ONLINE LATER: re-add a checkout by restoring a payment step on the
+configurator footer and the package buttons. Stripe Payment Links remain the
+simplest route — one link per package, opened instead of mailTo().
