@@ -222,3 +222,36 @@ DEST_ART_SHAPES.instagram is now ["round"], and picking Instagram on any other
 shape shows the builder's "Photo example coming soon for this shape" placeholder.
 Drop in dest-instagram-standard.jpg / -square.jpg / -stand.jpg and add those
 shapes back to DEST_ART_SHAPES.instagram to close the gap. ***
+
+--- UPDATE (v17) ---
+CONTACT DETAILS ADDED. All of them come from one place — the CONTACT object at
+the top of the script block:
+
+  const CONTACT={name:"Ani", email:"anitapofficials@gmail.com",
+                 phone:"+12678608496", phoneDisplay:"(267) 860-8496"};
+
+Edit that object and the cart, both form buttons and the toast all follow. The
+addresses written into the markup (contact section, footer, FAQ) are plain
+mailto:/tel: links, so search for the address if you ever change it.
+
+Where it appears:
+  - Contact section: three cards (email, call or text, "You'll be talking to:
+    Ani"), each a real mailto:/tel: link.
+  - Contact section: a "Can't order on the site? Just send a photo." panel
+    listing the three things to send — a picture of the product, the design, and
+    the quantity — with both contact links.
+  - Footer: a Contact column.
+  - Cart drawer: the note under Checkout now gives the same photo-order route
+    instead of the old developer-facing "connect Stripe" line.
+  - FAQ: "What if I can't order on the site?"
+
+TWO DEAD BUTTONS NOW WORK. Both previously did nothing a customer could use:
+  - The contact form said "this is a demo form, nothing was sent". Send Message
+    and Request a Demo now open the visitor's email app with every field they
+    filled in already written into the body, addressed to CONTACT.email.
+  - Checkout said "Demo checkout — connect Stripe". It now opens an email
+    listing every cart line, the total, and blanks for business name and phone.
+  Both are mailto: links, so they need no server. If a visitor has no mail app
+  configured nothing opens, which is why the on-screen confirmation and the cart
+  note always show the address and phone number as plain readable text too.
+  Replace checkout() with Stripe when you're ready; the rest can stay.

@@ -253,7 +253,8 @@ header{position:sticky;top:0;z-index:60;background:rgba(250,250,255,.72);backdro
 .form-ok.show{display:block}
 @media(max-width:760px){.contact-grid{grid-template-columns:1fr;gap:26px}.form .row{grid-template-columns:1fr}}
 footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:56px 0 30px}
-.foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:30px}
+.foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1.25fr;gap:30px}
+@media(max-width:1040px){.foot-grid{grid-template-columns:1fr 1fr 1fr}}
 .foot-brand .brand{color:#fff;margin-bottom:14px}.foot-brand .brand .mark{background:rgba(255,255,255,.16)}
 .foot-brand p{font-size:.88rem;color:#c3c4ee;max-width:34ch}
 .foot-col h5{font-family:var(--body);font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;color:#c3c4ee;margin:0 0 14px}
@@ -286,7 +287,9 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
 .cart-foot .promo button{padding:10px 16px;font-size:.82rem}
 .srow{display:flex;justify-content:space-between;font-size:.88rem;color:var(--text-2);padding:4px 0}
 .srow.total{color:var(--text);font-weight:700;border-top:1px solid var(--line);margin-top:6px;padding-top:10px;font-size:1.05rem}
-.cart-note{font-size:.72rem;color:var(--text-2);text-align:center;margin-top:10px}
+.cart-note{font-size:.74rem;line-height:1.5;color:var(--text-2);text-align:center;margin-top:12px}
+.cart-note a{color:var(--indigo);font-weight:600;white-space:nowrap}
+.cart-note a:hover{text-decoration:underline}
 .cz{width:920px;max-width:96vw}
 .cz-body{flex:1;overflow:auto;padding:20px 22px}
 .preview-card{aspect-ratio:1.6/1;border-radius:16px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:22px;position:relative;overflow:hidden;box-shadow:var(--shadow-lg);transition:background .3s,color .3s;margin-bottom:8px}
@@ -505,6 +508,25 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
 .spot-media.grid img{width:100%;height:100%;object-fit:cover;display:block;border-radius:var(--r);box-shadow:var(--shadow-lg);background:var(--light)}
 .spot-media.grid .wide{grid-column:1 / -1;aspect-ratio:2/1}
 .spot-media.grid .sq{aspect-ratio:1/1}
+
+/* ── Contact details ────────────────────────────────────── */
+.c-details{display:flex;flex-direction:column;gap:11px;margin-top:24px}
+.c-item{display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;color:inherit;transition:border-color .2s,transform .2s,box-shadow .2s}
+a.c-item:hover{border-color:var(--indigo);transform:translateX(3px);box-shadow:var(--shadow)}
+.c-ico{flex:none;width:42px;height:42px;border-radius:12px;background:var(--light);display:grid;place-items:center;color:var(--indigo)}
+.c-ico svg{width:20px;height:20px}
+.c-item small{display:block;font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-2);font-weight:700;margin-bottom:2px}
+.c-item b{font-family:var(--display);font-size:1.02rem;font-weight:600;color:var(--text);letter-spacing:-.01em;word-break:break-word}
+.c-note{margin-top:22px;background:var(--light);border:1px solid var(--line);border-radius:var(--r-sm);padding:22px 24px}
+.c-note h4{font-size:1.08rem;margin-bottom:9px;display:flex;align-items:center;gap:9px}
+.c-note h4 svg{width:19px;height:19px;color:var(--indigo);flex:none}
+.c-note>p{font-size:.92rem;color:var(--text-2);margin-bottom:14px}
+.c-note ol{margin:0;padding-left:19px;font-size:.92rem;color:var(--text)}
+.c-note ol li{margin-bottom:6px}
+.c-note .c-note-foot{font-size:.88rem;color:var(--text-2);margin-top:14px}
+.c-note .c-note-foot a{color:var(--indigo);font-weight:600}
+.c-note .c-note-foot a:hover{text-decoration:underline}
+@media(max-width:520px){.c-note{padding:18px}}
 
 /* ── Closing call to action ─────────────────────────────── */
 .finale{background:var(--bg)}
@@ -887,6 +909,33 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
       <span class="eyebrow">Contact</span>
       <h2>Let's build your tap experience</h2>
       <p class="lead">Tell us about your business and what you'd like customers to do. We'll follow up with ideas and a quote.</p>
+
+      <div class="c-details">
+        <a class="c-item" href="mailto:anitapofficials@gmail.com">
+          <span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="m3 7 9 6 9-6"/></svg></span>
+          <span><small>Email</small><b>anitapofficials@gmail.com</b></span>
+        </a>
+        <a class="c-item" href="tel:+12678608496">
+          <span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 6 6l1.5-2 4.5 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z"/></svg></span>
+          <span><small>Call or text</small><b>(267) 860-8496</b></span>
+        </a>
+        <div class="c-item">
+          <span class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+          <span><small>You'll be talking to</small><b>Ani</b></span>
+        </div>
+      </div>
+
+      <div class="c-note">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="12" cy="12" r="3"/><path d="M8 5l1.2-2h5.6L16 5"/></svg>Can't order on the site? Just send a photo.</h4>
+        <p>You don't need to use the builder. Send these three things and we'll set the whole order up for you:</p>
+        <ol>
+          <li><b>A picture of the product</b> you want — the card, coaster or tent sign.</li>
+          <li><b>Your design</b> — a logo, a photo of an existing card, or just your colors and what it should say.</li>
+          <li><b>How many</b> you need.</li>
+        </ol>
+        <p class="c-note-foot">Email them to <a href="mailto:anitapofficials@gmail.com">anitapofficials@gmail.com</a> or text them to <a href="tel:+12678608496">(267) 860-8496</a>. We'll reply with a price and a design preview to approve before anything is printed.</p>
+      </div>
+
       <div class="c-social" aria-label="AniTap social links">
         <a href="#" aria-label="AniTap on Instagram"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
         <a href="#" aria-label="AniTap on TikTok"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3c.3 2 1.6 3.6 3.6 3.9V10c-1.4 0-2.7-.4-3.6-1.1V15a5.5 5.5 0 1 1-5.5-5.5c.3 0 .6 0 .9.1v3.1a2.4 2.4 0 1 0 1.7 2.3V3H16Z"/></svg></a>
@@ -919,6 +968,7 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
     <div class="foot-col"><h5>Products</h5><a href="#products">NFC Business Card</a><a href="#products">Smart NFC Card</a><a href="#websites">Custom Website</a><a href="#pricing">Pricing</a></div>
     <div class="foot-col"><h5>Company</h5><a href="#how">How It Works</a><a href="#portfolio">Portfolio</a><a href="#faq">FAQ</a><a href="#contact">Contact</a></div>
     <div class="foot-col"><h5>Policies</h5><a href="#">Shipping Policy</a><a href="#">Refund Policy</a><a href="#">Privacy Policy</a><a href="#">Terms &amp; Conditions</a></div>
+    <div class="foot-col"><h5>Contact</h5><a href="mailto:anitapofficials@gmail.com">anitapofficials@gmail.com</a><a href="tel:+12678608496">(267) 860-8496</a><a href="#contact">Send us a photo instead</a></div>
   </div>
   <div class="wrap foot-bottom">
     <span>© <span id="year"></span> AniTap. All rights reserved.</span>
@@ -968,7 +1018,7 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
     <div class="srow"><span>Shipping</span><span id="cShip">$0</span></div>
     <div class="srow total"><span>Total</span><span id="cTotal">$0</span></div>
     <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="checkout()">Checkout</button>
-    <p class="cart-note">Demo checkout — no real payment is taken. Connect Stripe to accept live orders.</p>
+    <p class="cart-note">Prefer not to order online? Email or text a photo of the product, your design and the quantity to <a href="mailto:anitapofficials@gmail.com">anitapofficials@gmail.com</a> or <a href="tel:+12678608496">(267) 860-8496</a> and we'll set it up for you.</p>
   </div>
 </aside>
 
@@ -1010,6 +1060,12 @@ footer{background:linear-gradient(120deg,#312E81,#4F46E5);color:#dfe0f5;padding:
 <div class="toast" id="toast"></div>
 
 <script>
+/* Where orders and enquiries go. Change these in one place and the contact
+   section, the footer, the cart and both form buttons all follow. */
+const CONTACT={name:"Ani", email:"anitapofficials@gmail.com", phone:"+12678608496", phoneDisplay:"(267) 860-8496"};
+function mailTo(subject,body){
+  return `mailto:${CONTACT.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 const CONFIG={
   currency:"$", shipping:5, freeShipOver:100, promo:{TAP10:0.10},
   /* Per-card base prices. Google Review cards and social cards (Instagram,
@@ -1165,6 +1221,7 @@ const FAQ=[
  ["What's the difference between the NFC Business Card and the Smart NFC Card?","The Business Card opens one destination you choose. The Smart Card opens a full custom mobile page with multiple buttons — call, book, follow, review and more."],
  ["Do you provide a QR code too?","Every card includes a QR-code backup so it works even on phones without NFC."],
  ["Can you create the design for me?","Yes. Send your logo, colors, and details and our team designs it for you, then sends a preview to approve. There's no design fee."],
+ ["What if I can't order on the site?","No problem — you don't have to use the builder. Send three things and we'll set the order up for you: a picture of the product you want, your design (a logo, a photo of an existing card, or just your colors and what it should say), and how many you need. Email them to anitapofficials@gmail.com or text them to (267) 860-8496, and Ani will reply with a price and a design preview to approve."],
  ["How long does production take?","Most cards are designed, programmed, tested, and shipped within a short turnaround. You'll see estimated dates in the pricing summary and at checkout."],
  ["How much does a card cost?","Google Review cards and social media cards (Instagram, Facebook, TikTok) are $25 per card — the same price in every shape and every finish. Cards that open your website, menu, booking page, directions, phone, email or WhatsApp are $5 per card. The Smart NFC Business Card is $25. Larger orders drop the per-card price."],
  ["Does the shape change the price?","No. A standard card, a rounded square, a round coaster and a tabletop tent sign all cost the same. Only the finish you pick can add a small upgrade — brushed gold and natural walnut cost a little more than PVC."],
@@ -1553,7 +1610,15 @@ function updateCartTotals(){
 }
 function applyPromo(){const code=document.getElementById("promoInput").value.trim().toUpperCase();
   if(CONFIG.promo[code]){promoApplied=code;toast(`Promo ${code} applied`);}else{promoApplied=null;toast("That code isn't valid");}updateCartTotals();}
-function checkout(){if(!cart.length){toast("Your cart is empty");return;}toast("Demo checkout — connect Stripe to accept live orders");}
+/* No payment processor is connected yet, so Checkout hands the order to Ani by
+   email instead of dead-ending. Swap this for Stripe when you're ready. */
+function checkout(){
+  if(!cart.length){toast("Your cart is empty");return;}
+  const lines=cart.map(c=>`- ${c.title} | ${c.sub} | ${money(c.price)}`).join("\n");
+  const body=`Hi ${CONTACT.name},\n\nI'd like to order:\n\n${lines}\n\nTotal: ${document.getElementById("cTotal").textContent}\n\nBusiness name:\nBest phone number:\n\nI'll attach my logo or design. Thanks!`;
+  location.href=mailTo("AniTap order request",body);
+  toast("Opening your email — or text the same details to "+CONTACT.phoneDisplay);
+}
 function isCartOpen(){return document.getElementById("cart").classList.contains("open");}
 function isCzOpen(){return document.getElementById("cz").classList.contains("open");}
 function openCart(){closeCustomizer();document.getElementById("cart").classList.add("open");document.getElementById("overlay").classList.add("show");}
@@ -1588,8 +1653,13 @@ function submitContact(kind){
   if(!name.value.trim()){name.parentElement.classList.add("invalid");ok=false;}
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim())){email.parentElement.classList.add("invalid");ok=false;}
   if(!ok)return;
+  const v=id=>document.getElementById(id).value.trim();
+  const body=`Name: ${v("fName")}\nBusiness: ${v("fBiz")||"—"}\nEmail: ${v("fEmail")}\nPhone: ${v("fPhone")||"—"}\n`
+    +`Product of interest: ${v("fProduct")}\nPreferred contact: ${v("fContact")}\n\n`
+    +`Message:\n${v("fMsg")||"—"}\n`;
+  location.href=mailTo(kind==='demo'?"AniTap website demo request":"AniTap enquiry",body);
   const o=document.getElementById("formOk");o.classList.add("show");
-  o.textContent=(kind==='demo'?"Thanks — demo request noted":"Thanks — message noted")+" (this is a demo form, nothing was sent). Connect it to your inbox to go live.";
+  o.textContent=`Thanks — your email app should open with these details filled in. If it doesn't, email ${CONTACT.email} or call/text ${CONTACT.phoneDisplay}.`;
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeAll();}});
 document.addEventListener("click",e=>{
