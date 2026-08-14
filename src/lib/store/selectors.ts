@@ -408,10 +408,13 @@ export function businessMetrics(state: MarketplaceState, businessId: string): Bu
     (id) => (firstSeen.get(id) ?? today) < monthStart,
   ).length;
 
-  const publishedThisMonth = state.slots.filter(
-    (s) => s.business_id === businessId && s.date >= monthStart,
-  );
-  const filled = publishedThisMonth.filter((s) => s.status === "booked").length;
+  // Openings that are still listed, plus the ones already converted into
+  // bookings — otherwise a freshly generated inventory always reads as 0%.
+  const openInventory = state.slots.filter(
+    (s) => s.business_id === businessId && s.date >= monthStart && s.status !== "blocked",
+  ).length;
+  const filled = recovered.length;
+  const publishedTotal = openInventory + filled;
 
   const cancelled = monthAll.filter(
     (a) => a.status === "cancelled_by_customer" || a.status === "cancelled_by_business" || a.status === "no_show",
@@ -434,7 +437,7 @@ export function businessMetrics(state: MarketplaceState, businessId: string): Bu
     monthBookings: month.length,
     recoveredCents: recovered.reduce((sum, a) => sum + a.payout_cents, 0),
     recoveredCount: recovered.length,
-    fillRate: publishedThisMonth.length ? filled / publishedThisMonth.length : 0,
+    fillRate: publishedTotal ? filled / publishedTotal : 0,
     cancellationRate: monthAll.length ? cancelled / monthAll.length : 0,
     averageBookingCents: month.length ? Math.round(monthRevenue / month.length) : 0,
     returningRate: monthCustomers.size ? returning / monthCustomers.size : 0,
