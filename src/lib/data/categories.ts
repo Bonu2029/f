@@ -134,3 +134,18 @@ export function categoryById(id: string): ServiceCategory | undefined {
 
 /** Categories surfaced as chips on the home screen, in order. */
 export const HOME_CATEGORY_SLUGS = CATEGORIES.map((c) => c.slug);
+
+/**
+ * Public SEO pages use the plural form — /philadelphia/nail-salons reads
+ * better and matches what people search for than /philadelphia/nails.
+ */
+export function categorySeoSlug(category: ServiceCategory): string {
+  return category.plural_name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export function categoryBySeoSlug(slug: string): ServiceCategory | undefined {
+  return CATEGORIES.find((c) => categorySeoSlug(c) === slug);
+}
