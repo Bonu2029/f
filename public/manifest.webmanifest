@@ -1,0 +1,20 @@
+{
+  "name": "NOW — Available when you need it",
+  "short_name": "NOW",
+  "description": "Find local services with real availability today and book in a few taps.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBFAF7",
+  "theme_color": "#6C4DFF",
+  "categories": ["lifestyle", "shopping", "productivity"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/maskable-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Openings right now", "url": "/deals" },
+    { "name": "My bookings", "url": "/bookings" }
+  ]
+}
