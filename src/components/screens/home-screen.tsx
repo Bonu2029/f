@@ -49,24 +49,28 @@ export function HomeScreen() {
         <SearchBar className="mt-4 max-w-2xl" />
 
         {location.source === "default" && locationPromptOpen && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-brand-100 bg-brand-50/70 px-3.5 py-2.5">
-            <Crosshair className="h-4 w-4 shrink-0 text-brand-600" />
-            <p className="min-w-0 flex-1 text-[13px] font-medium text-ink">
-              Use your location to find appointments near you?
+          // One flex row that wraps: the CTA drops to its own line on phones,
+          // and the dismiss control always sits at the end of the row.
+          <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-2 rounded-2xl border border-brand-100 bg-brand-50/70 px-3.5 py-3">
+            <Crosshair className="order-1 h-4 w-4 shrink-0 text-brand-600" />
+            <p className="order-2 min-w-0 flex-1 text-[13px] font-medium leading-snug text-ink">
+              Use your location to find appointments available near you?
             </p>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <Button size="sm" onClick={() => requestDeviceLocation()}>
-                Use my location
-              </Button>
-              <button
-                type="button"
-                onClick={() => setLocationPromptOpen(false)}
-                aria-label="Dismiss — I'll enter my location manually"
-                className="tap-target flex items-center justify-center rounded-full text-ink-muted hover:bg-brand-100 hover:text-ink"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+            <Button
+              size="sm"
+              className="order-4 w-full sm:order-3 sm:w-auto"
+              onClick={() => requestDeviceLocation()}
+            >
+              Use my location
+            </Button>
+            <button
+              type="button"
+              onClick={() => setLocationPromptOpen(false)}
+              aria-label="Dismiss — I'll enter my location manually"
+              className="order-3 -mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-muted transition hover:bg-brand-100 hover:text-ink sm:order-4"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
       </div>
