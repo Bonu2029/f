@@ -90,45 +90,54 @@ export function LineChart({
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
   const area = `${line} L${w},${h} L0,${h} Z`;
 
+  const last = points[points.length - 1];
+  const peakIndex = data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0);
+  const peak = points[peakIndex];
+
   return (
     <div className={cn("w-full", className)}>
-      <svg
-        viewBox={`0 0 ${w} ${h}`}
-        preserveAspectRatio="none"
-        style={{ height }}
-        className="w-full overflow-visible"
-        role="img"
-        aria-label={`Trend from ${formatValue(data[0].value)} to ${formatValue(data[data.length - 1].value)}`}
-      >
-        <defs>
-          <linearGradient id="now-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6C4DFF" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#6C4DFF" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill="url(#now-area)" />
-        <path
-          d={line}
-          fill="none"
-          stroke="#6C4DFF"
-          strokeWidth="2"
-          vectorEffect="non-scaling-stroke"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {points.map((p, i) => (
-          <circle
-            key={i}
-            cx={p.x}
-            cy={p.y}
-            r="1.6"
-            fill="#fff"
+      {/* The plot is stretched horizontally, so markers are positioned in the
+          wrapper rather than drawn in the SVG — a circle inside a
+          `preserveAspectRatio="none"` viewBox renders as an ellipse. */}
+      <div className="relative w-full" style={{ height }}>
+        <svg
+          viewBox={`0 0 ${w} ${h}`}
+          preserveAspectRatio="none"
+          className="h-full w-full"
+          role="img"
+          aria-label={`Trend from ${formatValue(data[0].value)} to ${formatValue(data[data.length - 1].value)}`}
+        >
+          <defs>
+            <linearGradient id="now-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6C4DFF" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#6C4DFF" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill="url(#now-area)" />
+          <path
+            d={line}
+            fill="none"
             stroke="#6C4DFF"
-            strokeWidth="1.6"
+            strokeWidth="2"
             vectorEffect="non-scaling-stroke"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-        ))}
-      </svg>
+        </svg>
+
+        <span
+          className="pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-brand-500 bg-surface"
+          style={{ left: `${last.x}%`, top: `${last.y}%` }}
+        />
+        {peakIndex !== data.length - 1 && (
+          <span
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-semibold text-white"
+            style={{ left: `${peak.x}%`, top: `${Math.max(8, peak.y - 4)}%` }}
+          >
+            {formatValue(data[peakIndex].value)}
+          </span>
+        )}
+      </div>
       <div className="mt-1.5 flex justify-between text-[10.5px] text-ink-muted">
         <span>{data[0].label}</span>
         <span>{data[data.length - 1].label}</span>

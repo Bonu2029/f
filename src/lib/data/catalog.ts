@@ -76,6 +76,32 @@ export const DEMO_BUSINESS_SLUG = "luxe-nail-studio";
 export const DEMO_BUSINESS_ID = stableId("business", DEMO_BUSINESS_SLUG);
 export const DEMO_BUSINESS_OWNER_ID = stableId("user", "owner-luxe-nail-studio");
 
+/**
+ * The flagship demo business keeps one hour genuinely free every day so the
+ * "Fill this slot" story can be told end-to-end without fighting its own
+ * fully-booked calendar. Nothing books into it and no slot is generated for
+ * it — the gap is real, not a special case in the UI.
+ */
+export const SHOWCASE_GAP = {
+  business_slug: DEMO_BUSINESS_SLUG,
+  /** Applies to the owner (first staff member). */
+  staff_index: 0,
+  start_time: "14:30",
+  end_time: "15:30",
+} as const;
+
+export function isShowcaseGap(
+  businessSlug: string,
+  staffId: string,
+  ownerStaffId: string,
+  startTime: string,
+  endTime: string,
+): boolean {
+  if (businessSlug !== SHOWCASE_GAP.business_slug) return false;
+  if (staffId !== ownerStaffId) return false;
+  return startTime < SHOWCASE_GAP.end_time && endTime > SHOWCASE_GAP.start_time;
+}
+
 const CUSTOMER_NAMES = [
   "Sarah Whitmore", "Michael Duarte", "Jessica Alvarez", "Daniel Osei", "Emily Novak",
   "Tomas Reyes", "Rachel Kim", "Andre Boyd", "Nina Petrov", "Chris Callahan",
@@ -501,6 +527,17 @@ function buildBusiness(
       const start = minutesToTime(openMin + Math.floor((rand() * span) / 30) * 30);
       const key = `${member.id}-${start}`;
       if (usedStarts.has(key)) continue;
+      if (
+        isShowcaseGap(
+          seed.slug,
+          member.id,
+          staffList[SHOWCASE_GAP.staff_index].id,
+          start,
+          addMinutes(start, service.duration_minutes),
+        )
+      ) {
+        continue;
+      }
       usedStarts.add(key);
       pushAppointment(c, {
         key: `${seed.slug}-today-${i}`,

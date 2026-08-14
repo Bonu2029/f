@@ -1,6 +1,6 @@
 import type { Appointment, OpenSlot, Service, Staff } from "../types";
 import type { Catalog } from "./catalog";
-import { DEMO_BUSINESS_SLUG } from "./catalog";
+import { DEMO_BUSINESS_SLUG, isShowcaseGap } from "./catalog";
 import { DEFAULT_PLATFORM_SETTINGS } from "../config";
 import { applyDiscount } from "../pricing";
 import {
@@ -87,6 +87,7 @@ export function generateAvailability(catalog: Catalog, now: Date): OpenSlot[] {
           if (t + service.duration_minutes > endBound) continue;
           if (overlapsAppointment(appointments, member.id, date, t, service.duration_minutes)) continue;
           if (overlapsSlot(slots, member.id, date, t, service.duration_minutes)) continue;
+          if (isShowcaseGap(business.slug, member.id, staff[0].id, startTime, endTime)) continue;
 
           const minutesUntil = minutesFromNow(date, startTime, now, today);
           const isLastMinute =
@@ -220,7 +221,14 @@ function guaranteedShowcaseSlots(catalog: Catalog, now: Date, existing: OpenSlot
             (s) => s.staff_id === member.id && s.date === date && s.start_time === startTime,
           ) ||
           out.some((s) => s.staff_id === member.id && s.date === date && s.start_time === startTime) ||
-          overlapsAppointment(catalog.appointments, member.id, date, cursor, service.duration_minutes);
+          overlapsAppointment(catalog.appointments, member.id, date, cursor, service.duration_minutes) ||
+          isShowcaseGap(
+            business.slug,
+            member.id,
+            staff[0].id,
+            startTime,
+            addMinutes(startTime, service.duration_minutes),
+          );
 
         if (!clash && cursor + service.duration_minutes <= closeMin) {
           const discount = isFlagship ? 20 : [0, 15, 20, 25][Math.floor(rand() * 4)];

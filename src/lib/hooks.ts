@@ -63,17 +63,31 @@ export function useDeals(limit = 12) {
     const eligible = discovery.slots.filter(
       (s) => s.discount_pct > 0 && s.minutes_until <= 60 * 30,
     );
+    const ranked = [...eligible].sort(byUrgency);
+
+    // One card per offer, not per time: three identical "Beard Trim, 27% off"
+    // rows are noise — the remaining-slot count carries that information.
+    const byOffer = new Map<string, SlotView>();
+    for (const slot of ranked) {
+      const key = `${slot.business.id}:${slot.service.id}:${slot.slot.date}`;
+      if (!byOffer.has(key)) byOffer.set(key, slot);
+    }
+    const offers = [...byOffer.values()].sort(byUrgency);
+
+    // The home rail goes further and shows at most one business each, so the
+    // strip reads as a tour of the neighbourhood rather than one salon's day.
     const seen = new Set<string>();
     const unique: SlotView[] = [];
-    for (const slot of eligible.sort(byUrgency)) {
+    for (const slot of offers) {
       if (seen.has(slot.business.id)) continue;
       seen.add(slot.business.id);
       unique.push(slot);
     }
+
     return {
       ...discovery,
       deals: unique.slice(0, limit),
-      allDeals: eligible.sort(byUrgency),
+      allDeals: offers,
     };
   }, [discovery, limit]);
 }

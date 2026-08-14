@@ -11,7 +11,16 @@ import { useBusinessContext } from "@/lib/hooks";
 import { useActions, useMarketplace } from "@/lib/store";
 import { DISCOUNT_PRESETS, VISIBILITY_RADIUS_OPTIONS } from "@/lib/config";
 import { applyDiscount, formatCents } from "@/lib/pricing";
-import { addDays, addMinutes, dayLabel, formatDuration, formatTime, toDateOnly } from "@/lib/time";
+import {
+  addDays,
+  addMinutes,
+  dayLabel,
+  formatDuration,
+  formatTime,
+  minutesToTime,
+  timeToMinutes,
+  toDateOnly,
+} from "@/lib/time";
 
 /**
  * "Fill this slot" — the feature the whole business side exists for.
@@ -70,10 +79,69 @@ export function FillSlotModal({
     );
   }, [context, service]);
 
-  const staff = eligibleStaff.find((s) => s.id === staffId) ?? eligibleStaff[0];
+  // Who is actually free at this time? Surfacing it here beats letting the
+  // business hit "publish" and get told it clashes.
+  const endTime = service ? addMinutes(time, service.duration_minutes) : time;
+  const busyStaffIds = useMemo(() => {
+    if (!context || !service) return new Set<string>();
+    const busy = new Set<string>();
+    for (const a of context.state.appointments) {
+      if (a.business_id !== context.business.id || a.date !== date) continue;
+      if (a.status === "cancelled_by_business" || a.status === "cancelled_by_customer") continue;
+      if (a.start_time < endTime && a.end_time > time) busy.add(a.staff_id);
+    }
+    for (const s of context.state.slots) {
+      if (s.business_id !== context.business.id || s.date !== date) continue;
+      if (s.status === "expired") continue;
+      if (s.start_time < endTime && s.end_time > time) busy.add(s.staff_id);
+    }
+    return busy;
+  }, [context, service, date, time, endTime]);
+
+  const freeStaff = eligibleStaff.filter((s) => !busyStaffIds.has(s.id));
+  const chosen = eligibleStaff.find((s) => s.id === staffId);
+  // Default to somebody who can actually take it.
+  const staff = chosen && !busyStaffIds.has(chosen.id) ? chosen : (freeStaff[0] ?? chosen ?? eligibleStaff[0]);
   const effectiveDiscount = useCustom ? Math.min(80, Math.max(0, Number(customDiscount) || 0)) : discount;
   const offerCents = service ? applyDiscount(service.price_cents, effectiveDiscount) : 0;
   const publishedSlot = publishedId ? state?.slots.find((s) => s.id === publishedId) : null;
+
+  /** Free starts within a couple of hours of the chosen time, for the error state. */
+  const suggestions = useMemo(() => {
+    if (!context || !service || !staff) return [];
+    const base = timeToMinutes(time);
+    const out: string[] = [];
+    for (let delta = 30; delta <= 240 && out.length < 4; delta += 30) {
+      for (const candidate of [base + delta, base - delta]) {
+        if (candidate < 6 * 60 || candidate > 21 * 60) continue;
+        const start = minutesToTime(candidate);
+        const end = addMinutes(start, service.duration_minutes);
+        const clash =
+          context.state.appointments.some(
+            (a) =>
+              a.business_id === context.business.id &&
+              a.date === date &&
+              a.staff_id === staff.id &&
+              a.status !== "cancelled_by_business" &&
+              a.status !== "cancelled_by_customer" &&
+              a.start_time < end &&
+              a.end_time > start,
+          ) ||
+          context.state.slots.some(
+            (s) =>
+              s.business_id === context.business.id &&
+              s.date === date &&
+              s.staff_id === staff.id &&
+              s.status !== "expired" &&
+              s.start_time < end &&
+              s.end_time > start,
+          );
+        if (!clash && !out.includes(start)) out.push(start);
+        if (out.length >= 4) break;
+      }
+    }
+    return out.sort();
+  }, [context, service, staff, date, time]);
 
   function publish() {
     if (!context || !service || !staff) {
@@ -245,11 +313,20 @@ export function FillSlotModal({
             </Select>
           </Field>
 
-          <Field label="Provider" htmlFor="fill-staff">
+          <Field
+            label="Provider"
+            htmlFor="fill-staff"
+            hint={
+              freeStaff.length === 0
+                ? "Everyone is booked at this time — try a different start time."
+                : `${freeStaff.length} of ${eligibleStaff.length} free at ${formatTime(time)}`
+            }
+          >
             <Select id="fill-staff" value={staff?.id ?? ""} onChange={(e) => setStaffId(e.target.value)}>
               {eligibleStaff.map((member) => (
-                <option key={member.id} value={member.id}>
+                <option key={member.id} value={member.id} disabled={busyStaffIds.has(member.id)}>
                   {member.full_name} — {member.role}
+                  {busyStaffIds.has(member.id) ? " (busy)" : ""}
                 </option>
               ))}
             </Select>
@@ -329,9 +406,29 @@ export function FillSlotModal({
           </Field>
 
           {error && (
-            <p className="rounded-xl bg-urgent-50 px-3.5 py-2.5 text-[13px] font-medium text-urgent-700">
-              {error}
-            </p>
+            <div className="rounded-xl bg-urgent-50 px-3.5 py-3">
+              <p className="text-[13px] font-medium text-urgent-700">{error}</p>
+              {suggestions.length > 0 && (
+                <>
+                  <p className="mt-2 text-[12px] text-urgent-700/85">Nearby free times:</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {suggestions.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          setTime(t);
+                          setError(null);
+                        }}
+                        className="rounded-lg border border-urgent-100 bg-surface px-2.5 py-1.5 text-[12.5px] font-semibold text-ink transition hover:border-urgent-500"
+                      >
+                        {formatTime(t)}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
           <p className="flex items-start gap-2 text-[12.5px] leading-relaxed text-ink-muted">

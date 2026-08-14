@@ -25,7 +25,7 @@ import { Field, Textarea } from "@/components/ui/form";
 import { SlotPill } from "@/components/marketplace/slot-pill";
 import { useToast } from "@/components/ui/toast";
 import { useDiscovery } from "@/lib/hooks";
-import { useActions, useMarketplace } from "@/lib/store";
+import { DEMO_SESSIONS, useActions, useMarketplace } from "@/lib/store";
 import { formatCents, priceBooking } from "@/lib/pricing";
 import { formatDistance } from "@/lib/geo";
 import {
@@ -69,6 +69,9 @@ export function BookingFlow({ slotId }: { slotId: string }) {
   const viewedRef = useRef(false);
 
   const state = discovery?.state ?? null;
+  // Browsing without an account is allowed all the way to checkout; the demo
+  // customer is only attached at the point of booking.
+  const checkoutCustomerId = session.userId ?? DEMO_SESSIONS.customer.userId;
 
   /* ---- Resolve the current selection ------------------------------------ */
 
@@ -154,10 +157,10 @@ export function BookingFlow({ slotId }: { slotId: string }) {
   }, [releaseSlot]);
 
   useEffect(() => {
-    if (step !== 4 || !selected || !session.userId || expired) return;
+    if (step !== 4 || !selected || !checkoutCustomerId || expired) return;
     if (heldSlotRef.current === selected.slot.id) return;
     releaseCurrent();
-    const result = holdSlot(selected.slot.id, session.userId);
+    const result = holdSlot(selected.slot.id, checkoutCustomerId);
     if (result.ok && result.heldUntil) {
       heldSlotRef.current = selected.slot.id;
       setHeldUntil(result.heldUntil);
@@ -165,7 +168,7 @@ export function BookingFlow({ slotId }: { slotId: string }) {
     } else if (!result.ok) {
       setError(result.reason ?? null);
     }
-  }, [step, selected, session.userId, holdSlot, releaseCurrent, expired]);
+  }, [step, selected, checkoutCustomerId, holdSlot, releaseCurrent, expired]);
 
   // Release the hold if the customer walks away mid-checkout.
   useEffect(() => () => releaseCurrent(), [releaseCurrent]);
@@ -190,17 +193,18 @@ export function BookingFlow({ slotId }: { slotId: string }) {
   /* ---- Submit ------------------------------------------------------------ */
 
   async function confirm() {
-    if (!selected) return;
+    if (!selected || !checkoutCustomerId) return;
+    setSubmitting(true);
+    setError(null);
+    // Booking is what creates the account session — you never have to sign in
+    // before you know whether the time you want is still free.
     if (!session.userId) {
       signIn("customer");
       toast({ title: "Signed in as Maya", description: "Demo customer account.", tone: "info" });
-      return;
     }
-    setSubmitting(true);
-    setError(null);
     // Simulated network latency so the loading state is real, not decorative.
     await new Promise((r) => setTimeout(r, 700));
-    const result = bookSlot(selected.slot.id, { customerId: session.userId, note: note.trim() || null });
+    const result = bookSlot(selected.slot.id, { customerId: checkoutCustomerId, note: note.trim() || null });
     setSubmitting(false);
     if (!result.ok) {
       setError(result.reason ?? "We couldn't complete that booking.");
@@ -631,7 +635,7 @@ export function BookingFlow({ slotId }: { slotId: string }) {
               onClick={confirm}
               trailing={!submitting ? <ArrowRight className="h-4 w-4" /> : undefined}
             >
-              Confirm & Pay
+              {session.userId ? "Confirm & Pay" : "Sign in & Pay"}
             </Button>
           </div>
         </div>

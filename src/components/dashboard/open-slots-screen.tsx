@@ -160,8 +160,9 @@ export function OpenSlotsScreen() {
                       {slot.view_count} views
                     </span>
                     <span>
-                      Visible within{" "}
-                      {slot.visibility_radius_miles == null ? "everywhere" : `${slot.visibility_radius_miles} mi`}
+                      {slot.visibility_radius_miles == null
+                        ? "Visible to everyone"
+                        : `Visible within ${slot.visibility_radius_miles} mi`}
                     </span>
                   </div>
                   {slot.status !== "booked" && (
