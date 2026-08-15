@@ -7,6 +7,7 @@ import {
   defaultGreeting,
   slugify,
   getPlan,
+  ONBOARDING_TOTAL_STEPS,
 } from '@afd/shared';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
@@ -155,7 +156,7 @@ export async function advanceOnboarding(organizationId: string, step: number) {
   if (step <= current) return;
   await svc
     .from('organizations')
-    .update({ onboarding_step: Math.min(8, step) })
+    .update({ onboarding_step: Math.min(ONBOARDING_TOTAL_STEPS, step) })
     .eq('id', organizationId);
 }
 
@@ -164,7 +165,7 @@ export async function completeOnboarding(organizationId: string) {
   await svc
     .from('organizations')
     .update({
-      onboarding_step: 8,
+      onboarding_step: ONBOARDING_TOTAL_STEPS,
       onboarding_completed_at: new Date().toISOString(),
       status: 'active',
     })
@@ -178,12 +179,33 @@ export async function completeOnboarding(organizationId: string) {
  */
 export async function getReadinessChecklist(organizationId: string) {
   const svc = getServiceSupabase();
-  const [business, services, agent, phone, calendar, subscription] = await Promise.all([
-    svc.from('business_profiles').select('display_name, business_description, business_hours').eq('organization_id', organizationId).maybeSingle(),
-    svc.from('services').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('active', true),
-    svc.from('ai_agents').select('greeting, voice, transfer_enabled, transfer_phone, active').eq('organization_id', organizationId).maybeSingle(),
-    svc.from('phone_numbers').select('phone_number, is_demo').eq('organization_id', organizationId).eq('status', 'active').maybeSingle(),
-    svc.from('calendar_connections').select('active').eq('organization_id', organizationId).eq('provider', 'google').maybeSingle(),
+  const [org, business, services, agent, phone, subscription] = await Promise.all([
+    svc
+      .from('organizations')
+      .select('vapi_assistant_id, vapi_sync_error')
+      .eq('id', organizationId)
+      .maybeSingle(),
+    svc
+      .from('business_profiles')
+      .select('display_name, business_description, business_hours')
+      .eq('organization_id', organizationId)
+      .maybeSingle(),
+    svc
+      .from('services')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', organizationId)
+      .eq('active', true),
+    svc
+      .from('ai_agents')
+      .select('greeting, voice, transfer_enabled, transfer_phone, active')
+      .eq('organization_id', organizationId)
+      .maybeSingle(),
+    svc
+      .from('phone_numbers')
+      .select('phone_number, is_demo')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active')
+      .maybeSingle(),
     svc.from('subscriptions').select('status').eq('organization_id', organizationId).maybeSingle(),
   ]);
 
@@ -203,7 +225,7 @@ export async function getReadinessChecklist(organizationId: string) {
       label: 'Knows your business name and what you do',
       done: Boolean(business.data?.display_name && business.data?.business_description),
       required: true,
-      href: '/onboarding/business',
+      href: '/dashboard/settings/business',
       detail: business.data?.business_description ? 'Description saved' : 'Add a description',
     },
     {
@@ -211,7 +233,7 @@ export async function getReadinessChecklist(organizationId: string) {
       label: 'Knows your services',
       done: (services.count ?? 0) > 0,
       required: true,
-      href: '/dashboard/knowledge',
+      href: '/dashboard/settings/business',
       detail: `${services.count ?? 0} active`,
     },
     {
@@ -219,7 +241,7 @@ export async function getReadinessChecklist(organizationId: string) {
       label: 'Knows your business hours',
       done: hours.length > 0,
       required: false,
-      href: '/onboarding/business',
+      href: '/dashboard/settings/business',
       detail: hours.length ? `${hours.length} days configured` : 'Not set',
     },
     {
@@ -231,20 +253,26 @@ export async function getReadinessChecklist(organizationId: string) {
       detail: agent.data?.voice ?? 'not set',
     },
     {
+      // Without an assistant at the voice provider there is literally nothing to
+      // answer the phone, so this is required rather than advisory.
+      key: 'assistant',
+      label: 'Published to the voice provider',
+      done: Boolean(org.data?.vapi_assistant_id) && !org.data?.vapi_sync_error,
+      required: true,
+      href: '/dashboard/receptionist',
+      detail: org.data?.vapi_sync_error
+        ? 'Last update failed'
+        : org.data?.vapi_assistant_id
+          ? 'Up to date'
+          : 'Not published yet',
+    },
+    {
       key: 'phone',
       label: 'Has a phone number',
       done: Boolean(phone.data?.phone_number),
       required: true,
-      href: '/dashboard/settings/phone',
+      href: '/dashboard/receptionist',
       detail: phone.data?.phone_number ?? 'None yet',
-    },
-    {
-      key: 'calendar',
-      label: 'Can check availability',
-      done: Boolean(calendar.data?.active),
-      required: false,
-      href: '/dashboard/settings/calendar',
-      detail: calendar.data?.active ? 'Google Calendar connected' : 'Using internal availability',
     },
     {
       key: 'transfer',

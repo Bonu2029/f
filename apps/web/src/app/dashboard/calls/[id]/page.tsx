@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, MessageSquare, Phone } from 'lucide-react';
+import { ArrowLeft, Phone } from 'lucide-react';
 import { formatDuration, formatPhone } from '@afd/shared';
 import { requireSession } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { Alert, Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { labelFor } from '@/components/dashboard/charts';
 import { TranscriptViewer } from '@/components/dashboard/transcript-viewer';
-import { LeadPhotos } from '@/components/dashboard/lead-photos';
 
 export const metadata: Metadata = { title: 'Call detail' };
 export const dynamic = 'force-dynamic';
@@ -31,7 +30,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
 
   if (!call) notFound();
 
-  const [{ data: transcript }, { data: lead }, { data: appointment }, { data: messages }] =
+  const [{ data: transcript }, { data: lead }, { data: appointment }] =
     await Promise.all([
       svc
         .from('call_transcript_messages')
@@ -53,12 +52,6 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
         .eq('call_id', id)
         .eq('organization_id', ctx.active.organizationId)
         .maybeSingle(),
-      svc
-        .from('sms_messages')
-        .select('id, direction, body, status, created_at, to_number')
-        .eq('call_id', id)
-        .eq('organization_id', ctx.active.organizationId)
-        .order('created_at'),
     ]);
 
   const summary = call.summary_json as {
@@ -153,7 +146,10 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
                   <SummaryField label="Location" value={summary.location} />
                   <SummaryField label="Service" value={summary.service} />
                   <SummaryField label="Result" value={summary.result} />
-                  <SummaryField label="Appointment" value={summary.appointment} />
+                  <SummaryField
+                    label="Requested time"
+                    value={(call.requested_appointment as string | null) ?? summary.appointment}
+                  />
                   <SummaryField label="Notes" value={summary.notes} span />
                   {call.call_tone && <SummaryField label="Call tone" value={call.call_tone as string} />}
                 </dl>
@@ -229,56 +225,7 @@ export default async function CallDetailPage({ params }: { params: Promise<{ id:
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="size-4 text-ink-faint" aria-hidden />
-                Text messages
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(messages ?? []).length === 0 ? (
-                <p className="text-sm text-ink-subtle">No messages were sent on this call.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {(messages ?? []).map((m) => (
-                    <li key={m.id} className="text-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                          {m.direction === 'outbound' ? 'Sent' : 'Received'}
-                        </span>
-                        <Badge
-                          tone={
-                            ['delivered', 'sent', 'received'].includes(m.status as string)
-                              ? 'positive'
-                              : ['failed', 'undelivered'].includes(m.status as string)
-                                ? 'critical'
-                                : 'neutral'
-                          }
-                        >
-                          {m.status as string}
-                        </Badge>
-                      </div>
-                      <p className="mt-1 rounded-lg bg-surface-sunken px-3 py-2 text-ink-muted">
-                        {m.body as string}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
 
-          {lead && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Photos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LeadPhotos leadId={lead.id as string} organizationId={ctx.active.organizationId} />
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

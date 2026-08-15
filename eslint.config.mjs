@@ -60,9 +60,9 @@ export default tseslint.config(
     rules: { 'no-console': 'off' },
   },
 
-  // The worker's structured logger writes through console by design.
+  // The structured logger writes through console by design.
   {
-    files: ['apps/voice-worker/src/logger.ts', 'apps/web/src/lib/logger.ts'],
+    files: ['apps/web/src/lib/logger.ts'],
     rules: { 'no-console': 'off' },
   },
 );

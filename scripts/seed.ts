@@ -74,8 +74,13 @@ async function main() {
       owner_user_id: userId,
       timezone: 'America/New_York',
       status: 'active',
-      onboarding_step: 8,
+      onboarding_step: 4,
       onboarding_completed_at: new Date().toISOString(),
+      // A visibly fake assistant id: the demo tenant is fully configured in the
+      // UI without any assistant having been created at Vapi.
+      vapi_assistant_id: 'demo_asst_seed0001',
+      vapi_phone_number_id: 'demo_num_seed0001',
+      vapi_synced_at: new Date().toISOString(),
       is_demo: true,
     })
     .select('id')
@@ -123,21 +128,14 @@ async function main() {
   await db.from('ai_agents').insert({
     organization_id: orgId,
     display_name: 'Mia',
-    voice: 'marin',
-    language: 'en',
+    voice: 'elliot',
     personality: 'warm',
-    speaking_pace: 'natural',
-    response_length: 'balanced',
     greeting:
       "Thanks for calling Daniel's HVAC. This is Mia, the virtual receptionist. How can I help you today?",
     active: true,
     transfer_enabled: true,
     transfer_phone: '+12155550111',
-    sms_enabled: true,
     appointment_booking_enabled: true,
-    photo_requests_enabled: true,
-    disclosure_setting: 'upfront',
-    fallback_phone: '+12155550111',
   });
 
   await db.from('services').insert([
@@ -173,7 +171,7 @@ async function main() {
 
   await db.from('ai_rules').insert([
     { organization_id: orgId, title: 'Never invent prices', instruction: 'Only quote prices stored in the services list. If a price is not stored, say an estimate is required.', priority: 10, is_system: true, enabled: true },
-    { organization_id: orgId, title: 'Never invent availability', instruction: 'Only offer appointment times returned by the calendar availability tool.', priority: 30, is_system: true, enabled: true },
+    { organization_id: orgId, title: 'Never promise an appointment time', instruction: 'Take the day and time the caller would prefer, then say the team will confirm it.', priority: 30, is_system: true, enabled: true },
     { organization_id: orgId, title: 'Answer truthfully about being AI', instruction: 'If asked whether you are a person, say immediately that you are the virtual receptionist.', priority: 50, is_system: true, enabled: true },
     { organization_id: orgId, title: 'Gas smell is an emergency', instruction: 'If the caller mentions a gas smell, tell them to leave the property and call the gas company or 911 first, then transfer the call.', priority: 70, is_system: false, enabled: true },
     { organization_id: orgId, title: 'No same-day installations', instruction: 'Never schedule a system installation for the same day. Installations need at least three business days.', priority: 90, is_system: false, enabled: true },
@@ -203,13 +201,11 @@ async function main() {
 
   await db.from('phone_numbers').insert({
     organization_id: orgId,
-    twilio_sid: 'PNdemo0000000000000000000000',
+    vapi_phone_number_id: 'demo_num_seed0001',
     phone_number: '+12155550142',
     friendly_name: "Daniel's HVAC — AI receptionist (demo)",
-    capabilities: { voice: true, sms: true, mms: true },
+    capabilities: { voice: true, sms: false, mms: false },
     status: 'active',
-    forwarding_mode: 'missed_only',
-    forwarding_target: '+12155550100',
     is_demo: true,
   });
 
@@ -253,7 +249,7 @@ async function main() {
       .from('calls')
       .insert({
         organization_id: orgId,
-        external_call_id: `demo_call_${orgId.slice(0, 8)}_${i}`,
+        vapi_call_id: `demo_call_${orgId.slice(0, 8)}_${i}`,
         caller_phone: s.caller,
         business_phone: '+12155550142',
         direction: 'inbound',
@@ -345,17 +341,6 @@ async function main() {
             source: 'demo_call',
           });
 
-          await db.from('sms_messages').insert({
-            organization_id: orgId,
-            lead_id: lead.id,
-            call_id: call.id,
-            direction: 'outbound',
-            from_number: '+12155550142',
-            to_number: s.caller,
-            body: `Daniel's HVAC: you're booked for ${start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric' })}. Reply here if you need to change it.`,
-            status: 'delivered',
-            created_at: endedAt,
-          });
         }
       }
     }

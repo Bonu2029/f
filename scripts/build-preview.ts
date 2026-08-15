@@ -59,42 +59,39 @@ const marketing = `
   </div>
 </div>`;
 
-const training = `
+const business = `
 <div class="app">
-  <div class="app__bar app__bar--wizard">
+  <div class="app__bar app__bar--tabs">
     <span class="app__mark">${brand.logoMark}</span>
-    <ol class="steps">
-      <li class="is-done">Business</li><li class="is-now">Teach Your AI</li><li>Voice</li>
-      <li>Phone</li><li>Calendar</li><li>Rules</li><li>Test</li><li>Go Live</li>
-    </ol>
+    <ol class="tabs"><li class="is-now">Business</li><li>Services</li><li>Service areas</li><li>FAQ</li></ol>
   </div>
-  <div class="app__body chat-grid">
-    <div class="chat">
-      <div class="msg msg--ai"><span class="who">Training assistant</span>
-        <p>Hi! I&rsquo;m going to be answering the phone for Daniel&rsquo;s HVAC. What services do you
-          offer, and roughly what do they cost?</p></div>
-      <div class="msg msg--me"><span class="who">You</span>
-        <p>AC repair starts at $149, furnace tune-ups are $99, and full system installs we quote
-          after a visit.</p></div>
-      <div class="msg msg--ai"><span class="who">Training assistant</span>
-        <p>Got it — saved 3 services. Which cities or ZIP codes do you service?</p>
-        <div class="chips">
-          <span class="chip chip--ok">created: AC repair</span>
-          <span class="chip chip--ok">created: Furnace tune-up</span>
-          <span class="chip chip--ok">created: System installation</span>
-        </div></div>
+  <div class="app__body settings-grid">
+    <div class="panel panel--wide">
+      <h4 class="panel__h">Services and approved pricing</h4>
+      <table class="tbl">
+        <thead><tr><th>Service</th><th>Pricing</th><th class="r">Duration</th></tr></thead>
+        <tbody>
+          <tr><td><b>AC repair</b><i class="sub">Diagnostic visit and repair.</i></td><td>from $149</td><td class="r">90 min</td></tr>
+          <tr><td><b>Furnace tune-up</b><i class="sub">Seasonal inspection and safety check.</i></td><td>$99</td><td class="r">60 min</td></tr>
+          <tr><td><b>System installation</b><i class="sub">Full replacement.</i></td><td>$4,500 – $12,000</td><td class="r">480 min</td></tr>
+          <tr><td><b>Commercial RTU service</b></td><td>Estimate required</td><td class="r">—</td></tr>
+        </tbody>
+      </table>
+      <p class="tiny">The receptionist may only confirm services listed here, and may only quote
+        these prices. Anything marked estimate-required makes it offer a visit instead of a number.</p>
     </div>
     <aside class="learned">
-      <h4>What your AI has learned</h4>
+      <h4>What your receptionist knows</h4>
       <ul>
         <li class="ok">Business details<span>Name and description saved</span></li>
-        <li class="ok">Business hours<span>5 open days</span></li>
-        <li class="ok">Services<span>3 services</span></li>
-        <li class="ok">Pricing<span>3 of 3 services priced</span></li>
-        <li class="warn">Service area<span>Not set</span></li>
-        <li class="warn">Cancellation policy<span>Missing</span></li>
+        <li class="ok">Business hours<span>6 open days</span></li>
+        <li class="ok">Services<span>4 services</span></li>
+        <li class="ok">Pricing<span>3 of 4 services priced</span></li>
+        <li class="ok">Service area<span>2 areas</span></li>
+        <li class="warn">FAQ<span>None saved yet</span></li>
       </ul>
-      <p class="learned__note">Everything here is editable in Knowledge.</p>
+      <p class="learned__note">Saving any of this rebuilds the assistant on our server. If that
+        push fails, the page says so rather than reporting a clean save.</p>
     </aside>
   </div>
 </div>`;
@@ -103,20 +100,26 @@ const receptionist = `
 <div class="app">
   <div class="app__body">
     <div class="panel">
+      <h4 class="panel__h">Status</h4>
+      <ul class="health">
+        <li>AI assistant<span class="chip chip--ok">Up to date</span></li>
+        <li>Phone number<span class="chip chip--ok">(215) 555-0142</span></li>
+        <li>Answering calls<span class="chip chip--ok">Live</span></li>
+      </ul>
+    </div>
+    <div class="panel">
       <h4 class="panel__h">Voice</h4>
       <div class="voices">
-        <label class="voice is-picked"><i class="radio"></i><b>Marin</b><span>Warm and articulate. A natural default for most businesses.</span><i class="play">▶</i></label>
-        <label class="voice"><i class="radio"></i><b>Cedar</b><span>Calm and grounded with an even pace. Good for technical trades.</span><i class="play">▶</i></label>
-        <label class="voice"><i class="radio"></i><b>Coral</b><span>Approachable and reassuring. Works well for emergency intake.</span><i class="play">▶</i></label>
-        <label class="voice"><i class="radio"></i><b>Sage</b><span>Measured and thoughtful. Reads as experienced and senior.</span><i class="play">▶</i></label>
+        <label class="voice is-picked"><i class="radio"></i><b>Elliot</b><span>Warm and articulate. A natural default for most businesses.</span></label>
+        <label class="voice"><i class="radio"></i><b>Rohan</b><span>Calm and grounded with an even pace. Good for technical trades.</span></label>
+        <label class="voice"><i class="radio"></i><b>Hana</b><span>Soft and reassuring. Works well for emergency intake.</span></label>
+        <label class="voice"><i class="radio"></i><b>Harry</b><span>Measured and senior. Reads as experienced.</span></label>
       </div>
     </div>
     <div class="panel">
       <h4 class="panel__h">What it is allowed to do</h4>
       <div class="switches">
-        <div><b>Book appointments</b><span>Checks real availability, then creates the appointment.</span><i class="sw is-on"></i></div>
-        <div><b>Send text messages</b><span>Confirmations and follow-ups to the caller.</span><i class="sw is-on"></i></div>
-        <div><b>Request photos</b><span>Texts a secure, expiring upload link.</span><i class="sw is-on"></i></div>
+        <div><b>Collect appointment requests</b><span>Takes the preferred day and time. Your team confirms it.</span><i class="sw is-on"></i></div>
         <div><b>Transfer calls to a person</b><span>Hands the caller over when they ask.</span><i class="sw is-on"></i></div>
       </div>
     </div>
@@ -124,7 +127,7 @@ const receptionist = `
       <h4 class="panel__h">Receptionist rules</h4>
       <ul class="rules">
         <li><b>Never invent prices</b> <span class="chip">Built in</span><p>Only quote prices stored in the services list.</p></li>
-        <li><b>Never invent availability</b> <span class="chip">Built in</span><p>Only offer times returned by the calendar tool.</p></li>
+        <li><b>Never promise an appointment time</b> <span class="chip">Built in</span><p>Take the preferred time; the team confirms it.</p></li>
         <li><b>Answer truthfully about being AI</b> <span class="chip">Built in</span><p>Never claim to be human.</p></li>
         <li><b>No same-day installations</b><p>Installations need at least three business days.</p></li>
       </ul>
@@ -143,8 +146,8 @@ const call = `
           <div><dt>Customer</dt><dd>John Smith</dd></div>
           <div><dt>Location</dt><dd>Bensalem, PA 19020</dd></div>
           <div><dt>Service</dt><dd>AC repair</dd></div>
-          <div><dt>Result</dt><dd>Appointment booked</dd></div>
-          <div class="wide"><dt>Appointment</dt><dd>August 17, 1:00 PM</dd></div>
+          <div><dt>Result</dt><dd>Appointment requested</dd></div>
+          <div class="wide"><dt>Requested time</dt><dd>August 17, early afternoon</dd></div>
         </dl>
       </div>
       <div class="panel">
@@ -154,8 +157,9 @@ const call = `
           <p class="them"><span>Customer</span>My AC stopped working and the house is really hot.</p>
           <p><span>AI receptionist</span>I&rsquo;m sorry, that&rsquo;s miserable in this weather. What&rsquo;s the ZIP code for the property?</p>
           <p class="them"><span>Customer</span>It&rsquo;s 19020, in Bensalem.</p>
-          <p class="sys">Used tool: check_service_area</p>
-          <p><span>AI receptionist</span>Good news, you&rsquo;re inside our service area. I have tomorrow at 1:00 PM open — does that work?</p>
+          <p><span>AI receptionist</span>You&rsquo;re inside our service area. When would suit you best?</p>
+          <p class="them"><span>Customer</span>Tomorrow afternoon if you can.</p>
+          <p><span>AI receptionist</span>I&rsquo;ve noted tomorrow afternoon. The team will call you back to confirm the exact time — I don&rsquo;t book the slot myself.</p>
         </div>
       </div>
     </div>
@@ -164,16 +168,15 @@ const call = `
         <h4 class="panel__h">Lead</h4>
         <p class="lead__name">John Smith</p>
         <p class="lead__meta">(215) 555-0143 · AC repair · Bensalem, PA</p>
-        <div class="chips"><span class="chip chip--hot">Hot</span><span class="chip chip--warn">Urgent</span><span class="chip chip--ok">Booked</span></div>
+        <div class="chips"><span class="chip chip--hot">Hot</span><span class="chip chip--warn">Urgent</span><span class="chip chip--ok">Appointment requested</span></div>
       </div>
       <div class="panel">
-        <h4 class="panel__h">Photos from the customer</h4>
-        <div class="photos"><i></i><i></i><i></i></div>
-      </div>
-      <div class="panel">
-        <h4 class="panel__h">Text messages</h4>
-        <p class="sms">Daniel&rsquo;s HVAC: you&rsquo;re booked for Aug 17, 1:00 PM. Reply here if you need to change it.</p>
-        <span class="chip chip--ok">delivered</span>
+        <h4 class="panel__h">Why it scored hot</h4>
+        <ul class="plain">
+          <li>Emergency-level urgency stated by the caller</li>
+          <li>Inside the service area</li>
+          <li>Callback number and address both captured</li>
+        </ul>
       </div>
     </div>
   </div>
@@ -208,7 +211,7 @@ const billing = `
         <tbody>
           <tr><td>Aug 15, 10:24</td><td>Voice call</td><td class="r">214</td><td class="r">4</td></tr>
           <tr><td>Aug 15, 09:03</td><td>Voice call</td><td class="r">61</td><td class="r">2</td></tr>
-          <tr><td>Aug 14, 16:41</td><td>Text message</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td>Aug 14, 16:41</td><td>Voice call</td><td class="r">128</td><td class="r">3</td></tr>
           <tr><td>Aug 14, 11:12</td><td>Voice call</td><td class="r">30</td><td class="r">1</td></tr>
         </tbody>
       </table>
@@ -240,7 +243,8 @@ const admin = `
       <div class="panel">
         <h4 class="panel__h">Health</h4>
         <ul class="health">
-          <li>Voice worker<span class="chip chip--ok">Responding</span></li>
+          <li>Voice (Vapi)<span class="chip chip--ok">API key configured</span></li>
+          <li>Assistants<span class="chip chip--ok">34 live, 0 out of sync</span></li>
           <li>Database<span class="chip chip--ok">Reachable</span></li>
           <li>Webhooks (24h)<span class="chip chip--ok">312 received, 0 failed</span></li>
           <li>Errors (24h)<span class="chip chip--ok">0 recorded</span></li>
@@ -275,13 +279,13 @@ const specimens: Specimen[] = [
   },
   {
     n: '02',
-    id: 'training',
-    route: '/onboarding/teach',
-    title: 'Teaching the receptionist',
+    id: 'business',
+    route: '/dashboard/settings/business',
+    title: 'What the receptionist knows',
     blurb:
-      'The owner talks; the assistant turns what they said into services, prices, FAQs, policies and rules. Every record it writes is listed under the reply and stays editable in Knowledge — nothing is saved invisibly.',
-    real: 'Structured extraction · every write shown · panel reflects real database state',
-    html: training,
+      'Services, prices, hours, service areas and FAQs. Saving any of it rebuilds the assistant through our own server API — the browser never holds a provider key. If that push fails, the page says the change is saved but not live, rather than reporting success.',
+    real: 'Server-side assistant sync · prices quoted only from this table · honest failure states',
+    html: business,
   },
   {
     n: '03',
@@ -289,8 +293,8 @@ const specimens: Specimen[] = [
     route: '/dashboard/receptionist',
     title: 'Voice, rules and boundaries',
     blurb:
-      'Preview plays audio generated by the same provider that answers calls. The built-in safety rules can be switched off but never deleted, and each one maps to a line in the prompt the agent actually receives.',
-    real: 'Real audio previews · capability switches change the tools the model is offered',
+      'Name, greeting, voice, personality and transfer number. The built-in safety rules can be reworded but not deleted, and each one maps to a line in the prompt the assistant actually receives on every call.',
+    real: 'Every control writes into the live assistant · safety rules appended last so they win',
     html: receptionist,
   },
   {
@@ -299,8 +303,8 @@ const specimens: Specimen[] = [
     route: '/dashboard/calls/[id]',
     title: 'What happened on the call',
     blurb:
-      'Summary, searchable transcript, the lead it created, photos the customer uploaded and the texts it sent. Tool calls appear inline, so you can see the moment it checked the service area rather than taking its word for it.',
-    real: 'No audio recorded · transcripts only · tool calls visible in the transcript',
+      'Summary, full transcript and the lead it created. Call records are written only from a signed end-of-call report, matched to the business by an assistant id that only our server can set — nothing a caller says can move a call into someone else&rsquo;s account.',
+    real: 'No audio recorded · transcripts only · signed, idempotent webhook ingestion',
     html: call,
   },
   {
@@ -326,10 +330,10 @@ const specimens: Specimen[] = [
 ];
 
 const facts = [
-  ['114', 'automated tests passing'],
-  ['4', 'SQL migrations, applied and verified'],
+  ['108', 'automated tests passing'],
+  ['5', 'SQL migrations, applied and verified'],
   ['50', 'Founding Member slots, concurrency-tested'],
-  ['12', 'realtime tools the receptionist can call'],
+  ['10', 'voices an owner can choose from'],
 ];
 
 function specimenHtml(s: Specimen): string {
@@ -542,20 +546,14 @@ a { color: inherit; }
 .meter span { display: block; height: 100%; background: var(--p-brand); border-radius: 999px; }
 .meter--over span { background: var(--p-warn); }
 
-/* Wizard */
-.app__bar--wizard { flex-wrap: wrap; }
-.steps { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 0; font-size: 11px; color: var(--p-faint); }
-.steps li { padding: 3px 8px; border-radius: 6px; }
-.steps .is-done { color: var(--p-muted); }
-.steps .is-now { background: var(--p-brand-50); color: var(--p-brand-700); font-weight: 650; }
-.chat-grid { gap: 14px; }
-@media (min-width: 820px) { .chat-grid { grid-template-columns: 1fr 250px; align-items: start; } }
-.chat { border: 1px solid var(--p-line); border-radius: 11px; background: var(--p-surface); padding: 14px; display: grid; gap: 14px; }
-.msg .who { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-faint); font-weight: 700; margin-bottom: 5px; }
-.msg p { border-radius: 14px; padding: 9px 12px; font-size: 12.5px; }
-.msg--ai p { background: var(--p-sunken); }
-.msg--me { text-align: right; }
-.msg--me p { background: var(--p-brand); color: #fff; display: inline-block; text-align: left; max-width: 84%; }
+/* Settings tabs */
+.app__bar--tabs { flex-wrap: wrap; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 0; font-size: 11px; color: var(--p-faint); }
+.tabs li { padding: 3px 8px; border-radius: 6px; }
+.tabs .is-now { background: var(--p-brand-50); color: var(--p-brand-700); font-weight: 650; }
+.settings-grid { gap: 14px; }
+@media (min-width: 820px) { .settings-grid { grid-template-columns: 1fr 250px; align-items: start; } }
+.sub { display: block; font-style: normal; font-size: 10.5px; color: var(--p-subtle); margin-top: 2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .chip { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 600; border-radius: 999px; padding: 2.5px 8px; border: 1px solid var(--p-line); background: var(--p-sunken); color: var(--p-muted); }
 .chip--ok { background: var(--p-ok-soft); color: var(--p-ok); border-color: #bbf7d0; }
@@ -583,7 +581,6 @@ a { color: inherit; }
 .voice span { display: block; font-size: 10.5px; color: var(--p-subtle); }
 .radio { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--p-line-2); flex: none; margin-top: 2px; }
 .is-picked .radio { border-color: var(--p-brand); background: radial-gradient(circle, var(--p-brand) 0 42%, #fff 45%); }
-.play { margin-left: auto; font-style: normal; font-size: 10px; color: var(--p-muted); border: 1px solid var(--p-line-2); border-radius: 7px; padding: 5px 8px; background: var(--p-surface); }
 .switches { display: grid; }
 .switches div { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--p-line); }
 .switches div:first-child { border-top: 0; }
@@ -615,12 +612,6 @@ a { color: inherit; }
 .transcript span { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-faint); font-weight: 700; margin-bottom: 3px; }
 .lead__name { font-weight: 650; font-size: 13px; }
 .lead__meta { font-size: 11.5px; color: var(--p-subtle); margin-top: 2px; }
-.photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.photos i {
-  aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--p-line);
-  background: linear-gradient(135deg, #e7e5e4, #d6d3d1 60%, #e7e5e4);
-}
-.sms { font-size: 11.5px; background: var(--p-sunken); border-radius: 9px; padding: 8px 11px; margin-bottom: 7px; }
 
 /* Billing */
 .billing-grid { gap: 14px; }
@@ -719,24 +710,22 @@ html { scroll-behavior: smooth; }
         <ul>
           <li>Signup, email verification, login and password reset</li>
           <li>Multi-tenant database with row-level security enforced by Postgres</li>
-          <li>Eight-step onboarding that resumes where you left it</li>
-          <li>Training conversation that writes real, editable business knowledge</li>
-          <li>Inbound call routing, tool execution, transcripts and summaries</li>
-          <li>Leads, appointments, SMS and customer photo uploads</li>
+          <li>Business and receptionist settings that publish to the voice provider on save</li>
+          <li>Server-side assistant creation and phone-number provisioning</li>
+          <li>Signed, idempotent call-report ingestion into calls, transcripts and leads</li>
+          <li>Leads with rule-based scoring, and an appointments board</li>
           <li>Founding 50 with concurrency-safe slot reservation</li>
           <li>Stripe checkout, webhooks, usage metering and overage reporting</li>
           <li>Admin console with audit logging and no impersonation</li>
-          <li>114 automated tests, including real-database integration tests</li>
+          <li>108 automated tests, including real-database integration tests</li>
         </ul>
       </div>
       <div>
         <h3 class="needs">Needs an account before it can leave demo mode</h3>
         <ul class="needs">
-          <li>Supabase project — database, auth and file storage</li>
+          <li>Supabase project — database and authentication</li>
+          <li>Vapi — the phone number, the voice pipeline and the OpenAI model behind it</li>
           <li>Stripe — to take an actual payment</li>
-          <li>Twilio — to buy a number and send real texts</li>
-          <li>OpenAI — for the realtime voice and text models</li>
-          <li>Google Cloud — only if you want calendar booking</li>
         </ul>
         <p style="margin-top:16px;font-size:13px;color:var(--studio-dim)">Every one has a real
           adapter already written and a clearly-labelled development mock. <code>SETUP.md</code>

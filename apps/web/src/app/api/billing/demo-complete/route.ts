@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       plan: planId,
     });
 
-    return NextResponse.redirect(absoluteUrl('/onboarding/business?checkout=demo'));
+    return NextResponse.redirect(absoluteUrl('/dashboard/settings/business?checkout=demo'));
   } catch (err) {
     return errorResponse(err);
   }

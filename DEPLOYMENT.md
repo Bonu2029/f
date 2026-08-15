@@ -1,338 +1,303 @@
 # Deployment
 
-How to get AI Front Desk into production, keep it running, and roll it back when
-something goes wrong.
+The operational runbook. [SETUP.md](SETUP.md) is the checklist of provider
+configuration; this is how the thing runs, fails and is put back.
 
 ---
 
 ## Architecture in production
 
-| Component | Where it runs | Why |
+| Component | Where it goes | Why |
 | --- | --- | --- |
-| `apps/web` | Any Next.js host — Vercel, Netlify, Cloud Run, a container | Request/response and static pages; scales to zero fine |
-| `apps/voice-worker` | Persistent Node/Docker host — Railway, Render, Fly.io, ECS, a VM | Holds a WebSocket open for the length of each call |
-| Database, auth, storage | Supabase | Postgres with RLS, auth, private object storage |
-| Billing | Stripe | Subscriptions, invoices, customer portal, usage meter |
-| Telephony | Twilio | Numbers, SIP trunk, SMS |
-| Realtime AI | OpenAI | Voice conversation and text tasks |
+| `apps/web` | Any Next.js host — Vercel, Netlify, a container | Serverless-friendly: no request handler needs to live longer than 60 seconds |
 
-Nothing is coupled to a specific host. The web app is a standard Next.js build;
-the worker is a plain Node process in a container.
+| Managed service | Provider | Responsibility |
+| --- | --- | --- |
+| Database, auth | Supabase | Postgres with RLS, user accounts |
+| Voice and telephony | Vapi | Phone numbers, carrying calls, transcription, running the OpenAI model |
+| Billing | Stripe | Subscriptions, invoices, metered overage |
+| Email | Resend (or the console adapter) | Transactional notifications |
+
+There is exactly one thing to deploy. A phone call needs a socket held open for
+minutes, but Vapi holds it, not us — the app only receives a webhook when the
+call is over. That is what makes Vercel a viable host for a voice product.
 
 ---
 
 ## 1. Database first
 
+Migrations always go ahead of the code that needs them.
+
 ```bash
-SUPABASE_DB_URL="postgresql://...pooler.supabase.com:5432/postgres" npm run db:migrate
+SUPABASE_DB_URL=postgresql://... npm run db:migrate
 ```
 
-Run migrations **before** deploying code that depends on them. The runner is
-idempotent and records what it applied.
+The runner is transactional per file and records a checksum in
+`schema_migrations`, so re-running is safe and an edited-after-the-fact
+migration is refused rather than silently skipped.
 
-Verify RLS actually landed:
+Verify RLS actually applied — this is the check that matters most:
 
 ```sql
-select count(*) from pg_policies where schemaname = 'public';   -- expect > 50
-select relname from pg_class c
-  join pg_namespace n on n.oid = c.relnamespace
- where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
--- expect zero rows: every tenant table must have RLS enabled
+select count(*) from pg_policies where schemaname = 'public';
+-- expect well over 50. If it is 0, the database is NOT safe to use.
+
+select relname from pg_class
+ where relnamespace = 'public'::regnamespace
+   and relkind = 'r' and relrowsecurity = false;
+-- expect zero rows for tenant tables.
 ```
 
 ---
 
-## 2. Deploy the voice worker
+## 2. Deploy the web app
 
-The worker must be reachable by the web app and must **not** be publicly
-writable — its only authenticated endpoint is `/calls/accept`, protected by a
-shared secret. Put it on private networking where your platform supports it.
-
-### Docker
+### Build
 
 ```bash
-docker build -f apps/voice-worker/Dockerfile -t ai-front-desk-worker .
-docker run -p 8787:8787 \
-  -e OPENAI_API_KEY=sk-... \
-  -e VOICE_WORKER_SECRET=... \
-  -e WEB_INTERNAL_URL=https://your-app.example.com \
-  -e OPENAI_REALTIME_MODEL=gpt-realtime-2.1 \
-  ai-front-desk-worker
+npm ci
+npm run build          # Next.js production build
+npm run start          # or the host's own start command
 ```
+
+On Vercel: framework preset **Next.js**, build command `npm run build`, and
+nothing else to configure. The repository is an npm workspace; Vercel resolves
+`@afd/shared` from source.
 
 ### Environment
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | yes | Opens realtime sessions |
-| `VOICE_WORKER_SECRET` | yes | Must match the web app exactly |
-| `WEB_INTERNAL_URL` | yes | Where the worker reaches the internal API |
-| `OPENAI_REALTIME_MODEL` | no | Defaults to `gpt-realtime-2.1` |
-| `PORT` | no | Defaults to 8787 |
-| `MAX_CALL_SECONDS` | no | Hard ceiling per call. Default 1800 |
-| `IDLE_TIMEOUT_SECONDS` | no | Ends a silent call. Default 45 |
-| `LOG_LEVEL` | no | `debug` \| `info` \| `warn` \| `error` |
+Everything in [`.env.example`](.env.example) except the `TEST_` block. Three
+values deserve individual attention:
 
-### Scaling and shutdown
-
-- Scale **horizontally**; each instance handles many concurrent calls, bounded
-  by memory and outbound socket limits.
-- Do **not** autoscale to zero. A cold worker cannot answer a ringing phone.
-- On `SIGTERM` the worker stops accepting new calls and lets in-flight calls
-  finish (up to 30s) so their usage and summaries are still recorded. Set your
-  platform's grace period to at least 45 seconds.
-- Health check: `GET /health` → `{"status":"ok","active_calls":n}`.
-
----
-
-## 3. Deploy the web app
-
-```bash
-npm run build:web
-npm run start --workspace=@afd/web
-```
-
-On Vercel: root directory `.`, build command `npm run build:web`, output
-detected automatically. Set every server variable in the project settings, not
-in `.env`.
-
-### Environment
-
-All of `.env.example`. Specifically for production:
-
-- `NEXT_PUBLIC_APP_URL` — your real origin, **no trailing slash**. Webhook
-  callbacks, OAuth redirects and SMS upload links are all derived from it.
-- `DEMO_MODE` — must be `false`. Production builds force it off and log a
-  warning if it was requested, but set it correctly.
-- `SUPABASE_SERVICE_ROLE_KEY` — server-side only. If this ever appears in a
-  client bundle, rotate it immediately.
-- `VOICE_WORKER_URL` — the deployed worker.
+- **`NEXT_PUBLIC_APP_URL`** — must be the real public origin, no trailing slash.
+  Stripe return URLs and, more importantly, the webhook URL written into every
+  Vapi assistant are derived from it. Change it and every assistant must be
+  re-synced, or call reports go to the old address.
+- **`VAPI_API_KEY`** — server-only. If this ever appears with a `NEXT_PUBLIC_`
+  prefix, it is in the browser bundle and must be rotated immediately.
+- **`DEMO_MODE`** — force-disabled in production builds, but set it to `false`
+  explicitly so nobody has to rely on that.
 
 ### Function timeouts
 
-Some routes need more than a default 10-second serverless timeout:
-
-| Route | `maxDuration` |
-| --- | --- |
-| `/api/internal/calls/end` | 60s — usage, summary, meter reporting |
-| `/api/internal/calls/tool` | 30s — a tool may call Google Calendar |
-| `/api/onboarding/training` | 60s |
-| `/api/business/import-website` | 60s |
-| `/api/knowledge/upload` | 60s |
-| `/api/account/export` | 60s |
-| `/api/cron/maintenance` | 60s |
-
-These are declared in the route files. On hosts that ignore them, raise the
-platform default.
-
----
-
-## 4. Webhook URLs
-
-| Provider | URL | Configured in |
+| Route | Timeout | Why |
 | --- | --- | --- |
-| Stripe | `<origin>/api/webhooks/stripe` | Stripe dashboard |
-| OpenAI | `<origin>/api/webhooks/openai` | OpenAI dashboard |
-| Twilio SMS | `<origin>/api/webhooks/twilio/sms` | Set automatically when a number is purchased |
-| Twilio status | `<origin>/api/webhooks/twilio/status` | Set automatically |
+| `/api/webhooks/vapi` | 60s | Ingests a call, transcript, lead and usage in one transactionable batch |
+| `/api/webhooks/stripe` | 30s | Several database writes per event |
+| `/api/vapi/sync` | 60s | One `PATCH` to Vapi plus a fan-out read of the tenant's rows |
+| `/api/vapi/phone-number` | 60s | Buys a number, with a release-on-failure path |
+| `/api/cron/maintenance` | 60s | Batch cleanup |
+| `/api/account/export` | 60s | Reads every tenant table |
+| `/api/account/delete` | 60s | Releases provider resources before deleting |
 
-All four verify signatures before reading the payload, and all four are
-idempotent through the `webhook_events` table. Failures return 5xx so the
-provider retries; the admin panel shows the failure and its reason.
-
-> The Twilio routes are excluded from middleware so nothing rewrites their body,
-> and the Stripe route reads the raw body — do not put a body-transforming proxy
-> in front of them.
+These are declared with `export const maxDuration` in each route, so a host that
+reads that value needs no extra configuration.
 
 ---
 
-## 5. Scheduled job
+## 3. Webhook URLs
 
-`POST <origin>/api/cron/maintenance` with `Authorization: Bearer $CRON_SECRET`,
-every 5–15 minutes.
+| Source | URL | Configured where |
+| --- | --- | --- |
+| Vapi | `<origin>/api/webhooks/vapi` | **Not in the dashboard.** Set per-assistant by our own sync, from `NEXT_PUBLIC_APP_URL` |
+| Stripe | `<origin>/api/webhooks/stripe` | Stripe dashboard |
 
-**Vercel** (`vercel.json`):
+Both routes verify before they read:
+
+- Stripe — signature over the **raw body**. The route is excluded from
+  middleware so nothing rewrites it.
+- Vapi — the `x-vapi-secret` shared secret we set on the assistant, compared in
+  constant time.
+
+Both claim their event in `webhook_events` before processing, so a provider
+retry is a no-op rather than a double-write. Both return 500 on a genuine
+processing failure so the provider retries; a 200 means the event is durably
+recorded.
+
+> **Rotating `VAPI_WEBHOOK_SECRET` is a two-step change.** Change the variable,
+> redeploy, then re-sync every assistant. Until an assistant is re-synced it
+> still presents the old secret and its call reports will be rejected with 401.
+> To re-sync everything at once:
+>
+> ```sql
+> -- find the affected tenants
+> select id, name from public.organizations where vapi_assistant_id is not null;
+> ```
+>
+> then press **Update receptionist** per business, or script it against
+> `syncAssistant()`.
+
+---
+
+## 4. Scheduled job
+
+```
+POST <origin>/api/cron/maintenance
+Authorization: Bearer $CRON_SECRET
+```
+
+Every 5–15 minutes. On Vercel, `vercel.json`:
 
 ```json
 { "crons": [{ "path": "/api/cron/maintenance", "schedule": "*/10 * * * *" }] }
 ```
 
-Vercel cron sends GET, so either add a GET handler or use an external scheduler
-(GitHub Actions, Upstash QStash, a cron container) that can send POST with the
-header.
-
-It does three things:
-
-1. Expires abandoned Founding Member reservations → the slot returns to
-   inventory. **Without this, an abandoned checkout holds a slot forever.**
-2. Finalises calls the worker never closed (crash, network partition) so usage
-   and summaries are not lost.
-3. Purges expired OAuth state rows and marks lapsed upload tokens revoked.
+It expires abandoned founder reservations and stale team invitations. **Without
+it, an abandoned checkout holds a Founding Member slot indefinitely** and you
+run out of slots you never sold.
 
 ---
 
-## 6. Health checks and monitoring
+## 5. Health checks and monitoring
 
-| Endpoint | Meaning |
+| Probe | Expect |
 | --- | --- |
-| `GET /api/health` | 200 when the database is reachable; reports which integrations are configured (booleans only, never values) |
-| `GET <worker>/health` | 200 with the active call count |
+| `GET <origin>/api/health` | `200` with `status: "ok"` |
+
+The response reports which integrations are *configured* as booleans. It never
+returns a credential, or part of one — there is an E2E test asserting that.
 
 Alert on:
 
-- either health check failing for more than two consecutive probes;
-- rows appearing in `error_events` with scope `call.*` or `billing.*`;
-- `webhook_events` with `status = 'failed'` in the last hour;
-- Stripe webhook delivery failures in the Stripe dashboard;
-- worker `active_calls` at zero during business hours when calls are expected.
+- `status: "degraded"` — the database is unreachable.
+- Rows in `error_events` with `scope = 'vapi.sync'` — customers' settings are
+  saved but not reaching their receptionist.
+- Rows in `error_events` with `scope = 'webhook.vapi'` — calls are happening
+  that you are not recording, or not billing.
+- `webhook_events` with `status = 'failed'` in the last hour.
+- Organisations with a non-null `vapi_sync_error`:
 
-Logs are single-line JSON with `severity`, `message`, `request_id`,
-`organization_id` and `call_id`. Values that look like credentials, tokens, JWTs
-or card numbers are redacted before serialisation, so shipping logs to a
-third-party platform does not leak secrets.
+  ```sql
+  select id, name, vapi_sync_error, vapi_synced_at
+    from public.organizations
+   where vapi_sync_error is not null;
+  ```
 
----
-
-## 7. Rollback
-
-**Application.** Redeploy the previous build. The web app and worker are
-stateless; nothing is lost.
-
-**Database.** Migrations are forward-only and additive by convention. To undo a
-schema change, write a new migration that reverses it — do not edit an applied
-file (the runner detects a changed checksum and warns).
-
-For a destructive mistake, restore from a Supabase backup:
-Dashboard → Database → Backups → Restore. Test this before you need it.
-
-**Order matters.** Deploy migrations first, then code. When rolling back, roll
-code back first and leave the schema alone unless it is the problem.
+- A drop to zero calls during business hours, which is what a broken webhook
+  looks like from the outside.
 
 ---
 
-## 8. Zero-downtime notes
+## 6. Rollback
 
-- Migrations must be backwards compatible with the currently-deployed code:
-  add columns as nullable, backfill separately, drop only after the old code is
-  gone.
-- The worker drains in-flight calls on shutdown, so a rolling restart does not
-  drop live conversations if your platform waits for the grace period.
-- Phone numbers stay attached to the SIP trunk across deploys; a web app restart
-  does not interrupt a call already in progress.
+**Application.** Redeploy the previous build. Nothing else is stateful.
+
+**Database.** Migrations are forward-only. `0005_vapi.sql` **drops tables**
+(`knowledge_documents`, `upload_tokens`, `lead_photos`, `training_messages`,
+`calendar_connections`, `oauth_states`) — take a backup before applying it, and
+be aware that rolling the app back past that migration will not bring the data
+back. For anything else, write a new migration rather than editing an applied
+one; the checksum will reject the edit anyway.
+
+**Assistants.** Rolling the app back does **not** roll back what is configured
+at Vapi. If a bad deploy pushed a broken prompt, fix the code, redeploy, then
+re-sync the affected assistants — until you do, the old prompt is still
+answering calls.
 
 ---
 
-## 9. Cost control
+## 7. Zero-downtime notes
+
+- Migrations are additive. Add columns, backfill, then deploy code that reads
+  them — never the other way round.
+- In-flight calls are unaffected by a deploy: Vapi owns the call, and the only
+  thing it needs from us is a webhook endpoint that exists when the call ends.
+- Phone numbers stay attached to their assistant across deploys.
+- A deploy that changes the assistant payload takes effect per business on their
+  next save or manual sync, not automatically. If a change must reach everyone,
+  script a sync across tenants and expect it to take a while.
+
+---
+
+## 8. Cost control
+
+Two bills to keep apart: what Vapi charges **you**, and what you charge your
+customers.
 
 | Cost | Driver | Control |
 | --- | --- | --- |
-| OpenAI Realtime | Per minute of conversation | `MAX_CALL_SECONDS`, `IDLE_TIMEOUT_SECONDS`, an OpenAI spend limit |
-| Twilio | Number rental + per-minute + per-SMS | One number per organisation, enforced by plan |
-| Supabase | Storage and egress | Document and photo size caps; retention policy |
+| Vapi minutes | Per minute of conversation, including the OpenAI usage | `maxDurationSeconds: 1800` and `silenceTimeoutSeconds: 30` on every assistant, plus a spend limit in the Vapi dashboard |
+| Vapi numbers | Monthly rental | One number per organisation; account deletion releases it |
+| Supabase | Rows and egress | Transcript retention policy |
 | Stripe | Percentage of revenue | — |
 
-Your gross margin depends on realtime pricing versus the plan's included
-minutes. Model this before launch: at $20/month with 200 included minutes, the
-per-minute cost has to be well under $0.10 for a Founding Member to be
-profitable at full usage.
+**Check your unit economics before launch.** The Founding plan bills overage at
+$0.10/minute. If your all-in Vapi cost per minute is higher than that, every
+customer who exceeds their allowance costs you money. The numbers live in
+[`packages/shared/src/plans.ts`](packages/shared/src/plans.ts) and changing them
+is a one-line edit plus a new Stripe price.
 
 ---
 
-## 10. Security checklist
+## 9. Security checklist
 
-Before production:
+Verified before launch, and after any change to auth or the provider layer:
 
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` set only server-side; never `NEXT_PUBLIC_`
-- [ ] Verified: `grep -r "SUPABASE_SERVICE_ROLE" apps/web/src` shows only
-      `lib/env.ts` and `lib/supabase/server.ts`
-- [ ] RLS enabled **and forced** on every tenant table (query in §1)
-- [ ] `APP_ENCRYPTION_KEY` is 32 bytes of real randomness, stored in a secret
-      manager, and **backed up** — losing it makes every stored OAuth token
-      unrecoverable
-- [ ] All four webhook signature secrets set and verified working
-- [ ] `CRON_SECRET` set; `/api/cron/maintenance` returns 403 without it
-- [ ] `ADMIN_EMAILS` contains only people who should see every customer's account
-- [ ] HTTPS enforced; HSTS header present (set in `next.config.ts`)
-- [ ] Storage buckets are **private** — confirm in the Supabase dashboard
-- [ ] Rate limiting: the in-process limiter is per-instance. For multiple
-      instances, implement `RateLimitStore` against Redis and pass it to
-      `setRateLimitStore()` — otherwise each instance allows the full quota
-- [ ] Database backups enabled, and a restore actually tested
-- [ ] Secrets stored in the platform's secret manager, not in a repo or image
-- [ ] Dependency audit run (`npm audit`) and criticals addressed
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` is server-only and has no `NEXT_PUBLIC_` twin.
+- [ ] `VAPI_API_KEY` appears nowhere in the client bundle:
+      `npm run build && grep -r "VAPI_API_KEY\|vapi.ai" apps/web/.next/static/`
+      returns nothing.
+- [ ] Every tenant table has `rowsecurity = true` **and** `forcerowsecurity`.
+- [ ] The Stripe webhook rejects an unsigned request with 400.
+- [ ] The Vapi webhook rejects a wrong secret with 401 and never writes a call.
+- [ ] `/admin` is refused to a signed-in user not in `ADMIN_EMAILS`.
+- [ ] There is no impersonation path — admins cannot read customer transcripts
+      from the admin console.
+- [ ] Logs contain no keys, secrets or full phone numbers.
+- [ ] Card details are never written to our database; Stripe holds them.
+- [ ] Invitation tokens are stored as keyed hashes, never in plaintext.
+- [ ] Account deletion releases the Vapi number and assistant before deleting
+      the organisation, and is audit-logged first so the record survives.
 
 ---
 
-## 11. Known limitations
+## 10. Known limitations
 
-Honest list. None of these are hidden behind a "coming soon" label in the UI.
+Stated plainly, because a launch decision needs them:
 
-**Telephony**
-
-- **Number porting is not implemented.** Businesses keep their existing number
-  by forwarding to the AI number. Forwarding is configured with their own
-  carrier — we provide instructions, not automation, and we say so.
-- Outbound calling is not implemented; the receptionist answers, it does not
-  dial out.
-- Transfers use SIP REFER. Some carriers handle REFER poorly; when it fails the
-  receptionist tells the caller honestly and offers to take a message.
-
-**AI**
-
-- Voice previews use a text-to-speech model, which is close to but not identical
-  to the realtime voice.
-- Multilingual mode is verified for English and Spanish. Other languages are
-  best-effort and the product does not claim otherwise.
-- Knowledge retrieval is PostgreSQL full-text search, not embeddings. It is fast,
-  cheap, tenant-isolated and good enough for a small business's documents; it
-  will not match a paraphrase that shares no words with the source.
-- PDF text extraction handles text-based PDFs. Scanned PDFs are rejected with a
-  clear message rather than indexed as empty. There is no OCR.
-
-**Availability**
-
-- Radius-based service areas cannot be evaluated without a geocoder. The
-  receptionist says a human will confirm rather than guessing coverage.
-- Availability comes from Google Calendar free/busy plus our own bookings.
-  Other calendar providers are not implemented.
-
-**Billing**
-
-- One plan per organisation; no seat-based or usage-tier pricing.
-- Overage is reported to a Stripe meter as it accrues. If meter reporting fails,
-  the error is recorded in `error_events` and the ledger row stays unreported —
-  reconcile before invoicing.
-- Proration on plan change is left to Stripe's defaults.
-
-**Operations**
-
-- Rate limiting is in-process (see the security checklist).
-- No audio recording, by design. Adding it requires consent handling and legal
-  review; the disclosure page says so.
-- Email uses a single provider abstraction with a Resend adapter. The default
-  `console` adapter logs instead of sending, and says so in the log line.
-
-**Legal**
-
-- Everything under `/legal` is a **template** and is labelled as such on every
-  page. It has not been reviewed by a lawyer.
+- **Rate limiting is per-instance.** The default store is in-memory, so N
+  instances allow roughly N times the configured limit. Swap
+  `setRateLimitStore()` for a Redis-backed implementation of the same interface
+  before serious traffic.
+- **Assistant sync is not transactional.** A settings save commits to Postgres
+  before the push to Vapi is attempted. When the push fails the row is stamped
+  with `vapi_sync_error` and the UI says the change is not live — but the two
+  can be out of step until someone retries.
+- **No bulk re-sync tool.** A change to the prompt builder reaches each business
+  only on their next save or manual sync. A migration that must reach everyone
+  needs a script.
+- **Overage is reported, not enforced.** A business past its allowance keeps
+  being answered and is billed afterwards. That is deliberate — cutting off a
+  customer's phone line mid-month is worse — but it means a runaway caller can
+  run up a bill.
+- **Transfers depend on the carrier.** `forwardingPhoneNumber` hands the call to
+  Vapi's transfer path; some destinations handle it poorly. Test the actual
+  number a business gives you.
+- **The receptionist does not book appointments.** It records the time a caller
+  asked for. There is no availability lookup, so two callers can request the
+  same slot and a human resolves it.
+- **No SMS.** Nothing texts the caller. If a business needs confirmation texts,
+  that is a feature to build, not a setting to turn on.
+- **Legal pages are templates.** They describe what the software actually does,
+  which is the hard part, but they have not been reviewed by a lawyer.
 
 ---
 
-## 12. Production checklist
+## 11. Production checklist
 
-- [ ] Migrations applied and verified
-- [ ] Web app deployed with all environment variables
-- [ ] Voice worker deployed, healthy, reachable from the web app
-- [ ] All four webhooks configured and returning 200
-- [ ] Scheduled maintenance job running
-- [ ] Stripe in live mode, portal activated
-- [ ] Twilio out of trial, A2P 10DLC approved, SIP trunk verified
-- [ ] OpenAI webhook enabled, spend limit set
-- [ ] Google OAuth consent screen submitted for verification
-- [ ] Email domain authenticated (SPF/DKIM/DMARC)
-- [ ] Monitoring and alerting live
-- [ ] Backups enabled and a restore tested
-- [ ] A real end-to-end call completed successfully (SETUP.md §10)
-- [ ] Legal templates reviewed
+- [ ] Migrations applied; `pg_policies` count verified non-zero
+- [ ] Web app deployed and `/api/health` returns `ok`
 - [ ] `DEMO_MODE=false`
+- [ ] `NEXT_PUBLIC_APP_URL` is the real origin, and assistants were synced after
+      it was set
+- [ ] Vapi private key configured, spend limit set
+- [ ] `VAPI_WEBHOOK_SECRET` set, and a real call report was received and stored
+- [ ] Stripe in live mode; live webhook secret; portal activated
+- [ ] Cron job scheduled and returning `{"ok":true}`
+- [ ] `ADMIN_EMAILS` set to real addresses
+- [ ] Email domain verified (SPF, DKIM, DMARC)
+- [ ] Uptime monitoring on `/api/health`
+- [ ] Alerting on `error_events` and `webhook_events.status = 'failed'`
+- [ ] Backups confirmed, and a restore actually tested
+- [ ] Legal templates reviewed
+- [ ] You have called the number yourself, from a phone, and it worked

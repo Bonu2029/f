@@ -52,7 +52,7 @@ describeDb('tenant isolation (RLS)', () => {
       [orgB, 'B'],
     ] as const) {
       const { rows } = await asService<{ id: string }>(
-        `insert into public.calls (organization_id, external_call_id, caller_phone, business_phone)
+        `insert into public.calls (organization_id, vapi_call_id, caller_phone, business_phone)
          values ($1, $2, '+12155550100', '+12155550142') returning id`,
         [org.id, `ext_${label}`],
       );
@@ -128,35 +128,23 @@ describeDb('tenant isolation (RLS)', () => {
     expect(after.rows[0]!.name).toBe(before.rows[0]!.name);
   });
 
-  it('never exposes encrypted calendar tokens to a client role', async () => {
-    await asService(
-      `insert into public.calendar_connections
-         (organization_id, provider, encrypted_refresh_token, account_email)
-       values ($1, 'google', 'v1.aaa.bbb.ccc', 'owner@business-a.test')`,
-      [orgA.id],
-    );
-
-    // Even the owner of the organisation cannot read the token table.
-    const result = await asUser(alice.id, 'select * from public.calendar_connections');
-    expect(result.rows).toHaveLength(0);
-
-    // The redacted accessor returns status without the secret.
-    const status = await asUser(
-      alice.id,
-      'select account_email, has_refresh_token from public.get_calendar_status($1)',
-      [orgA.id],
-    );
-    expect(status.rows[0]!.account_email).toBe('owner@business-a.test');
-    expect(status.rows[0]!.has_refresh_token).toBe(true);
-    expect(Object.keys(status.rows[0]!)).not.toContain('encrypted_refresh_token');
-  });
-
-  it('never exposes upload tokens or webhook events to a client role', async () => {
-    const tokens = await asUser(alice.id, 'select * from public.upload_tokens');
-    expect(tokens.rows).toHaveLength(0);
-
+  it('never exposes webhook events or audit logs to a client role', async () => {
     const webhooks = await asUser(alice.id, 'select * from public.webhook_events');
     expect(webhooks.rows).toHaveLength(0);
+
+    const audits = await asUser(alice.id, 'select * from public.audit_logs');
+    expect(audits.rows).toHaveLength(0);
+  });
+
+  it('never exposes another tenant\'s Vapi identifiers', async () => {
+    await asService(
+      `update public.organizations set vapi_assistant_id = 'asst_secret_b' where id = $1`,
+      [orgB.id],
+    );
+    const rows = await asUser(alice.id, 'select vapi_assistant_id from public.organizations');
+    expect(rows.rows.map((r) => (r as { vapi_assistant_id: string | null }).vapi_assistant_id)).not.toContain(
+      'asst_secret_b',
+    );
   });
 
   it('applies role hierarchy: staff may work leads but not change settings', async () => {

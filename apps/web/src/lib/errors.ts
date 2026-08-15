@@ -239,6 +239,13 @@ export function errorResponse(err: unknown, requestId?: string): NextResponse {
 export interface ActionResult<T = unknown> {
   ok: boolean;
   message?: string;
+  /**
+   * Set when the write succeeded but a downstream step did not — most often the
+   * change is saved here but has not reached the voice provider yet. Forms must
+   * show this instead of a plain success, so an owner is never told a change is
+   * live when it is not.
+   */
+  warning?: string;
   code?: ErrorCode;
   action?: string;
   actionHref?: string;

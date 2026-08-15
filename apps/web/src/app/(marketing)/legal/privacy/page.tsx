@@ -17,10 +17,9 @@ export default function PrivacyPage() {
 
       <h2>1. Information about our customers</h2>
       <ul>
-        <li><strong>Account data:</strong> name, email address, hashed password (held by our authentication provider), and profile photo if you upload one.</li>
-        <li><strong>Business data:</strong> everything you enter about your business — services, prices, hours, policies, service area, rules and uploaded documents.</li>
+        <li><strong>Account data:</strong> name, email address and a hashed password (held by our authentication provider).</li>
+        <li><strong>Business data:</strong> everything you enter about your business — services, prices, hours, policies, service area, FAQs and receptionist rules.</li>
         <li><strong>Billing data:</strong> subscription status, plan, invoice history and usage totals. <strong>We never see or store your card details</strong>; payment information is handled entirely by our payment processor.</li>
-        <li><strong>Integration tokens:</strong> if you connect Google Calendar, we store OAuth tokens encrypted at rest. They are used only to read availability and manage events created by the Service.</li>
         <li><strong>Operational logs:</strong> request metadata used to run and secure the Service. Logs are automatically redacted of credentials and tokens.</li>
       </ul>
 
@@ -30,8 +29,7 @@ export default function PrivacyPage() {
         <li>the caller&rsquo;s phone number and the number they dialled;</li>
         <li>a written transcript of the conversation;</li>
         <li>information the caller provides — name, address, email, what they need;</li>
-        <li>appointments booked and text messages sent;</li>
-        <li>photographs the caller chooses to upload through a secure link.</li>
+        <li>a summary of the call and the appointment time the caller asked for, if any.</li>
       </ul>
       <p>
         <strong>Audio is not recorded.</strong> Speech is processed to produce a transcript; raw call
@@ -46,10 +44,9 @@ export default function PrivacyPage() {
       <p>The Service depends on these categories of provider:</p>
       <ul>
         <li><strong>Cloud database, authentication and file storage</strong> — hosts account and business data.</li>
-        <li><strong>AI provider</strong> — powers the live conversation, summaries and knowledge extraction.</li>
-        <li><strong>Telephony provider</strong> — supplies phone numbers, call routing and SMS.</li>
+        <li><strong>Voice provider</strong> — supplies phone numbers, carries the call, transcribes speech and produces the call summary. Your business information is sent to it as the receptionist&rsquo;s instructions.</li>
+        <li><strong>AI model provider</strong> — generates the receptionist&rsquo;s side of the conversation, via the voice provider.</li>
         <li><strong>Payment processor</strong> — handles subscriptions, cards and invoices.</li>
-        <li><strong>Calendar provider</strong> — only if you connect a calendar.</li>
         <li><strong>Email provider</strong> — transactional notifications.</li>
       </ul>
       <p>The specific vendors must be listed here before launch, with links to their own privacy terms.</p>
@@ -64,9 +61,8 @@ export default function PrivacyPage() {
       <h2>5. Security</h2>
       <ul>
         <li>Row-level database isolation between businesses, enforced by the database itself.</li>
-        <li>OAuth tokens encrypted with AES-256-GCM before storage.</li>
-        <li>Private file storage with time-limited signed access only.</li>
-        <li>Webhook signature verification on every inbound provider callback.</li>
+        <li>Secrets encrypted with AES-256-GCM before storage; invitation tokens stored only as keyed hashes.</li>
+        <li>Webhook verification on every inbound provider callback, compared in constant time.</li>
         <li>Secret redaction in application logs.</li>
       </ul>
 

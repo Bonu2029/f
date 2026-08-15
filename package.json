@@ -8,15 +8,14 @@
   },
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/web"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=@afd/web",
-    "dev:worker": "npm run dev --workspace=@afd/voice-worker",
-    "build": "npm run build --workspace=@afd/web && npm run build --workspace=@afd/voice-worker",
+    "build": "npm run build --workspace=@afd/web",
     "build:web": "npm run build --workspace=@afd/web",
     "start": "npm run start --workspace=@afd/web",
-    "typecheck": "tsc -p packages/shared/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit && tsc -p apps/voice-worker/tsconfig.json --noEmit",
+    "typecheck": "tsc -p packages/shared/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
@@ -25,7 +24,6 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "stripe:setup": "tsx scripts/setup-stripe.ts",
-    "twilio:setup": "tsx scripts/setup-twilio-sip.ts",
     "founder:expire": "tsx scripts/expire-founder-reservations.ts",
     "preview:html": "tsx scripts/build-preview.ts",
     "verify": "npm run typecheck && npm run lint && npm run test"

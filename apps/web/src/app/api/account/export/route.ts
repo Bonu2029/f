@@ -40,10 +40,8 @@ export async function GET() {
       calls,
       transcripts,
       appointments,
-      messages,
       usage,
       subscription,
-      documents,
       members,
     ] = await Promise.all([
       svc.from('organizations').select('*').eq('id', organizationId).maybeSingle(),
@@ -56,15 +54,13 @@ export async function GET() {
       table('ai_rules'),
       table('availability_rules'),
       table('availability_settings'),
-      table('phone_numbers', 'id, phone_number, capabilities, status, forwarding_mode, created_at'),
+      table('phone_numbers', 'id, phone_number, capabilities, status, created_at'),
       table('leads'),
       table('calls'),
       table('call_transcript_messages'),
       table('appointments'),
-      table('sms_messages'),
       table('usage_ledger'),
       table('subscriptions', 'plan, status, billing_period_start, billing_period_end, included_minutes, used_minutes, founder, founder_slot, created_at'),
-      table('knowledge_documents', 'id, filename, mime_type, size_bytes, processing_status, extracted_text, created_at'),
       svc
         .from('organization_members')
         .select('role, created_at, profile:profiles(first_name, last_name, email)')
@@ -90,10 +86,8 @@ export async function GET() {
       calls: calls.data,
       call_transcripts: transcripts.data,
       appointments: appointments.data,
-      sms_messages: messages.data,
       usage_ledger: usage.data,
       subscription: subscription.data,
-      knowledge_documents: documents.data,
     };
 
     await recordAudit({

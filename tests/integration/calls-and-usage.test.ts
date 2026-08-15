@@ -23,29 +23,36 @@ async function seedOrg(slug: string): Promise<TestOrg> {
 
 async function attachNumber(orgId: string, number: string, status = 'active') {
   await asService(
-    `insert into public.phone_numbers (organization_id, phone_number, twilio_sid, status)
+    `insert into public.phone_numbers (organization_id, phone_number, vapi_phone_number_id, status)
      values ($1, $2, $3, $4)`,
-    [orgId, number, `PN${Math.random().toString(36).slice(2, 12)}`, status],
+    [orgId, number, `pn_${Math.random().toString(36).slice(2, 12)}`, status],
   );
 }
 
-async function resolve(dialled: string) {
+/** Binds an assistant id to the organisation, the way a successful sync does. */
+async function attachAssistant(orgId: string, assistantId: string) {
+  await asService('update public.organizations set vapi_assistant_id = $2 where id = $1', [
+    orgId,
+    assistantId,
+  ]);
+}
+
+async function resolve(assistantId: string) {
   const { rows } = await asService<{
     organization_id: string | null;
     servable: boolean;
     reason: string;
-    fallback_phone: string | null;
-  }>('select * from public.resolve_inbound_call($1)', [dialled]);
+  }>('select * from public.resolve_call_by_assistant($1)', [assistantId]);
   return rows[0]!;
 }
 
-async function createCall(orgId: string, externalId: string) {
+async function createCall(orgId: string, vapiCallId: string) {
   const { rows } = await asService<{ id: string }>(
     `insert into public.calls
-       (organization_id, external_call_id, caller_phone, business_phone, answered_at)
+       (organization_id, vapi_call_id, caller_phone, business_phone, answered_at)
      values ($1, $2, '+12155550100', '+12155550142', now())
      returning id`,
-    [orgId, externalId],
+    [orgId, vapiCallId],
   );
   return rows[0]!.id;
 }
@@ -61,37 +68,39 @@ describeDb('inbound call routing', () => {
     await truncateAll();
     org = await seedOrg('routing-org');
     await attachNumber(org.id, '+12155550142');
+    await attachAssistant(org.id, 'asst_routing_org');
   });
 
   afterAll(async () => {
     await closePool();
   });
 
-  it('resolves a dialled number to the owning organisation', async () => {
-    const result = await resolve('+12155550142');
+  it('resolves an assistant id to the owning organisation', async () => {
+    const result = await resolve('asst_routing_org');
     expect(result.organization_id).toBe(org.id);
     expect(result.servable).toBe(true);
     expect(result.reason).toBe('ok');
   });
 
-  it('rejects a number that belongs to nobody', async () => {
-    const result = await resolve('+19995550000');
+  it('rejects an assistant that belongs to nobody', async () => {
+    const result = await resolve('asst_not_ours');
     expect(result.organization_id).toBeNull();
     expect(result.servable).toBe(false);
-    expect(result.reason).toBe('unknown_number');
+    expect(result.reason).toBe('unknown_assistant');
   });
 
   it('refuses to serve a paused receptionist', async () => {
     await asService('update public.organizations set ai_paused = true where id = $1', [org.id]);
-    const result = await resolve('+12155550142');
+    const result = await resolve('asst_routing_org');
     expect(result.servable).toBe(false);
     expect(result.reason).toBe('ai_paused');
+    // Still attributed to the tenant, so the missed call is recorded for them.
     expect(result.organization_id).toBe(org.id);
   });
 
   it('refuses to serve an inactive agent', async () => {
     await asService('update public.ai_agents set active = false where organization_id = $1', [org.id]);
-    const result = await resolve('+12155550142');
+    const result = await resolve('asst_routing_org');
     expect(result.servable).toBe(false);
     expect(result.reason).toBe('agent_inactive');
   });
@@ -100,7 +109,7 @@ describeDb('inbound call routing', () => {
     await asService(`update public.subscriptions set status = 'canceled' where organization_id = $1`, [
       org.id,
     ]);
-    const result = await resolve('+12155550142');
+    const result = await resolve('asst_routing_org');
     expect(result.servable).toBe(false);
     expect(result.reason).toBe('subscription_canceled');
   });
@@ -109,35 +118,24 @@ describeDb('inbound call routing', () => {
     await asService(`update public.subscriptions set status = 'past_due' where organization_id = $1`, [
       org.id,
     ]);
-    expect((await resolve('+12155550142')).servable).toBe(true);
+    expect((await resolve('asst_routing_org')).servable).toBe(true);
   });
 
-  it('returns the fallback number so a failed call can be forwarded, not dropped', async () => {
-    await asService(
-      `update public.ai_agents set fallback_phone = '+12155550111', active = false
-        where organization_id = $1`,
-      [org.id],
+  it('prevents two organisations sharing one assistant id', async () => {
+    const other = await seedOrg('other-org');
+    await expect(attachAssistant(other.id, 'asst_routing_org')).rejects.toThrow(
+      /duplicate key|unique/i,
     );
-    const result = await resolve('+12155550142');
-    expect(result.servable).toBe(false);
-    expect(result.fallback_phone).toBe('+12155550111');
-  });
-
-  it('does not route to a released number', async () => {
-    await asService(`update public.phone_numbers set status = 'released' where organization_id = $1`, [
-      org.id,
-    ]);
-    expect((await resolve('+12155550142')).reason).toBe('unknown_number');
   });
 
   it('prevents two organisations holding the same live number', async () => {
-    const other = await seedOrg('other-org');
+    const other = await seedOrg('other-org-2');
     await expect(attachNumber(other.id, '+12155550142')).rejects.toThrow(/duplicate key|unique/i);
   });
 
   it('prevents duplicate call rows for one provider call id', async () => {
-    await createCall(org.id, 'ext_dup_1');
-    await expect(createCall(org.id, 'ext_dup_1')).rejects.toThrow(/duplicate key|unique/i);
+    await createCall(org.id, 'vapi_dup_1');
+    await expect(createCall(org.id, 'vapi_dup_1')).rejects.toThrow(/duplicate key|unique/i);
   });
 });
 
@@ -216,8 +214,8 @@ describeDb('usage metering', () => {
   it('records demo calls without charging plan minutes', async () => {
     const { rows } = await asService<{ id: string }>(
       `insert into public.calls
-         (organization_id, external_call_id, answered_at, is_demo)
-       values ($1, 'ext_demo', now(), true) returning id`,
+         (organization_id, vapi_call_id, answered_at, is_demo)
+       values ($1, 'vapi_demo', now(), true) returning id`,
       [org.id],
     );
     const result = await record(rows[0]!.id, 300);

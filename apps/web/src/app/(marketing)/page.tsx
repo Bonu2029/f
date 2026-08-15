@@ -4,7 +4,6 @@ import {
   CalendarCheck,
   Clock,
   FileText,
-  Image as ImageIcon,
   MessageSquare,
   PhoneCall,
   PhoneForwarded,
@@ -184,23 +183,18 @@ export default async function HomePage() {
               },
               {
                 icon: CalendarCheck,
-                title: 'Appointment booking',
-                body: 'Connects to Google Calendar or your own availability. It checks before it offers, so nothing gets double-booked.',
+                title: 'Appointment requests',
+                body: 'It collects the day and time the caller wants and puts it on your appointments board. Your team confirms — it never promises a slot it cannot keep.',
               },
               {
                 icon: BookOpen,
                 title: 'Business knowledge',
-                body: 'Teach it your services, prices, policies and service area. It answers from that, and says it will check when it does not know.',
+                body: 'Give it your services, prices, hours, service area and FAQs. It answers from that, and says it will check when it does not know.',
               },
               {
                 icon: PhoneForwarded,
                 title: 'Human transfer',
                 body: 'Emergencies and callers who ask for you get put straight through to whichever number you choose.',
-              },
-              {
-                icon: ImageIcon,
-                title: 'SMS & photo requests',
-                body: 'It can text a secure upload link mid-call so you see the leaking roof before you quote it.',
               },
               {
                 icon: FileText,

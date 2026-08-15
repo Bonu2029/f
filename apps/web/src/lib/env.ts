@@ -84,48 +84,35 @@ export const supabaseEnv = {
   },
 };
 
-export const openaiEnv = {
+export const vapiEnv = {
+  /**
+   * Private Vapi API key. Server-only — this module imports `server-only`, so a
+   * client component that reaches for it fails the build rather than shipping
+   * the key to the browser.
+   */
   get apiKey() {
-    return requireEnv('OPENAI_API_KEY', 'AI features');
+    return requireEnv('VAPI_API_KEY', 'the AI receptionist');
   },
-  get projectId() {
-    return requireEnv('OPENAI_PROJECT_ID', 'SIP call routing');
-  },
+  /**
+   * Shared secret set on each assistant and echoed back by Vapi in the
+   * `x-vapi-secret` header, so the webhook can prove a call report is genuine.
+   */
   get webhookSecret() {
-    return requireEnv('OPENAI_WEBHOOK_SECRET', 'incoming call webhooks');
+    return requireEnv('VAPI_WEBHOOK_SECRET', 'verifying call reports from Vapi');
   },
-  get realtimeModel() {
-    return read('OPENAI_REALTIME_MODEL') ?? 'gpt-realtime-2.1';
+  /**
+   * Non-throwing variant used when building an assistant payload in demo mode,
+   * where no real secret exists and none is needed.
+   */
+  get webhookSecretOrPlaceholder() {
+    return read('VAPI_WEBHOOK_SECRET') ?? 'demo-mode-no-secret';
   },
-  get textModel() {
-    return read('OPENAI_TEXT_MODEL') ?? 'gpt-5.1';
-  },
-  get ttsModel() {
-    return read('OPENAI_TTS_MODEL') ?? 'gpt-4o-mini-tts';
-  },
-  get configured() {
-    return Boolean(read('OPENAI_API_KEY'));
-  },
-  get sipUri() {
-    return `sip:${this.projectId}@sip.api.openai.com;transport=tls`;
-  },
-};
-
-export const twilioEnv = {
-  get accountSid() {
-    return requireEnv('TWILIO_ACCOUNT_SID', 'phone numbers and SMS');
-  },
-  get authToken() {
-    return requireEnv('TWILIO_AUTH_TOKEN', 'phone numbers and SMS');
-  },
-  get sipTrunkSid() {
-    return requireEnv('TWILIO_SIP_TRUNK_SID', 'routing calls to the AI');
-  },
-  get messagingServiceSid() {
-    return read('TWILIO_MESSAGING_SERVICE_SID');
+  /** OpenAI model Vapi drives for the conversation. */
+  get openaiModel() {
+    return read('VAPI_OPENAI_MODEL') ?? 'gpt-4o';
   },
   get configured() {
-    return Boolean(read('TWILIO_ACCOUNT_SID') && read('TWILIO_AUTH_TOKEN'));
+    return Boolean(read('VAPI_API_KEY'));
   },
 };
 
@@ -153,39 +140,9 @@ export const stripeEnv = {
   },
 };
 
-export const googleEnv = {
-  get clientId() {
-    return requireEnv('GOOGLE_CLIENT_ID', 'Google Calendar');
-  },
-  get clientSecret() {
-    return requireEnv('GOOGLE_CLIENT_SECRET', 'Google Calendar');
-  },
-  get redirectUri() {
-    return read('GOOGLE_REDIRECT_URI') ?? absoluteUrl('/api/integrations/google/callback');
-  },
-  get configured() {
-    return Boolean(read('GOOGLE_CLIENT_ID') && read('GOOGLE_CLIENT_SECRET'));
-  },
-};
-
 export const cryptoEnv = {
   get encryptionKey() {
-    return requireEnv('APP_ENCRYPTION_KEY', 'encrypting stored OAuth tokens');
-  },
-  get uploadTokenSecret() {
-    return requireEnv('UPLOAD_TOKEN_SECRET', 'secure photo upload links');
-  },
-};
-
-export const workerEnv = {
-  get url() {
-    return read('VOICE_WORKER_URL') ?? 'http://localhost:8787';
-  },
-  get secret() {
-    return requireEnv('VOICE_WORKER_SECRET', 'the voice worker connection');
-  },
-  get configured() {
-    return Boolean(read('VOICE_WORKER_SECRET'));
+    return requireEnv('APP_ENCRYPTION_KEY', 'hashing invitation tokens');
   },
 };
 
@@ -221,11 +178,8 @@ export function integrationStatus() {
   return {
     demoMode: DEMO_MODE,
     supabase: supabaseEnv.configured,
-    openai: openaiEnv.configured,
-    twilio: twilioEnv.configured,
+    vapi: vapiEnv.configured,
     stripe: stripeEnv.configured,
-    google: googleEnv.configured,
-    voiceWorker: workerEnv.configured,
     encryption: Boolean(read('APP_ENCRYPTION_KEY')),
   };
 }

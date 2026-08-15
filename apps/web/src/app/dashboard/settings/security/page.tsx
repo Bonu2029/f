@@ -42,12 +42,14 @@ export default async function SecurityPage() {
               Stripe. We never see or store them.
             </li>
             <li>
-              <strong className="text-ink">Encrypted integrations.</strong> Google Calendar tokens are
-              encrypted before storage and are never sent to your browser.
+              <strong className="text-ink">Server-held provider keys.</strong> The credentials for
+              the voice provider live only on our servers. They are never sent to your browser, and
+              every change to your receptionist is made server-side.
             </li>
             <li>
-              <strong className="text-ink">Private files.</strong> Documents and customer photos live
-              in private storage, reachable only through short-lived signed links.
+              <strong className="text-ink">Verified call reports.</strong> Every call record arrives
+              through a signed webhook and is matched to your business by an identifier only we can
+              set — nothing a caller says can move a call into your account.
             </li>
             <li>
               <strong className="text-ink">No call recordings.</strong> Audio is not recorded. Written

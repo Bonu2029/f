@@ -17,7 +17,7 @@ import {
   Shield,
   Users,
   X,
-  BookOpen,
+  Building2,
 } from 'lucide-react';
 import { BrandMark } from '@/components/brand-mark';
 import { Badge, Button, cn } from '@/components/ui';
@@ -36,10 +36,10 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/calls', label: 'Calls', icon: PhoneCall, primary: true },
   { href: '/dashboard/leads', label: 'Leads', icon: Users, primary: true },
   { href: '/dashboard/appointments', label: 'Appointments', icon: CalendarCheck, primary: true },
-  { href: '/dashboard/receptionist', label: 'Receptionist', icon: Mic, primary: true },
-  { href: '/dashboard/knowledge', label: 'Knowledge', icon: BookOpen },
+  { href: '/dashboard/receptionist', label: 'AI Receptionist', icon: Mic, primary: true },
+  { href: '/dashboard/settings/business', label: 'Business Settings', icon: Building2 },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/settings', label: 'Account', icon: Settings },
 ];
 
 export function DashboardShell({

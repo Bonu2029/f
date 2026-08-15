@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       planId: eligibility.plan,
       priceId,
       overagePriceId: stripeEnv.overagePriceId ?? null,
-      successUrl: absoluteUrl('/onboarding/business?checkout=success'),
+      successUrl: absoluteUrl('/dashboard/settings/business?checkout=success'),
       cancelUrl: absoluteUrl('/dashboard/billing?checkout=cancelled'),
       existingCustomerId: subscription?.stripe_customer_id ?? null,
       founderSlot: eligibility.founderSlot,

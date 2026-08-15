@@ -42,8 +42,6 @@ export type FounderClaimStatus = 'reserved' | 'active' | 'expired' | 'released';
 
 export type PriceType = 'fixed' | 'starting_at' | 'range' | 'quote_only' | 'hourly';
 
-export type ProcessingStatus = 'pending' | 'processing' | 'ready' | 'failed';
-
 export type CallDirection = 'inbound' | 'outbound';
 
 export type CallResult =
@@ -94,16 +92,11 @@ export type AppointmentStatus =
   | 'cancelled'
   | 'no_show';
 
-export type SmsDirection = 'inbound' | 'outbound';
-export type SmsStatus = 'queued' | 'sending' | 'sent' | 'delivered' | 'undelivered' | 'failed' | 'received';
-
 export type ServiceAreaType = 'city' | 'postal_code' | 'radius' | 'state';
 
 export type PhoneNumberStatus = 'provisioning' | 'active' | 'released' | 'failed';
 
-export type ForwardingMode = 'all' | 'missed_only' | 'after_hours' | 'none';
-
-export type WebhookProvider = 'stripe' | 'twilio' | 'openai' | 'google';
+export type WebhookProvider = 'stripe' | 'vapi';
 export type WebhookStatus = 'received' | 'processed' | 'failed' | 'skipped';
 
 export type NotificationKind =
@@ -140,6 +133,12 @@ export interface Organization {
   onboarding_step: number;
   onboarding_completed_at: Timestamp | null;
   ai_paused: boolean;
+  /** The assistant this organisation's calls are answered by. Server-written. */
+  vapi_assistant_id: string | null;
+  vapi_phone_number_id: string | null;
+  vapi_synced_at: Timestamp | null;
+  /** Non-null when the stored settings have not reached the voice provider. */
+  vapi_sync_error: string | null;
   is_demo: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -251,20 +250,13 @@ export interface AiAgent {
   organization_id: Uuid;
   display_name: string;
   voice: string;
-  language: string;
   personality: string;
-  speaking_pace: string;
-  response_length: string;
   greeting: string;
   instructions: string | null;
   active: boolean;
   transfer_enabled: boolean;
   transfer_phone: string | null;
-  sms_enabled: boolean;
   appointment_booking_enabled: boolean;
-  photo_requests_enabled: boolean;
-  disclosure_setting: string;
-  fallback_phone: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -281,54 +273,16 @@ export interface AiRule {
   updated_at: Timestamp;
 }
 
-export interface KnowledgeDocument {
-  id: Uuid;
-  organization_id: Uuid;
-  filename: string;
-  storage_path: string;
-  mime_type: string;
-  size_bytes: number;
-  processing_status: ProcessingStatus;
-  processing_error: string | null;
-  extracted_text: string | null;
-  created_at: Timestamp;
-}
-
-export interface KnowledgeChunk {
-  id: Uuid;
-  organization_id: Uuid;
-  document_id: Uuid;
-  chunk_index: number;
-  content: string;
-  created_at: Timestamp;
-}
-
 export interface PhoneNumber {
   id: Uuid;
   organization_id: Uuid;
-  twilio_sid: string | null;
+  vapi_phone_number_id: string | null;
   phone_number: string;
   friendly_name: string | null;
   capabilities: { voice: boolean; sms: boolean; mms: boolean };
   status: PhoneNumberStatus;
-  forwarding_target: string | null;
-  forwarding_mode: ForwardingMode;
   is_demo: boolean;
   created_at: Timestamp;
-}
-
-export interface CalendarConnection {
-  id: Uuid;
-  organization_id: Uuid;
-  provider: string;
-  external_account_id: string | null;
-  account_email: string | null;
-  selected_calendar_id: string | null;
-  expires_at: Timestamp | null;
-  active: boolean;
-  last_error: string | null;
-  created_at: Timestamp;
-  updated_at: Timestamp;
 }
 
 export interface AvailabilityRule {
@@ -377,20 +331,11 @@ export interface Lead {
   updated_at: Timestamp;
 }
 
-export interface LeadPhoto {
-  id: Uuid;
-  organization_id: Uuid;
-  lead_id: Uuid;
-  storage_path: string;
-  mime_type: string;
-  size_bytes: number;
-  uploaded_at: Timestamp;
-}
-
 export interface Call {
   id: Uuid;
   organization_id: Uuid;
-  external_call_id: string | null;
+  vapi_call_id: string | null;
+  vapi_assistant_id: string | null;
   caller_phone: string | null;
   business_phone: string | null;
   direction: CallDirection;
@@ -405,6 +350,8 @@ export interface Call {
   transferred: boolean;
   transfer_succeeded: boolean | null;
   appointment_booked: boolean;
+  /** Free-text time the caller asked for, as heard. Not a confirmed booking. */
+  requested_appointment: string | null;
   lead_id: Uuid | null;
   summary: string | null;
   summary_json: CallSummary | null;
@@ -453,22 +400,6 @@ export interface Appointment {
   status: AppointmentStatus;
   notes: string | null;
   source: string;
-  created_at: Timestamp;
-  updated_at: Timestamp;
-}
-
-export interface SmsMessage {
-  id: Uuid;
-  organization_id: Uuid;
-  lead_id: Uuid | null;
-  call_id: Uuid | null;
-  direction: SmsDirection;
-  from_number: string;
-  to_number: string;
-  body: string;
-  provider_message_sid: string | null;
-  status: SmsStatus;
-  error_message: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -551,18 +482,6 @@ export interface Notification {
   created_at: Timestamp;
 }
 
-export interface UploadToken {
-  id: Uuid;
-  organization_id: Uuid;
-  lead_id: Uuid;
-  token_hash: string;
-  expires_at: Timestamp;
-  max_files: number;
-  used_count: number;
-  revoked: boolean;
-  created_at: Timestamp;
-}
-
 export interface TeamInvite {
   id: Uuid;
   organization_id: Uuid;
@@ -573,19 +492,4 @@ export interface TeamInvite {
   expires_at: Timestamp;
   accepted_at: Timestamp | null;
   created_at: Timestamp;
-}
-
-/** Everything the realtime agent needs, resolved once at call start. */
-export interface OrgCallContext {
-  organization: Pick<Organization, 'id' | 'name' | 'timezone' | 'status' | 'ai_paused'>;
-  business: BusinessProfile | null;
-  agent: AiAgent;
-  services: Service[];
-  faqs: Faq[];
-  policies: BusinessPolicy[];
-  serviceAreas: ServiceArea[];
-  rules: AiRule[];
-  subscription: Pick<Subscription, 'plan' | 'status' | 'included_minutes' | 'used_minutes'> | null;
-  calendarConnected: boolean;
-  knowledgeDocumentCount: number;
 }

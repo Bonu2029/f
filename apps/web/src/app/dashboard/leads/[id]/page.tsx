@@ -7,7 +7,6 @@ import { requireSession } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { LeadScoreBadge, StatusBadge, UrgencyBadge } from '@/components/dashboard/badges';
-import { LeadPhotos } from '@/components/dashboard/lead-photos';
 import { LeadEditForm } from './lead-edit-form';
 
 export const metadata: Metadata = { title: 'Lead' };
@@ -27,7 +26,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   if (!lead) notFound();
 
-  const [{ data: calls }, { data: appointments }, { data: messages }] = await Promise.all([
+  const [{ data: calls }, { data: appointments }] = await Promise.all([
     svc
       .from('calls')
       .select('id, started_at, duration_seconds, summary, disposition')
@@ -40,12 +39,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       .eq('lead_id', id)
       .eq('organization_id', ctx.active.organizationId)
       .order('start_at'),
-    svc
-      .from('sms_messages')
-      .select('id, direction, body, status, created_at')
-      .eq('lead_id', id)
-      .eq('organization_id', ctx.active.organizationId)
-      .order('created_at'),
   ]);
 
   const reasons = (lead.score_reasons as string[]) ?? [];
@@ -167,15 +160,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           <Card>
             <CardHeader>
-              <CardTitle>Photos from the customer</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <LeadPhotos leadId={id} organizationId={ctx.active.organizationId} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Appointments</CardTitle>
             </CardHeader>
             <CardContent>
@@ -200,29 +184,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Messages</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(messages ?? []).length === 0 ? (
-                <p className="text-sm text-ink-subtle">No texts have been exchanged.</p>
-              ) : (
-                <ul className="space-y-2.5 text-sm">
-                  {(messages ?? []).map((m) => (
-                    <li key={m.id}>
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-ink-faint">
-                        {m.direction === 'outbound' ? 'Sent' : 'Received'} · {m.status as string}
-                      </p>
-                      <p className="mt-0.5 rounded-lg bg-surface-sunken px-3 py-2 text-ink-muted">
-                        {m.body as string}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

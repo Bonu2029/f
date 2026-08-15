@@ -2,9 +2,7 @@ import Link from 'next/link';
 import { requireSession } from '@/lib/auth';
 
 const SETTINGS_NAV = [
-  { href: '/dashboard/settings', label: 'Business' },
-  { href: '/dashboard/settings/phone', label: 'Phone' },
-  { href: '/dashboard/settings/calendar', label: 'Calendar' },
+  { href: '/dashboard/settings/business', label: 'Business' },
   { href: '/dashboard/settings/team', label: 'Team' },
   { href: '/dashboard/settings/notifications', label: 'Notifications' },
   { href: '/dashboard/billing', label: 'Billing' },

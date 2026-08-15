@@ -191,15 +191,16 @@ export const DEFAULT_AI_RULES: readonly DefaultRule[] = [
     is_system: true,
   },
   {
-    title: 'Never invent availability',
-    instruction: 'Only offer appointment times returned by the calendar availability tool.',
+    title: 'Never promise an appointment time',
+    instruction:
+      'Take the day and time the caller would prefer, then say the team will confirm it. Never tell a caller a slot is booked or that someone will definitely arrive at a given time.',
     priority: 30,
     is_system: true,
   },
   {
-    title: 'Confirm details before booking',
+    title: 'Confirm details before finishing',
     instruction:
-      'Read back the caller name, phone number, address and appointment time before booking anything.',
+      'Read back the caller name, phone number, address and requested time before ending the call.',
     priority: 40,
     is_system: true,
   },
@@ -247,24 +248,48 @@ export const DEFAULT_AGENT_NAME = 'Mia';
 /* Onboarding                                                                 */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Onboarding is no longer a wizard: the owner fills in Business Settings and
+ * AI Receptionist Settings, gets a number, and activates. These steps exist so
+ * the dashboard can show what is still outstanding.
+ */
 export interface OnboardingStep {
   readonly index: number;
   readonly slug: string;
   readonly label: string;
   readonly description: string;
-  /** Whether the step must be completed before the receptionist can go live. */
-  readonly required: boolean;
+  readonly href: string;
 }
 
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
-  { index: 1, slug: 'business', label: 'Business', description: 'Tell us about your business', required: true },
-  { index: 2, slug: 'teach', label: 'Teach Your AI', description: 'Train your receptionist in conversation', required: true },
-  { index: 3, slug: 'voice', label: 'Voice', description: 'Pick how your receptionist sounds', required: true },
-  { index: 4, slug: 'phone', label: 'Phone', description: 'Get an AI number or forward your own', required: true },
-  { index: 5, slug: 'calendar', label: 'Calendar', description: 'Connect a calendar or set your hours', required: false },
-  { index: 6, slug: 'rules', label: 'Rules', description: 'Set the boundaries for your receptionist', required: false },
-  { index: 7, slug: 'test', label: 'Test', description: 'Talk to your receptionist before going live', required: false },
-  { index: 8, slug: 'live', label: 'Go Live', description: 'Activate your AI receptionist', required: true },
+  {
+    index: 1,
+    slug: 'business',
+    label: 'Business details',
+    description: 'Name, contact details, hours, services, service areas and FAQs',
+    href: '/dashboard/settings/business',
+  },
+  {
+    index: 2,
+    slug: 'receptionist',
+    label: 'Receptionist',
+    description: 'Name, greeting, voice, personality and transfer number',
+    href: '/dashboard/receptionist',
+  },
+  {
+    index: 3,
+    slug: 'phone',
+    label: 'Phone number',
+    description: 'Get the number your receptionist answers on',
+    href: '/dashboard/receptionist',
+  },
+  {
+    index: 4,
+    slug: 'live',
+    label: 'Go live',
+    description: 'Activate the receptionist',
+    href: '/dashboard/receptionist',
+  },
 ];
 
 export const ONBOARDING_TOTAL_STEPS = ONBOARDING_STEPS.length;
@@ -272,38 +297,3 @@ export const ONBOARDING_TOTAL_STEPS = ONBOARDING_STEPS.length;
 export function stepBySlug(slug: string): OnboardingStep | undefined {
   return ONBOARDING_STEPS.find((s) => s.slug === slug);
 }
-
-/* -------------------------------------------------------------------------- */
-/* AI training conversation                                                   */
-/* -------------------------------------------------------------------------- */
-
-/** The questions the training assistant works through, in order. */
-export const TRAINING_QUESTIONS: readonly string[] = [
-  'What services do you offer?',
-  'What do those services typically cost?',
-  'Which cities or ZIP codes do you service?',
-  'What are your business hours?',
-  'What should I do with emergency calls?',
-  'What questions should I ask a new customer before booking?',
-  'Am I allowed to give estimates over the phone?',
-  'What should I never promise a customer?',
-  'When should I transfer a call to you instead of handling it?',
-  'What information do you need before I book an appointment?',
-  'Do you have a cancellation or deposit policy I should mention?',
-];
-
-export const TRAINING_SYSTEM_PROMPT = `You are helping a small business owner train their new AI receptionist. You are talking to the OWNER, not to a customer.
-
-Your job:
-1. Work through the topics below conversationally, one question at a time. Never ask more than one question per message.
-2. Acknowledge what they told you in one short sentence, then ask the next thing.
-3. Whenever the owner tells you something concrete, call the record_business_knowledge tool to save it. Call it as often as you learn something — do not batch everything until the end.
-4. If an answer is vague ("we do most things", "it depends"), ask one specific follow-up to pin it down. Do not invent details to fill gaps.
-5. Never make up prices, services, hours or policies. Only record what the owner actually said.
-6. Keep your messages short — two or three sentences maximum. This is a chat, not an essay.
-7. When you have covered the topics, summarise what the receptionist now knows and tell them they can edit anything in the Knowledge section.
-
-Topics to cover, in roughly this order:
-${TRAINING_QUESTIONS.map((q, i) => `${i + 1}. ${q}`).join('\n')}
-
-Start by greeting them by business name if you know it, and asking the first question.`;

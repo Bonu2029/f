@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import { MEMBER_ROLES } from './types';
+import { isValidVapiVoice } from './vapi';
 
 const trimmed = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) =>
@@ -157,27 +158,30 @@ export const serviceAreaSchema = z
     { message: 'Fill in the fields required for this area type' },
   );
 
-export const aiAgentSchema = z.object({
-  display_name: trimmed(60).min(1, 'Give your receptionist a name'),
-  voice: trimmed(40).min(1),
-  language: z.enum(['en', 'es', 'auto']),
-  personality: z.enum(['professional', 'friendly', 'warm', 'energetic', 'calm', 'direct']),
-  speaking_pace: z.enum(['slow', 'natural', 'brisk']),
-  response_length: z.enum(['concise', 'balanced', 'thorough']),
-  greeting: trimmed(600).min(10, 'Write a greeting of at least 10 characters'),
-  instructions: optionalText(4000),
-  transfer_enabled: z.boolean(),
-  transfer_phone: optionalText(30),
-  sms_enabled: z.boolean(),
-  appointment_booking_enabled: z.boolean(),
-  photo_requests_enabled: z.boolean(),
-  disclosure_setting: z.enum(['upfront', 'on_request']),
-  fallback_phone: optionalText(30),
-  active: z.boolean().optional(),
-}).refine((v) => !v.transfer_enabled || !!v.transfer_phone, {
-  message: 'Add a transfer number, or turn transfers off',
-  path: ['transfer_phone'],
-});
+/**
+ * Receptionist settings the owner can change.
+ *
+ * Deliberately limited to what actually reaches the assistant Vapi runs. Fields
+ * that would imply a capability we have not built (outbound SMS, photo request
+ * links) are not accepted here, because a control that saves but changes nothing
+ * is worse than no control at all.
+ */
+export const aiAgentSchema = z
+  .object({
+    display_name: trimmed(60).min(1, 'Give your receptionist a name'),
+    voice: trimmed(40).refine(isValidVapiVoice, 'Choose one of the available voices'),
+    personality: z.enum(['professional', 'friendly', 'warm', 'energetic', 'calm', 'direct']),
+    greeting: trimmed(600).min(10, 'Write a greeting of at least 10 characters'),
+    instructions: optionalText(4000),
+    transfer_enabled: z.boolean(),
+    transfer_phone: optionalText(30),
+    appointment_booking_enabled: z.boolean(),
+    active: z.boolean().optional(),
+  })
+  .refine((v) => !v.transfer_enabled || !!v.transfer_phone, {
+    message: 'Add a transfer number, or turn transfers off',
+    path: ['transfer_phone'],
+  });
 
 export const aiRuleSchema = z.object({
   title: trimmed(160).min(1, 'Give the rule a short title'),
@@ -240,24 +244,14 @@ export const inviteSchema = z.object({
   role: z.enum(MEMBER_ROLES as unknown as [string, ...string[]]),
 });
 
-export const phoneSearchSchema = z.object({
+/** Vapi picks the number; the owner may only express an area-code preference. */
+export const phoneProvisionSchema = z.object({
   area_code: z
     .string()
     .trim()
     .regex(/^\d{3}$/, 'Enter a 3-digit area code')
     .optional()
     .nullable(),
-  contains: z.string().trim().max(10).optional().nullable(),
-  country: z.string().trim().length(2).default('US'),
-});
-
-export const phonePurchaseSchema = z.object({
-  phone_number: z.string().trim().regex(/^\+[1-9]\d{7,14}$/, 'Invalid phone number'),
-});
-
-export const forwardingSchema = z.object({
-  forwarding_mode: z.enum(['all', 'missed_only', 'after_hours', 'none']),
-  forwarding_target: optionalText(30),
 });
 
 export const checkoutSchema = z.object({
@@ -268,36 +262,9 @@ export const checkoutSchema = z.object({
   plan: z.enum(['founder', 'standard']).optional(),
 });
 
-export const trainingMessageSchema = z.object({
-  message: z.string().trim().min(1).max(4000),
-});
-
-export const websiteImportSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .min(4)
-    .max(300)
-    .transform((v) => (v.startsWith('http') ? v : `https://${v}`))
-    .refine((v) => /^https?:\/\/[^\s]+\.[^\s]+$/.test(v), 'Enter a valid website URL'),
-});
-
 export const notificationPrefsSchema = z.object({
   email_new_lead: z.boolean(),
   email_appointment: z.boolean(),
   email_usage_alerts: z.boolean(),
   email_billing: z.boolean(),
-});
-
-export const uploadInitSchema = z.object({
-  files: z
-    .array(
-      z.object({
-        name: z.string().trim().min(1).max(255),
-        type: z.string().trim().min(1).max(120),
-        size: z.number().int().min(1),
-      }),
-    )
-    .min(1)
-    .max(10),
 });

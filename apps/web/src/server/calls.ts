@@ -3,186 +3,230 @@ import {
   billableMinutesForCall,
   billedSecondsFromTimestamps,
   newlyCrossedThresholds,
+  normalizePhone,
+  scoreLead,
+  type CallDisposition,
+  type Urgency,
 } from '@afd/shared';
 import { getServiceSupabase } from '@/lib/supabase/server';
-import { getAIProvider } from '@/lib/providers/ai';
 import { getBillingProvider } from '@/lib/providers/billing';
 import { childLogger } from '@/lib/logger';
 import { recordErrorEvent } from '@/lib/audit';
-import { notifyUsageThreshold } from '@/server/notifications';
+import { notifyNewLead, notifyUsageThreshold } from '@/server/notifications';
 
 /**
- * Call lifecycle.
+ * Call ingestion.
  *
- * Timing is taken exclusively from provider/session timestamps supplied by the
- * voice worker. Nothing about a call's duration is ever accepted from a
- * browser.
+ * Vapi runs the call and posts an end-of-call report when it finishes. This
+ * module turns that one report into everything the dashboard shows: the call
+ * row, the transcript, the lead, the usage entry, and the notifications.
+ *
+ * Timing comes from Vapi's own `startedAt` / `endedAt`, never from a browser.
+ * The whole operation is idempotent on `vapi_call_id`, because Vapi retries a
+ * webhook that does not return 200.
  */
 
-export interface StartCallInput {
-  organizationId: string;
-  externalCallId: string;
-  callerPhone: string | null;
-  businessPhone: string | null;
-  isDemo?: boolean;
+/** The subset of Vapi's end-of-call report this product relies on. */
+export interface VapiEndOfCallReport {
+  callId: string;
+  assistantId: string | null;
+  phoneNumberId: string | null;
+  customerNumber: string | null;
+  businessNumber: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  endedReason: string | null;
+  summary: string | null;
+  transcriptTurns: Array<{ role: 'assistant' | 'user' | 'system'; text: string; secondsFromStart?: number }>;
+  structured: {
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    customer_email?: string | null;
+    service_address?: string | null;
+    postal_code?: string | null;
+    service_requested?: string | null;
+    urgency?: string | null;
+    requested_appointment?: string | null;
+    outcome?: string | null;
+  } | null;
+}
+
+const OUTCOME_TO_DISPOSITION: Record<string, CallDisposition> = {
+  lead_captured: 'lead_captured',
+  appointment_requested: 'lead_captured',
+  question_answered: 'question_answered',
+  transferred_to_human: 'transferred_to_human',
+  spam: 'spam',
+  wrong_number: 'wrong_number',
+  out_of_service_area: 'out_of_service_area',
+  no_intent: 'no_intent',
+  unresolved: 'unresolved',
+};
+
+const URGENCIES: readonly Urgency[] = ['emergency', 'urgent', 'soon', 'flexible', 'unknown'];
+
+function toUrgency(value: string | null | undefined): Urgency {
+  return URGENCIES.includes(value as Urgency) ? (value as Urgency) : 'unknown';
+}
+
+function clean(value: string | null | undefined): string | null {
+  const trimmed = (value ?? '').trim();
+  return trimmed && trimmed.toLowerCase() !== 'unknown' ? trimmed : null;
+}
+
+export interface IngestResult {
+  callId: string;
+  duplicate: boolean;
+  billableMinutes: number;
+  leadId: string | null;
 }
 
 /**
- * Creates (or returns) the call row. Idempotent on `external_call_id` so a
- * retried webhook cannot create a second call for the same conversation.
+ * Records a completed call. Safe to call more than once with the same report.
  */
-export async function startCall(input: StartCallInput): Promise<{ id: string; created: boolean }> {
+export async function ingestCallReport(input: {
+  organizationId: string;
+  report: VapiEndOfCallReport;
+  isDemo?: boolean;
+}): Promise<IngestResult> {
+  const { organizationId, report } = input;
   const svc = getServiceSupabase();
+  const logger = childLogger({ organization_id: organizationId, event: 'call.ingest' });
 
+  // Idempotency: Vapi retries until it gets a 200.
   const { data: existing } = await svc
     .from('calls')
-    .select('id')
-    .eq('external_call_id', input.externalCallId)
+    .select('id, lead_id, billable_minutes')
+    .eq('vapi_call_id', report.callId)
     .maybeSingle();
-  if (existing) return { id: existing.id as string, created: false };
 
-  const { data, error } = await svc
+  if (existing) {
+    logger.info('duplicate call report ignored', { vapi_call_id: report.callId });
+    return {
+      callId: existing.id as string,
+      duplicate: true,
+      billableMinutes: (existing.billable_minutes as number) ?? 0,
+      leadId: (existing.lead_id as string) ?? null,
+    };
+  }
+
+  const startedAt = report.startedAt ? new Date(report.startedAt) : new Date();
+  const endedAt = report.endedAt ? new Date(report.endedAt) : new Date();
+  const billedSeconds = billedSecondsFromTimestamps(startedAt, endedAt);
+  const durationSeconds = billedSeconds;
+  const structured = report.structured ?? {};
+
+  const transferred =
+    structured.outcome === 'transferred_to_human' ||
+    /forward|transfer/i.test(report.endedReason ?? '');
+
+  const disposition =
+    OUTCOME_TO_DISPOSITION[structured.outcome ?? ''] ??
+    (transferred ? 'transferred_to_human' : 'unresolved');
+
+  const { data: call, error: callError } = await svc
     .from('calls')
     .insert({
-      organization_id: input.organizationId,
-      external_call_id: input.externalCallId,
-      caller_phone: input.callerPhone,
-      business_phone: input.businessPhone,
+      organization_id: organizationId,
+      vapi_call_id: report.callId,
+      vapi_assistant_id: report.assistantId,
+      caller_phone: normalizePhone(report.customerNumber),
+      business_phone: normalizePhone(report.businessNumber),
       direction: 'inbound',
-      started_at: new Date().toISOString(),
-      result: 'in_progress',
+      started_at: startedAt.toISOString(),
+      answered_at: startedAt.toISOString(),
+      ended_at: endedAt.toISOString(),
+      duration_seconds: durationSeconds,
+      billed_seconds: billedSeconds,
+      billable_minutes: billableMinutesForCall(billedSeconds),
+      result: transferred ? 'transferred' : 'completed',
+      disposition,
+      transferred,
+      transfer_succeeded: transferred ? true : null,
+      appointment_booked: false,
+      requested_appointment: clean(structured.requested_appointment),
+      summary: report.summary,
+      summary_json: {
+        reason: clean(structured.service_requested) ?? report.summary ?? 'Not recorded',
+        customer_name: clean(structured.customer_name),
+        location: clean(structured.service_address) ?? clean(structured.postal_code),
+        service: clean(structured.service_requested),
+        result: disposition.replace(/_/g, ' '),
+        appointment: clean(structured.requested_appointment),
+        notes: null,
+        follow_up_required: disposition !== 'question_answered',
+      },
+      recording_enabled: false,
       is_demo: input.isDemo ?? false,
     })
     .select('id')
     .single();
 
-  if (error || !data) {
-    // Lost a race with a concurrent delivery — fetch the winner's row.
+  if (callError || !call) {
+    // Lost a race with a concurrent delivery — return the winner's row.
     const { data: raced } = await svc
       .from('calls')
-      .select('id')
-      .eq('external_call_id', input.externalCallId)
+      .select('id, lead_id, billable_minutes')
+      .eq('vapi_call_id', report.callId)
       .maybeSingle();
-    if (raced) return { id: raced.id as string, created: false };
-    throw new Error(`Could not create call record: ${error?.message}`);
+    if (raced) {
+      return {
+        callId: raced.id as string,
+        duplicate: true,
+        billableMinutes: (raced.billable_minutes as number) ?? 0,
+        leadId: (raced.lead_id as string) ?? null,
+      };
+    }
+    throw new Error(`Could not record the call: ${callError?.message}`);
   }
 
-  return { id: data.id as string, created: true };
-}
+  const callId = call.id as string;
 
-export async function markCallAnswered(callId: string, answeredAt = new Date()): Promise<void> {
-  const svc = getServiceSupabase();
-  await svc
-    .from('calls')
-    .update({ answered_at: answeredAt.toISOString() })
-    .eq('id', callId)
-    .is('answered_at', null);
-}
-
-export async function appendTranscript(input: {
-  callId: string;
-  organizationId: string;
-  role: 'assistant' | 'user' | 'system' | 'tool';
-  text: string;
-  sequence?: number;
-  timestamp?: string;
-}): Promise<void> {
-  const svc = getServiceSupabase();
-  const sequence =
-    input.sequence ??
-    (
-      await svc
-        .from('call_transcript_messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('call_id', input.callId)
-    ).count ??
-    0;
-
-  await svc.from('call_transcript_messages').insert({
-    call_id: input.callId,
-    organization_id: input.organizationId,
-    role: input.role,
-    text: input.text.slice(0, 8000),
-    sequence: sequence + (input.sequence == null ? 1 : 0),
-    timestamp: input.timestamp ?? new Date().toISOString(),
-  });
-}
-
-export interface EndCallInput {
-  callId: string;
-  endedAt?: Date;
-  result?: 'completed' | 'transferred' | 'failed' | 'abandoned' | 'rejected';
-  errorMessage?: string | null;
-  transferSucceeded?: boolean | null;
-}
-
-/**
- * Finalises a call: computes duration, records billable usage, generates the
- * summary and reports any overage to the billing meter.
- *
- * Every step is idempotent, because this runs from the voice worker AND from a
- * reconciliation sweep, and both may fire for the same call.
- */
-export async function endCall(input: EndCallInput): Promise<{
-  billableMinutes: number;
-  billedSeconds: number;
-}> {
-  const svc = getServiceSupabase();
-  const logger = childLogger({ call_id: input.callId, event: 'call.end' });
-  const endedAt = input.endedAt ?? new Date();
-
-  const { data: call } = await svc
-    .from('calls')
-    .select('id, organization_id, started_at, answered_at, ended_at, transferred, appointment_booked, lead_id, is_demo, result')
-    .eq('id', input.callId)
-    .maybeSingle();
-
-  if (!call) throw new Error(`endCall: unknown call ${input.callId}`);
-
-  // Already finalised — return the recorded figures rather than recomputing.
-  if (call.ended_at) {
-    const { data: existing } = await svc
-      .from('calls')
-      .select('billed_seconds, billable_minutes')
-      .eq('id', input.callId)
-      .single();
-    return {
-      billableMinutes: (existing?.billable_minutes as number) ?? 0,
-      billedSeconds: (existing?.billed_seconds as number) ?? 0,
-    };
+  /* Transcript ------------------------------------------------------------ */
+  if (report.transcriptTurns.length) {
+    const rows = report.transcriptTurns.slice(0, 500).map((turn, index) => ({
+      call_id: callId,
+      organization_id: organizationId,
+      role: turn.role,
+      text: turn.text.slice(0, 8000),
+      sequence: index + 1,
+      timestamp: new Date(
+        startedAt.getTime() + Math.round((turn.secondsFromStart ?? 0) * 1000),
+      ).toISOString(),
+    }));
+    const { error } = await svc.from('call_transcript_messages').insert(rows);
+    if (error) logger.warn('transcript insert failed', { error: error.message });
   }
 
-  const billedSeconds = billedSecondsFromTimestamps(call.answered_at as string | null, endedAt);
-  const durationSeconds = Math.max(
-    0,
-    Math.round((endedAt.getTime() - new Date(call.started_at as string).getTime()) / 1000),
-  );
+  /* Lead ------------------------------------------------------------------ */
+  let leadId: string | null = null;
+  const leadWorthCreating =
+    clean(structured.customer_name) ||
+    clean(structured.customer_phone) ||
+    clean(structured.service_requested);
 
-  await svc
-    .from('calls')
-    .update({
-      ended_at: endedAt.toISOString(),
-      duration_seconds: durationSeconds,
-      billed_seconds: billedSeconds,
-      billable_minutes: billableMinutesForCall(billedSeconds),
-      result: input.result ?? (call.transferred ? 'transferred' : 'completed'),
-      ...(input.errorMessage ? { error_message: input.errorMessage } : {}),
-      ...(input.transferSucceeded != null ? { transfer_succeeded: input.transferSucceeded } : {}),
-    })
-    .eq('id', input.callId);
+  if (leadWorthCreating && !['spam', 'wrong_number'].includes(disposition)) {
+    leadId = await createLeadFromCall({
+      organizationId,
+      callId,
+      isDemo: input.isDemo ?? false,
+      callerPhone: report.customerNumber,
+      structured,
+      disposition,
+    });
+  }
 
-  // Usage is recorded by a database function so the ledger insert, the call
-  // update and the subscription counter move together and exactly once.
+  /* Usage ----------------------------------------------------------------- */
   const { data: usage, error: usageError } = await svc.rpc('record_call_usage', {
-    p_call_id: input.callId,
+    p_call_id: callId,
     p_billed_seconds: billedSeconds,
-    p_ai_metadata: { model: process.env.OPENAI_REALTIME_MODEL ?? 'unknown' },
+    p_ai_metadata: { provider: 'vapi', ended_reason: report.endedReason },
   });
 
   if (usageError) {
     await recordErrorEvent({
-      organizationId: call.organization_id as string,
-      callId: input.callId,
+      organizationId,
+      callId,
       scope: 'usage.record',
       message: `Usage recording failed: ${usageError.message}`,
     });
@@ -191,27 +235,123 @@ export async function endCall(input: EndCallInput): Promise<{
   const usageRow = Array.isArray(usage) ? usage[0] : usage;
   const minutes = (usageRow?.billable_minutes as number) ?? billableMinutesForCall(billedSeconds);
 
-  if (usageRow && !usageRow.already_recorded && !call.is_demo) {
+  if (usageRow && !usageRow.already_recorded && !input.isDemo) {
     await Promise.all([
       handleUsageThresholds(
-        call.organization_id as string,
+        organizationId,
         usageRow.used_minutes_before as number,
         usageRow.used_minutes_after as number,
       ),
-      reportOverageToBilling(call.organization_id as string, input.callId, usageRow.used_minutes_before as number, usageRow.used_minutes_after as number),
+      reportOverageToBilling(
+        organizationId,
+        callId,
+        usageRow.used_minutes_before as number,
+        usageRow.used_minutes_after as number,
+      ),
     ]);
   }
 
-  // Summary generation is deliberately last: a failure here must not affect
-  // billing, and the call detail page renders fine without it.
-  void generateCallSummary(input.callId).catch((err) => {
-    logger.warn('summary generation failed', { error: err instanceof Error ? err.message : String(err) });
-  });
-
-  return { billableMinutes: minutes, billedSeconds };
+  logger.info('call recorded', { call_id: callId, billable_minutes: minutes, disposition });
+  return { callId, duplicate: false, billableMinutes: minutes, leadId };
 }
 
 /* -------------------------------------------------------------------------- */
+
+async function createLeadFromCall(input: {
+  organizationId: string;
+  callId: string;
+  isDemo: boolean;
+  callerPhone: string | null;
+  structured: NonNullable<VapiEndOfCallReport['structured']>;
+  disposition: CallDisposition;
+}): Promise<string | null> {
+  const svc = getServiceSupabase();
+  const s = input.structured;
+
+  const phone = normalizePhone(clean(s.customer_phone) ?? input.callerPhone);
+  const postalCode = clean(s.postal_code);
+  const inArea = await evaluateServiceArea(input.organizationId, postalCode);
+
+  const scored = scoreLead({
+    name: clean(s.customer_name),
+    phone,
+    email: clean(s.customer_email),
+    address: clean(s.service_address),
+    postal_code: postalCode,
+    service_requested: clean(s.service_requested),
+    urgency: toUrgency(s.urgency),
+    in_service_area: inArea,
+  });
+
+  const { data: lead, error } = await svc
+    .from('leads')
+    .insert({
+      organization_id: input.organizationId,
+      call_id: input.callId,
+      name: clean(s.customer_name),
+      phone,
+      email: clean(s.customer_email),
+      address: clean(s.service_address),
+      postal_code: postalCode,
+      service_requested: clean(s.service_requested),
+      description: clean(s.requested_appointment)
+        ? `Caller asked for: ${clean(s.requested_appointment)}`
+        : null,
+      urgency: toUrgency(s.urgency),
+      lead_score: scored.score,
+      score_reasons: scored.reasons,
+      status: 'new',
+      source: input.isDemo ? 'demo_call' : 'ai_call',
+      in_service_area: inArea,
+    })
+    .select('id, name, phone, service_requested')
+    .single();
+
+  if (error || !lead) return null;
+
+  await svc.from('calls').update({ lead_id: lead.id }).eq('id', input.callId);
+
+  const { data: business } = await svc
+    .from('business_profiles')
+    .select('display_name')
+    .eq('organization_id', input.organizationId)
+    .maybeSingle();
+
+  await notifyNewLead({
+    organizationId: input.organizationId,
+    organizationName: (business?.display_name as string) ?? 'Your business',
+    leadId: lead.id as string,
+    leadName: (lead.name as string) ?? 'Unknown caller',
+    service: (lead.service_requested as string) ?? 'General enquiry',
+    phone: (lead.phone as string) ?? '',
+  });
+
+  return lead.id as string;
+}
+
+/**
+ * Decides service-area coverage from the stored ZIP rules. Returns null when it
+ * cannot be determined — the product never guesses coverage.
+ */
+async function evaluateServiceArea(
+  organizationId: string,
+  postalCode: string | null,
+): Promise<boolean | null> {
+  if (!postalCode) return null;
+  const svc = getServiceSupabase();
+  const { data } = await svc
+    .from('service_areas')
+    .select('type, postal_code')
+    .eq('organization_id', organizationId)
+    .eq('active', true);
+
+  const zips = (data ?? [])
+    .filter((a) => a.type === 'postal_code')
+    .map((a) => String(a.postal_code ?? '').trim());
+  if (zips.length === 0) return null;
+
+  return zips.includes(postalCode.trim());
+}
 
 async function handleUsageThresholds(organizationId: string, before: number, after: number) {
   const svc = getServiceSupabase();
@@ -241,9 +381,9 @@ async function handleUsageThresholds(organizationId: string, before: number, aft
 }
 
 /**
- * Reports minutes used beyond the plan allowance to the billing meter.
- * Only the newly-overage portion of this call is reported, and the ledger id
- * is used as the idempotency identifier.
+ * Reports minutes beyond the plan allowance to the Stripe billing meter. Only
+ * the newly-overage portion of this call is reported, keyed on the call id so a
+ * retry cannot double-charge.
  */
 async function reportOverageToBilling(
   organizationId: string,
@@ -260,9 +400,7 @@ async function reportOverageToBilling(
   if (!sub?.stripe_customer_id) return;
 
   const included = sub.included_minutes as number;
-  const overageBefore = Math.max(0, before - included);
-  const overageAfter = Math.max(0, after - included);
-  const delta = overageAfter - overageBefore;
+  const delta = Math.max(0, after - included) - Math.max(0, before - included);
   if (delta <= 0) return;
 
   try {
@@ -284,87 +422,34 @@ async function reportOverageToBilling(
 }
 
 /**
- * Generates the structured post-call summary. Skipped silently when there is no
- * transcript — an empty summary is better than an invented one.
+ * Records a call that could not be served, so the business sees a missed call
+ * rather than nothing at all.
  */
-export async function generateCallSummary(callId: string): Promise<void> {
-  const svc = getServiceSupabase();
-
-  const { data: call } = await svc
-    .from('calls')
-    .select('id, organization_id, summary, appointment_booked, transferred, lead_id')
-    .eq('id', callId)
-    .maybeSingle();
-  if (!call || call.summary) return;
-
-  const { data: messages } = await svc
-    .from('call_transcript_messages')
-    .select('role, text')
-    .eq('call_id', callId)
-    .in('role', ['assistant', 'user'])
-    .order('sequence');
-
-  if (!messages || messages.length === 0) return;
-
-  const { data: business } = await svc
-    .from('business_profiles')
-    .select('display_name')
-    .eq('organization_id', call.organization_id as string)
-    .maybeSingle();
-
-  const summary = await getAIProvider().summarizeCall({
-    businessName: (business?.display_name as string) ?? 'the business',
-    transcript: messages as Array<{ role: string; text: string }>,
-    appointmentBooked: Boolean(call.appointment_booked),
-    transferred: Boolean(call.transferred),
-    leadCaptured: Boolean(call.lead_id),
-  });
-
-  await svc
-    .from('calls')
-    .update({
-      summary: summary.summary,
-      summary_json: summary.structured,
-      call_tone: summary.call_tone,
-      // Never overwrite a disposition the agent set explicitly via end_call.
-      ...(call.transferred ? {} : { disposition: summary.disposition }),
-    })
-    .eq('id', callId);
-}
-
-/**
- * Marks a call as failed when the AI could not be reached at all, so the
- * business sees a missed call rather than nothing.
- */
-export async function recordFailedCall(input: {
-  organizationId: string | null;
-  externalCallId: string;
+export async function recordUnservedCall(input: {
+  organizationId: string;
+  vapiCallId: string;
   callerPhone: string | null;
-  businessPhone: string | null;
   reason: string;
 }): Promise<void> {
   const svc = getServiceSupabase();
-  if (!input.organizationId) return;
-
   await svc.from('calls').upsert(
     {
       organization_id: input.organizationId,
-      external_call_id: input.externalCallId,
-      caller_phone: input.callerPhone,
-      business_phone: input.businessPhone,
+      vapi_call_id: input.vapiCallId,
+      caller_phone: normalizePhone(input.callerPhone),
       direction: 'inbound',
       started_at: new Date().toISOString(),
       ended_at: new Date().toISOString(),
       result: 'failed',
       error_message: input.reason,
     },
-    { onConflict: 'external_call_id' },
+    { onConflict: 'vapi_call_id' },
   );
 
   await svc.from('notifications').insert({
     organization_id: input.organizationId,
     kind: 'ai_unavailable',
-    title: 'A call could not be answered by the AI',
+    title: 'A call was not answered by your receptionist',
     body: `${input.callerPhone ?? 'A caller'} reached your number but the receptionist could not answer: ${input.reason}`,
     link: '/dashboard/calls',
   });

@@ -54,12 +54,15 @@ export function decryptSecret(payload: string): string {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Opaque tokens (photo uploads, team invites)                                */
+/* Opaque tokens (team invites)                                               */
 /* -------------------------------------------------------------------------- */
 
 /**
  * Generates a high-entropy token and its storage hash. Only the hash is
- * persisted, so a database leak cannot be replayed against the upload endpoint.
+ * persisted, so a database leak cannot be replayed against the invite endpoint.
+ *
+ * The HMAC is keyed with APP_ENCRYPTION_KEY rather than a bare hash so a stolen
+ * database still cannot be used to pre-compute matching tokens.
  */
 export function generateToken(bytes = 32): { token: string; hash: string } {
   const token = randomBytes(bytes).toString('base64url');
@@ -67,7 +70,7 @@ export function generateToken(bytes = 32): { token: string; hash: string } {
 }
 
 export function hashToken(token: string): string {
-  return createHmac('sha256', cryptoEnv.uploadTokenSecret).update(token).digest('hex');
+  return createHmac('sha256', cryptoEnv.encryptionKey).update(token).digest('hex');
 }
 
 export function constantTimeEqual(a: string, b: string): boolean {

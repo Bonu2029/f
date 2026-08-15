@@ -13,9 +13,7 @@ Work through it once for a staging environment and once for production.
 - [ ] `cp .env.example .env.local`
 - [ ] Generate `APP_ENCRYPTION_KEY`
       `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
-- [ ] Generate `UPLOAD_TOKEN_SECRET`
-      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-- [ ] Generate `VOICE_WORKER_SECRET`
+- [ ] Generate `VAPI_WEBHOOK_SECRET`
       `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 - [ ] Generate `CRON_SECRET`
       `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
@@ -84,61 +82,30 @@ Work through it once for a staging environment and once for production.
 
 ---
 
-## 4. Twilio
+## 4. Vapi
 
-- [ ] Create an account and complete verification
-- [ ] **dashboard** Copy Account SID → `TWILIO_ACCOUNT_SID`
-- [ ] **dashboard** Copy Auth Token → `TWILIO_AUTH_TOKEN`
-- [ ] Run `npm run twilio:setup` → paste `TWILIO_SIP_TRUNK_SID`
-- [ ] **dashboard** Elastic SIP Trunking → your trunk → confirm:
-  - [ ] Origination URI is `sip:<OPENAI_PROJECT_ID>@sip.api.openai.com;transport=tls`
-  - [ ] Secure trunking (TLS + SRTP) is on
-- [ ] **dashboard** Messaging → register a Messaging Service if you want better
-      SMS deliverability → `TWILIO_MESSAGING_SERVICE_SID`
-- [ ] **dashboard** Complete **A2P 10DLC registration** before sending SMS to US
-      numbers. Unregistered traffic is filtered by carriers. This takes days —
-      start early.
-- [ ] **dashboard** Confirm your account is out of trial (trial accounts can
-      only call verified numbers)
+Vapi supplies the number, carries the call, transcribes it and runs the OpenAI
+model. There is no separate OpenAI key in this product.
 
----
-
-## 5. OpenAI
-
-- [ ] **dashboard** Create a project at platform.openai.com
-- [ ] **dashboard** Copy an API key → `OPENAI_API_KEY`
-- [ ] **dashboard** Copy the **project id** → `OPENAI_PROJECT_ID`
-- [ ] **dashboard** Settings → Webhooks → Add endpoint
-  - [ ] URL `<origin>/api/webhooks/openai`
-  - [ ] Enable event `realtime.call.incoming`
-  - [ ] Copy the signing secret → `OPENAI_WEBHOOK_SECRET`
-- [ ] **dashboard** Confirm the project has Realtime API access
-- [ ] **dashboard** Set a monthly spend limit — a runaway loop on a phone line
-      is expensive
-- [ ] Confirm `OPENAI_REALTIME_MODEL` names a model your project can use
+- [ ] Create an account at vapi.ai
+- [ ] **dashboard** Add a payment method — numbers and per-minute charges are
+      billed by Vapi, separately from what your customers pay you through Stripe
+- [ ] **dashboard** Copy the **private** API key → `VAPI_API_KEY`
+      *(not the public key — that one is for browser SDKs, which this product
+      does not use)*
+- [ ] Set `VAPI_WEBHOOK_SECRET` to the value generated in step 1
+- [ ] Confirm `NEXT_PUBLIC_APP_URL` is your real public origin. It is written
+      into every assistant as the webhook URL at sync time, so an assistant
+      synced against `localhost` will never deliver call reports
+- [ ] Optionally set `VAPI_OPENAI_MODEL` (defaults to `gpt-4o`)
+- [ ] **dashboard** Set a spend limit — a runaway loop on a phone line is
+      expensive
+- [ ] There is **nothing to configure in the Vapi dashboard for webhooks.** Each
+      assistant we create carries its own `server.url` and `server.secret`
 
 ---
 
-## 6. Google Calendar
-
-- [ ] **dashboard** Google Cloud Console → create a project
-- [ ] **dashboard** APIs & Services → Library → enable **Google Calendar API**
-- [ ] **dashboard** OAuth consent screen
-  - [ ] User type: External
-  - [ ] App name, support email, developer contact
-  - [ ] Scopes: `calendar.readonly`, `calendar.events`, `openid`, `email`
-  - [ ] Add test users while the app is unverified
-- [ ] **dashboard** Credentials → Create OAuth client ID → Web application
-  - [ ] Authorised redirect URI `<origin>/api/integrations/google/callback`
-  - [ ] Copy client id → `GOOGLE_CLIENT_ID`
-  - [ ] Copy client secret → `GOOGLE_CLIENT_SECRET`
-- [ ] Set `GOOGLE_REDIRECT_URI` to the same value
-- [ ] **dashboard** Submit for verification before public launch — unverified
-      apps are capped at 100 users and show a warning screen
-
----
-
-## 7. Email
+## 5. Email
 
 - [ ] Choose a provider (`EMAIL_PROVIDER=resend` is implemented; `console` just
       logs)
@@ -148,32 +115,18 @@ Work through it once for a staging environment and once for production.
 
 ---
 
-## 8. Voice worker
-
-- [ ] Deploy the container (see DEPLOYMENT.md)
-- [ ] Set on the worker: `OPENAI_API_KEY`, `VOICE_WORKER_SECRET`,
-      `WEB_INTERNAL_URL`, `OPENAI_REALTIME_MODEL`, `PORT`
-- [ ] Set on the web app: `VOICE_WORKER_URL` pointing at the deployed worker
-- [ ] Confirm `VOICE_WORKER_SECRET` is **identical** on both
-- [ ] `curl https://<worker>/health` returns `{"status":"ok"}`
-- [ ] Confirm the web app can reach the worker (private networking is fine and
-      preferable)
-
----
-
-## 9. Scheduled maintenance
+## 6. Scheduled maintenance
 
 - [ ] Schedule `POST <origin>/api/cron/maintenance` every 5–15 minutes with
       header `Authorization: Bearer $CRON_SECRET`
 - [ ] Confirm it returns `{"ok":true}` and not 403
 
-This job expires abandoned founder reservations, finalises calls the worker
-never closed, and purges expired OAuth state and upload tokens. **Without it,
-abandoned checkouts hold Founding Member slots indefinitely.**
+This job expires abandoned founder reservations and stale team invitations.
+**Without it, abandoned checkouts hold Founding Member slots indefinitely.**
 
 ---
 
-## 10. Go-live verification
+## 7. Go-live verification
 
 Walk the whole path yourself before inviting anyone:
 
@@ -181,30 +134,34 @@ Walk the whole path yourself before inviting anyone:
 - [ ] Checkout completes and the subscription shows **active** in the dashboard
 - [ ] The Stripe webhook shows a `200` for `checkout.session.completed`
 - [ ] The founder counter decrements on the public pricing page
-- [ ] Onboarding: business details save
-- [ ] Onboarding: the training conversation creates real services and FAQs
-- [ ] Onboarding: a voice preview actually plays audio
-- [ ] Onboarding: a phone number is purchased and appears in Twilio, attached to
-      the trunk
-- [ ] Onboarding: Google Calendar connects and lists your calendars
-- [ ] Onboarding: activation succeeds and the checklist is green
+- [ ] Business Settings: details, services, service areas and FAQs all save
+- [ ] The AI Receptionist page shows the assistant as **Up to date**, and the
+      assistant exists in the Vapi dashboard with your business in its prompt
+- [ ] Deliberately break it: set `VAPI_API_KEY` to garbage, save a service, and
+      confirm the UI says *saved here, but not live yet* rather than "Saved".
+      Restore the key and press **Update receptionist**
+- [ ] A phone number is purchased and appears in the Vapi dashboard, attached to
+      your assistant
+- [ ] Activation succeeds and the checklist is green
 - [ ] **Call the AI number from your own phone.** It answers, knows your
       business, and sounds right
 - [ ] Ask "are you a real person?" — it answers truthfully
 - [ ] Ask for a price you did not configure — it refuses to invent one
 - [ ] Give a ZIP outside your service area — it says so politely
-- [ ] Book an appointment — it appears in Google Calendar and in Appointments
-- [ ] The confirmation SMS arrives
-- [ ] Ask for photos — the link arrives, uploads work, photos appear on the lead
+- [ ] Ask for an appointment — it takes your preferred time and says the team
+      will confirm, rather than promising a slot
 - [ ] Ask for a human — the transfer connects
 - [ ] After hanging up: the call, transcript, summary, lead and usage all appear
+      within a minute or so
+- [ ] Pause the receptionist, call again, and confirm the missed call is still
+      recorded against the business
 - [ ] `/admin` is reachable by an `ADMIN_EMAILS` address and **not** by anyone
       else
 - [ ] `/api/health` reports `ok`
 
 ---
 
-## 11. Before charging real money
+## 8. Before charging real money
 
 - [ ] `DEMO_MODE=false` in production (it is force-disabled in production builds
       anyway, but set it correctly)
@@ -213,10 +170,11 @@ Walk the whole path yourself before inviting anyone:
 - [ ] Privacy Policy lists your actual sub-processors by name
 - [ ] Call recording and consent requirements reviewed for every state you
       operate in
-- [ ] A2P 10DLC registration approved
-- [ ] Google OAuth verification submitted
+- [ ] Vapi spend limit set, and your per-minute cost checked against the plan
+      allowances in `packages/shared/src/plans.ts` — if Vapi costs you more per
+      minute than you charge in overage, every heavy customer loses you money
 - [ ] Business registration, tax and sales-tax position sorted
-- [ ] Uptime monitoring on `/api/health` and the worker's `/health`
+- [ ] Uptime monitoring on `/api/health`
 - [ ] Error alerting wired to the `error_events` table or your log platform
 - [ ] Database backups confirmed (Supabase → Database → Backups)
 - [ ] A tested restore, not just a backup

@@ -120,14 +120,6 @@ test.describe('authentication', () => {
   });
 });
 
-test.describe('public photo upload', () => {
-  test('an invalid token is refused with an explanation, not a crash', async ({ page }) => {
-    await page.goto('/upload/this-token-does-not-exist-and-is-long-enough');
-    await expect(page.getByText(/This link cannot be used/i)).toBeVisible();
-    await expect(page.getByText(/reply to the text message/i)).toBeVisible();
-  });
-});
-
 test.describe('operational endpoints', () => {
   test('health reports status without leaking configuration values', async ({ request }) => {
     const res = await request.get('/api/health');
@@ -143,10 +135,26 @@ test.describe('operational endpoints', () => {
     expect(JSON.stringify(body)).not.toMatch(/sk-|whsec_|SUPABASE_SERVICE_ROLE/);
   });
 
-  test('internal call APIs reject unauthenticated callers', async ({ request }) => {
-    const res = await request.post('/api/internal/calls/tool', {
-      data: { call_id: crypto.randomUUID(), organization_id: crypto.randomUUID(), tool: 'create_lead', arguments: {} },
+  test('the Vapi webhook never ingests an unsigned call report', async ({ request }) => {
+    const res = await request.post('/api/webhooks/vapi', {
+      data: { message: { type: 'end-of-call-report', call: { id: 'fake', assistantId: 'asst_fake' } } },
     });
+    // 401 with a real secret configured. DEMO_MODE deliberately skips signature
+    // verification for local development, but the forged assistant id still has
+    // no tenant, so nothing may ever be written.
+    expect([401, 200]).toContain(res.status());
+    if (res.status() === 200) {
+      expect((await res.json()).call_id).toBeUndefined();
+    }
+  });
+
+  test('the Vapi sync endpoint refuses an unauthenticated caller', async ({ request }) => {
+    const res = await request.post('/api/vapi/sync', { data: {} });
+    expect([401, 403]).toContain(res.status());
+  });
+
+  test('the phone provisioning endpoint refuses an unauthenticated caller', async ({ request }) => {
+    const res = await request.post('/api/vapi/phone-number', { data: { area_code: '215' } });
     expect([401, 403]).toContain(res.status());
   });
 

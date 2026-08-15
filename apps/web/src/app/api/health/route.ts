@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase/server';
-import { integrationStatus, workerEnv, DEMO_MODE } from '@/lib/env';
+import { integrationStatus, DEMO_MODE } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +10,11 @@ export const dynamic = 'force-dynamic';
  * Reports which integrations are CONFIGURED — never their values, never a
  * partial key. Safe to expose publicly; it is what the admin health panel and
  * an uptime monitor both read.
+ *
+ * Voice is delivered by Vapi, so there is no worker process of ours to probe.
+ * We check that the database answers and that the API key is present; we do NOT
+ * call Vapi on every health check, because a health endpoint that burns a
+ * third-party rate limit is worse than no health endpoint.
  */
 export async function GET() {
   const started = Date.now();
@@ -23,14 +28,12 @@ export async function GET() {
     checks.database = { ok: false, detail: 'not configured' };
   }
 
-  try {
-    const res = await fetch(`${workerEnv.url}/health`, { signal: AbortSignal.timeout(2500) });
-    checks.voice_worker = res.ok ? { ok: true } : { ok: false, detail: `status ${res.status}` };
-  } catch {
-    checks.voice_worker = { ok: false, detail: 'unreachable' };
-  }
-
   const integrations = integrationStatus();
+
+  checks.voice = integrations.vapi
+    ? { ok: true, detail: 'Vapi configured' }
+    : { ok: false, detail: DEMO_MODE ? 'demo mode — no real calls' : 'VAPI_API_KEY is not set' };
+
   const healthy = checks.database?.ok === true;
 
   return NextResponse.json(

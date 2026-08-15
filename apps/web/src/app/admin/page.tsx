@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { formatMoney } from '@afd/shared';
 import { requirePlatformAdmin } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
-import { integrationStatus, workerEnv } from '@/lib/env';
+import { integrationStatus, DEMO_MODE } from '@/lib/env';
 import { Badge, Card, CardContent, CardHeader, CardTitle, Progress } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Platform admin' };
@@ -27,15 +27,23 @@ export default async function AdminOverviewPage() {
   await requirePlatformAdmin();
   const svc = getServiceSupabase();
 
-  const [{ data }, workerHealth] = await Promise.all([
+  const [{ data }, assistants] = await Promise.all([
     svc.rpc('admin_platform_metrics'),
-    checkWorker(),
+    svc
+      .from('organizations')
+      .select('vapi_assistant_id, vapi_sync_error')
+      .not('vapi_assistant_id', 'is', null),
   ]);
 
   const m = (data ?? {}) as PlatformMetrics;
   const founder = m.founder ?? { total: 50, active: 0, reserved: 0, remaining: 50 };
   const claimed = founder.total - founder.remaining;
   const integrations = integrationStatus();
+
+  // Voice health is derived from our own records rather than by polling Vapi, so
+  // loading the admin page never depends on a third party being reachable.
+  const assistantCount = assistants.data?.length ?? 0;
+  const outOfSync = (assistants.data ?? []).filter((o) => o.vapi_sync_error).length;
 
   const webhookTotal = Object.values(m.webhooks_24h ?? {}).reduce((a, b) => a + b, 0);
   const webhookFailed = (m.webhooks_24h ?? {}).failed ?? 0;
@@ -95,7 +103,22 @@ export default async function AdminOverviewPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm">
-              <HealthRow label="Voice worker" ok={workerHealth.ok} detail={workerHealth.detail} />
+              <HealthRow
+                label="Voice (Vapi)"
+                ok={integrations.vapi || DEMO_MODE}
+                detail={
+                  integrations.vapi
+                    ? 'API key configured'
+                    : DEMO_MODE
+                      ? 'Demo mode — no real calls'
+                      : 'VAPI_API_KEY not set'
+                }
+              />
+              <HealthRow
+                label="Assistants"
+                ok={outOfSync === 0}
+                detail={`${assistantCount} live, ${outOfSync} out of sync`}
+              />
               <HealthRow label="Database" ok detail="Reachable" />
               <HealthRow
                 label="Webhooks (24h)"
@@ -132,15 +155,6 @@ export default async function AdminOverviewPage() {
       </p>
     </div>
   );
-}
-
-async function checkWorker(): Promise<{ ok: boolean; detail: string }> {
-  try {
-    const res = await fetch(`${workerEnv.url}/health`, { signal: AbortSignal.timeout(2500), cache: 'no-store' });
-    return res.ok ? { ok: true, detail: 'Responding' } : { ok: false, detail: `HTTP ${res.status}` };
-  } catch {
-    return { ok: false, detail: 'Unreachable' };
-  }
 }
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {

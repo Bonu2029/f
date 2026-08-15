@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireRole } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { getBillingProvider } from '@/lib/providers/billing';
-import { getTelephonyProvider } from '@/lib/providers/telephony';
+import { getVapiProvider } from '@/lib/providers/vapi';
 import { errorResponse, errors } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { childLogger, newRequestId } from '@/lib/logger';
@@ -17,9 +17,8 @@ export const maxDuration = 60;
  * Order matters, because provider resources cost money and cannot be released
  * once our record of them is gone:
  *   1. Cancel the subscription with the billing provider.
- *   2. Release the phone number with the telephony provider.
- *   3. Delete stored files.
- *   4. Delete the organisation, which cascades to tenant data.
+ *   2. Release the phone number and delete the assistant at Vapi.
+ *   3. Delete the organisation, which cascades to tenant data.
  *
  * Audit rows survive: `audit_logs.organization_id` is ON DELETE SET NULL, so the
  * compliance record of the deletion itself is preserved.
@@ -57,29 +56,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Release phone numbers.
+    // 2. Release the Vapi phone number, then delete the assistant. Order matters:
+    //    deleting an assistant that a live number still points at would leave the
+    //    number ringing into nothing while we are still billed for it.
+    const vapi = getVapiProvider();
+
     const { data: numbers } = await svc
       .from('phone_numbers')
-      .select('twilio_sid')
+      .select('vapi_phone_number_id')
       .eq('organization_id', organizationId)
-      .not('twilio_sid', 'is', null);
+      .not('vapi_phone_number_id', 'is', null);
     for (const n of numbers ?? []) {
       try {
-        await getTelephonyProvider().releaseNumber(n.twilio_sid as string);
+        await vapi.releasePhoneNumber(n.vapi_phone_number_id as string);
         releasedResources.push('phone_number');
       } catch (err) {
         logger.warn('number release failed during deletion', { error: err });
       }
     }
 
-    // 3. Delete stored files.
-    for (const bucket of ['knowledge', 'lead-photos'] as const) {
-      const { data: files } = await svc.storage.from(bucket).list(organizationId, { limit: 1000 });
-      if (files?.length) {
-        await svc.storage
-          .from(bucket)
-          .remove(files.map((f) => `${organizationId}/${f.name}`))
-          .catch(() => undefined);
+    const { data: org } = await svc
+      .from('organizations')
+      .select('vapi_assistant_id')
+      .eq('id', organizationId)
+      .maybeSingle();
+    if (org?.vapi_assistant_id) {
+      try {
+        await vapi.deleteAssistant(org.vapi_assistant_id as string);
+        releasedResources.push('vapi_assistant');
+      } catch (err) {
+        logger.warn('assistant deletion failed during deletion', { error: err });
       }
     }
 
@@ -94,7 +100,7 @@ export async function POST(request: NextRequest) {
       metadata: { released: releasedResources, note: 'Founder slot intentionally not returned to inventory.' },
     });
 
-    // 4. Delete the organisation; tenant tables cascade.
+    // 3. Delete the organisation; tenant tables cascade.
     const { error } = await svc.from('organizations').delete().eq('id', organizationId);
     if (error) throw errors.conflict(`The account could not be deleted: ${error.message}`);
 

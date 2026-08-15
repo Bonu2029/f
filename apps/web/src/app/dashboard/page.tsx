@@ -113,7 +113,7 @@ export default async function DashboardPage() {
           title="Your receptionist is not live yet"
           action={
             <Button asChild size="sm">
-              <Link href="/onboarding/live">
+              <Link href="/dashboard/receptionist">
                 Finish setup <ArrowRight aria-hidden />
               </Link>
             </Button>

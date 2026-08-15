@@ -47,7 +47,7 @@ export default async function OnboardingStartPage() {
     .maybeSingle();
 
   if (subscription && ['active', 'trialing', 'past_due'].includes(subscription.status)) {
-    redirect('/onboarding/business');
+    redirect('/dashboard/settings/business');
   }
 
   const stats = await getFounderStatsFresh();

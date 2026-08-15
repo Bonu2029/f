@@ -21,8 +21,8 @@ export default function TermsPage() {
       <p>
         {brand.name} provides an AI-powered telephone receptionist. It answers calls to a phone
         number you provision or forward, converses with callers using information you supply,
-        captures leads, may book appointments against a calendar you connect, and may send SMS
-        messages on your behalf.
+        captures leads, records the appointment times callers ask for, and can transfer a caller to a
+        number you nominate. It does not send text messages.
       </p>
 
       <h2>2. Your responsibilities</h2>
@@ -33,14 +33,9 @@ export default function TermsPage() {
           that information accurate. We do not verify it.
         </li>
         <li>
-          <strong>Legal compliance for calls and messages.</strong> You are responsible for complying
-          with laws applicable to your calls and text messages, including consent, disclosure and
-          recording requirements in every jurisdiction you operate in. Requirements vary
-          significantly by state and country.
-        </li>
-        <li>
-          <strong>Consent for SMS.</strong> You must have a lawful basis to text the people you
-          instruct the Service to text.
+          <strong>Legal compliance for calls.</strong> You are responsible for complying with laws
+          applicable to your calls, including consent, disclosure and recording requirements in every
+          jurisdiction you operate in. Requirements vary significantly by state and country.
         </li>
         <li>
           <strong>Account security.</strong> You are responsible for activity under your account and

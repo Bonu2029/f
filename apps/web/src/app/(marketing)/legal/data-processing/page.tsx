@@ -28,7 +28,7 @@ export default function DataProcessingPage() {
       <h2>Nature and purpose</h2>
       <p>
         Answering inbound telephone calls, transcribing conversations, capturing enquiry details,
-        scheduling appointments, sending SMS messages and storing photographs supplied by callers.
+        recording the appointment times callers ask for, and transferring callers to a number you nominate.
       </p>
 
       <h2>Categories of data subject</h2>
@@ -42,7 +42,6 @@ export default function DataProcessingPage() {
         <li>Contact details: name, telephone number, email address, service address.</li>
         <li>Conversation transcripts and summaries.</li>
         <li>Appointment details.</li>
-        <li>Photographs voluntarily uploaded by callers.</li>
       </ul>
       <p>
         No special-category data is intentionally processed. Callers should not be asked for it, and

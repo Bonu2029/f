@@ -54,12 +54,10 @@ export const RATE_LIMITS = {
   signup: { limit: 5, windowMs: 60 * 60_000 },
   passwordReset: { limit: 5, windowMs: 60 * 60_000 },
   checkout: { limit: 10, windowMs: 10 * 60_000 },
-  training: { limit: 60, windowMs: 5 * 60_000 },
-  phoneSearch: { limit: 20, windowMs: 5 * 60_000 },
+  /** Manual "Update receptionist" — each one is a write to Vapi. */
+  vapi_sync: { limit: 20, windowMs: 10 * 60_000 },
+  /** Provisioning buys a real number, so this is deliberately tight. */
   phonePurchase: { limit: 5, windowMs: 60 * 60_000 },
-  voicePreview: { limit: 30, windowMs: 10 * 60_000 },
-  publicUpload: { limit: 30, windowMs: 15 * 60_000 },
-  websiteImport: { limit: 10, windowMs: 60 * 60_000 },
   api: { limit: 120, windowMs: 60_000 },
   webhook: { limit: 600, windowMs: 60_000 },
 } as const satisfies Record<string, RateLimitRule>;

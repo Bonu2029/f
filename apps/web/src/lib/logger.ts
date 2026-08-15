@@ -18,12 +18,18 @@ const threshold = LEVELS[(process.env.LOG_LEVEL as Severity) ?? 'info'] ?? 20;
 const SECRET_KEY_PATTERN =
   /(authorization|api[_-]?key|secret|token|password|passwd|credential|signature|cookie|refresh_token|access_token|client_secret|card|cvv|cvc|iban|ssn)/i;
 
+/**
+ * Value patterns for credentials that are recognisable on sight.
+ *
+ * A Vapi key is a bare UUID, indistinguishable from an organisation id, so it
+ * cannot be caught here without redacting every identifier and making the logs
+ * useless. It is caught by SECRET_KEY_PATTERN instead — which is why nothing in
+ * this codebase ever puts a provider key in a log field not named for a secret.
+ */
 const SECRET_VALUE_PATTERNS: RegExp[] = [
   /\bsk-[A-Za-z0-9_-]{12,}\b/g, // OpenAI
   /\b(sk|pk|rk)_(live|test)_[A-Za-z0-9]{10,}\b/g, // Stripe
   /\bwhsec_[A-Za-z0-9+/=_-]{10,}\b/g, // webhook secrets
-  /\bAC[0-9a-fA-F]{32}\b/g, // Twilio account sid
-  /\bSK[0-9a-fA-F]{32}\b/g, // Twilio API key sid
   /\bey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, // JWTs
   /\b(?:\d[ -]*?){13,19}\b/g, // card-like number runs
 ];

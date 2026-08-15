@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 import {
   aiAgentSchema,
   aiRuleSchema,
-  availabilitySettingsSchema,
   businessProfileSchema,
   faqSchema,
   leadUpdateSchema,
@@ -13,7 +12,6 @@ import {
   policySchema,
   serviceAreaSchema,
   serviceSchema,
-  forwardingSchema,
   normalizePhone,
   scoreLeadFromRecord,
 } from '@afd/shared';
@@ -22,6 +20,7 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { actionError, actionOk, errors, type ActionResult } from '@/lib/errors';
 import { advanceOnboarding, completeOnboarding, getReadinessChecklist } from '@/server/organizations';
+import { syncAssistant, syncAssistantQuietly } from '@/server/vapi-sync';
 
 /**
  * Server Actions for every dashboard and onboarding mutation.
@@ -46,6 +45,39 @@ function num(value: FormDataEntryValue | null): number | null {
   if (value == null || value === '') return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Assistant sync                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Pushes a settings change through to the organisation's Vapi assistant.
+ *
+ * The database write has already committed by the time this runs, so a provider
+ * failure must not be reported as a failed save. It must not be reported as a
+ * clean success either: the owner would believe a change was live when the
+ * receptionist is still answering with the old configuration. The middle case
+ * is what `warning` is for.
+ */
+async function syncAfterSave(
+  ctx: { user: { id: string; email?: string | null } },
+  organizationId: string,
+  reason: string,
+  savedMessage: string,
+): Promise<ActionResult> {
+  const sync = await syncAssistantQuietly({
+    organizationId,
+    actorUserId: ctx.user.id,
+    actorEmail: ctx.user.email ?? null,
+    reason,
+  });
+
+  revalidatePath('/dashboard/receptionist');
+
+  return sync.ok
+    ? actionOk(undefined, savedMessage)
+    : { ok: true, warning: sync.message };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -110,9 +142,13 @@ export async function saveBusinessProfileAction(
     });
 
     revalidatePath('/dashboard');
-    revalidatePath('/dashboard/knowledge');
-    revalidatePath('/onboarding/business');
-    return actionOk(undefined, 'Business details saved.');
+    revalidatePath('/dashboard/settings/business');
+    return syncAfterSave(
+      ctx,
+      organizationId,
+      'business profile updated',
+      'Business details saved. Your receptionist knows them from your next call.',
+    );
   } catch (err) {
     return actionError(err);
   }
@@ -158,15 +194,20 @@ export async function saveServiceAction(
       throw errors.conflict(`That service could not be saved: ${error.message}`);
     }
 
-    revalidatePath('/dashboard/knowledge');
-    return actionOk(undefined, id ? 'Service updated.' : 'Service added.');
+    revalidatePath('/dashboard/settings/business');
+    return syncAfterSave(
+      ctx,
+      ctx.active.organizationId,
+      id ? 'service updated' : 'service added',
+      id ? 'Service updated.' : 'Service added.',
+    );
   } catch (err) {
     return actionError(err);
   }
 }
 
 export async function deleteRecordAction(
-  table: 'services' | 'faqs' | 'business_policies' | 'service_areas' | 'ai_rules' | 'knowledge_documents',
+  table: 'services' | 'faqs' | 'business_policies' | 'service_areas' | 'ai_rules',
   id: string,
 ): Promise<ActionResult> {
   try {
@@ -191,9 +232,8 @@ export async function deleteRecordAction(
       .eq('organization_id', ctx.active.organizationId);
     if (error) throw errors.conflict(`That could not be deleted: ${error.message}`);
 
-    revalidatePath('/dashboard/knowledge');
-    revalidatePath('/dashboard/receptionist');
-    return actionOk(undefined, 'Deleted.');
+    revalidatePath('/dashboard/settings/business');
+    return syncAfterSave(ctx, ctx.active.organizationId, `${table} row deleted`, 'Deleted.');
   } catch (err) {
     return actionError(err);
   }
@@ -216,8 +256,13 @@ export async function saveFaqAction(_prev: ActionResult | null, formData: FormDa
       : await svc.from('faqs').insert(payload);
     if (error) throw errors.conflict(`That question could not be saved: ${error.message}`);
 
-    revalidatePath('/dashboard/knowledge');
-    return actionOk(undefined, id ? 'Question updated.' : 'Question added.');
+    revalidatePath('/dashboard/settings/business');
+    return syncAfterSave(
+      ctx,
+      ctx.active.organizationId,
+      id ? 'FAQ updated' : 'FAQ added',
+      id ? 'Question updated.' : 'Question added.',
+    );
   } catch (err) {
     return actionError(err);
   }
@@ -241,8 +286,8 @@ export async function savePolicyAction(_prev: ActionResult | null, formData: For
       : await svc.from('business_policies').insert(payload);
     if (error) throw errors.conflict(`That policy could not be saved: ${error.message}`);
 
-    revalidatePath('/dashboard/knowledge');
-    return actionOk(undefined, 'Policy saved.');
+    revalidatePath('/dashboard/settings/business');
+    return syncAfterSave(ctx, ctx.active.organizationId, 'policy saved', 'Policy saved.');
   } catch (err) {
     return actionError(err);
   }
@@ -270,8 +315,8 @@ export async function saveServiceAreaAction(
       .insert({ ...input, organization_id: ctx.active.organizationId });
     if (error) throw errors.conflict(`That service area could not be saved: ${error.message}`);
 
-    revalidatePath('/dashboard/knowledge');
-    return actionOk(undefined, 'Service area added.');
+    revalidatePath('/dashboard/settings/business');
+    return syncAfterSave(ctx, ctx.active.organizationId, 'service area added', 'Service area added.');
   } catch (err) {
     return actionError(err);
   }
@@ -290,19 +335,12 @@ export async function saveAgentAction(_prev: ActionResult | null, formData: Form
     const input = aiAgentSchema.parse({
       display_name: formData.get('display_name'),
       voice: formData.get('voice'),
-      language: formData.get('language') || 'en',
       personality: formData.get('personality') || 'friendly',
-      speaking_pace: formData.get('speaking_pace') || 'natural',
-      response_length: formData.get('response_length') || 'balanced',
       greeting: formData.get('greeting'),
       instructions: formData.get('instructions'),
       transfer_enabled: transferEnabled,
       transfer_phone: formData.get('transfer_phone'),
-      sms_enabled: formData.get('sms_enabled') === 'on',
       appointment_booking_enabled: formData.get('appointment_booking_enabled') === 'on',
-      photo_requests_enabled: formData.get('photo_requests_enabled') === 'on',
-      disclosure_setting: formData.get('disclosure_setting') || 'upfront',
-      fallback_phone: formData.get('fallback_phone'),
     });
 
     const svc = getServiceSupabase();
@@ -311,25 +349,27 @@ export async function saveAgentAction(_prev: ActionResult | null, formData: Form
       .update({
         ...input,
         transfer_phone: input.transfer_enabled ? normalizePhone(input.transfer_phone) : null,
-        fallback_phone: normalizePhone(input.fallback_phone),
       })
       .eq('organization_id', organizationId);
 
     if (error) throw errors.conflict(`Your receptionist settings could not be saved: ${error.message}`);
 
-    await advanceOnboarding(organizationId, 4);
+    await advanceOnboarding(organizationId, 2);
     await recordAudit({
       organizationId,
       actorUserId: ctx.user.id,
       actorEmail: ctx.user.email ?? null,
       action: AUDIT_ACTIONS.AGENT_UPDATED,
       targetType: 'ai_agent',
-      metadata: { voice: input.voice, language: input.language, personality: input.personality },
+      metadata: { voice: input.voice, personality: input.personality },
     });
 
-    revalidatePath('/dashboard/receptionist');
-    revalidatePath('/onboarding/voice');
-    return actionOk(undefined, 'Saved. Your next call will use these settings.');
+    return syncAfterSave(
+      ctx,
+      organizationId,
+      'receptionist settings updated',
+      'Saved. Your next call will use these settings.',
+    );
   } catch (err) {
     return actionError(err);
   }
@@ -356,9 +396,7 @@ export async function saveRuleAction(_prev: ActionResult | null, formData: FormD
       : await svc.from('ai_rules').insert({ ...input, organization_id: ctx.active.organizationId });
     if (error) throw errors.conflict(`That rule could not be saved: ${error.message}`);
 
-    revalidatePath('/dashboard/receptionist');
-    revalidatePath('/onboarding/rules');
-    return actionOk(undefined, 'Rule saved.');
+    return syncAfterSave(ctx, ctx.active.organizationId, 'receptionist rule saved', 'Rule saved.');
   } catch (err) {
     return actionError(err);
   }
@@ -374,8 +412,12 @@ export async function toggleRuleAction(id: string, enabled: boolean): Promise<Ac
       .eq('id', id)
       .eq('organization_id', ctx.active.organizationId);
     if (error) throw errors.conflict(error.message);
-    revalidatePath('/dashboard/receptionist');
-    return actionOk();
+    return syncAfterSave(
+      ctx,
+      ctx.active.organizationId,
+      enabled ? 'receptionist rule enabled' : 'receptionist rule disabled',
+      enabled ? 'Rule enabled.' : 'Rule disabled.',
+    );
   } catch (err) {
     return actionError(err);
   }
@@ -428,6 +470,15 @@ export async function activateReceptionistAction(): Promise<ActionResult> {
       );
     }
 
+    // Push the current settings to Vapi FIRST. Activating an organisation whose
+    // assistant was never created would put a number live with nothing behind it.
+    await syncAssistant({
+      organizationId,
+      actorUserId: ctx.user.id,
+      actorEmail: ctx.user.email ?? null,
+      reason: 'activation',
+    });
+
     const svc = getServiceSupabase();
     const { error } = await svc
       .from('ai_agents')
@@ -445,86 +496,8 @@ export async function activateReceptionistAction(): Promise<ActionResult> {
     });
 
     revalidatePath('/dashboard');
+    revalidatePath('/dashboard/receptionist');
     return actionOk(undefined, 'Your receptionist is live and answering calls.');
-  } catch (err) {
-    return actionError(err);
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Availability                                                               */
-/* -------------------------------------------------------------------------- */
-
-export async function saveAvailabilityAction(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  try {
-    const ctx = await requireRole('admin');
-    const organizationId = ctx.active.organizationId;
-
-    const input = availabilitySettingsSchema.parse({
-      appointment_duration: num(formData.get('appointment_duration')) ?? 60,
-      buffer_before: num(formData.get('buffer_before')) ?? 0,
-      buffer_after: num(formData.get('buffer_after')) ?? 15,
-      min_notice_minutes: num(formData.get('min_notice_minutes')) ?? 120,
-      max_horizon_days: num(formData.get('max_horizon_days')) ?? 30,
-      blackout_dates: JSON.parse(String(formData.get('blackout_dates') || '[]')),
-      rules: JSON.parse(String(formData.get('rules') || '[]')),
-    });
-
-    const svc = getServiceSupabase();
-    const { rules, ...settings } = input;
-
-    await svc
-      .from('availability_settings')
-      .upsert({ organization_id: organizationId, ...settings }, { onConflict: 'organization_id' });
-
-    // Replace the weekly pattern wholesale — simpler and race-free.
-    await svc.from('availability_rules').delete().eq('organization_id', organizationId);
-    if (rules.length) {
-      await svc
-        .from('availability_rules')
-        .insert(rules.map((r) => ({ ...r, organization_id: organizationId })));
-    }
-
-    await advanceOnboarding(organizationId, 6);
-    revalidatePath('/dashboard/settings/calendar');
-    revalidatePath('/onboarding/calendar');
-    return actionOk(undefined, 'Availability saved.');
-  } catch (err) {
-    return actionError(err);
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Phone forwarding                                                           */
-/* -------------------------------------------------------------------------- */
-
-export async function saveForwardingAction(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  try {
-    const ctx = await requireRole('admin');
-    const input = forwardingSchema.parse({
-      forwarding_mode: formData.get('forwarding_mode'),
-      forwarding_target: formData.get('forwarding_target'),
-    });
-
-    const svc = getServiceSupabase();
-    const { error } = await svc
-      .from('phone_numbers')
-      .update({
-        forwarding_mode: input.forwarding_mode,
-        forwarding_target: normalizePhone(input.forwarding_target),
-      })
-      .eq('organization_id', ctx.active.organizationId)
-      .eq('status', 'active');
-    if (error) throw errors.conflict(error.message);
-
-    revalidatePath('/dashboard/settings/phone');
-    return actionOk(undefined, 'Forwarding preference saved.');
   } catch (err) {
     return actionError(err);
   }

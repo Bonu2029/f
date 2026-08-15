@@ -1,7 +1,6 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { Download, Sparkles } from 'lucide-react';
 import { INDUSTRIES, DEFAULT_BUSINESS_HOURS, type BusinessHoursDay } from '@afd/shared';
 import { Alert, Button, Field, Input, Select, Switch, Textarea } from '@/components/ui';
 import { saveBusinessProfileAction } from '@/server/actions';
@@ -39,21 +38,19 @@ interface Initial {
 }
 
 /**
- * Business profile form, shared by onboarding step 1 and settings.
+ * Business profile form.
  *
- * "Import from website" fetches suggestions server-side and fills the form for
- * REVIEW — it never saves anything on its own. The owner still has to press
- * save, which is the whole point.
+ * Everything saved here is written into the receptionist's instructions, so the
+ * form reports back whether the change actually reached the voice provider —
+ * never a bare "Saved" when it did not.
  */
 export function BusinessForm({
   initial,
   canEdit,
-  showImport,
   submitLabel = 'Save business details',
 }: {
   initial: Initial;
   canEdit: boolean;
-  showImport: boolean;
   submitLabel?: string;
 }) {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(
@@ -80,11 +77,6 @@ export function BusinessForm({
     return Array.isArray(stored) && stored.length === 7 ? stored : DEFAULT_BUSINESS_HOURS;
   });
 
-  const [importing, setImporting] = useState(false);
-  const [importUrl, setImportUrl] = useState(initial.website);
-  const [importNotice, setImportNotice] = useState<string | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-
   const fields = state?.fields ?? {};
   const set = (key: keyof typeof values) => (v: string) => setValues((s) => ({ ...s, [key]: v }));
 
@@ -92,85 +84,18 @@ export function BusinessForm({
     setHours((h) => h.map((d) => (d.weekday === weekday ? { ...d, ...patch } : d)));
   }
 
-  async function importFromWebsite() {
-    setImporting(true);
-    setImportError(null);
-    setImportNotice(null);
-    try {
-      const res = await fetch('/api/business/import-website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: importUrl }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setImportError(json?.error?.message ?? 'That website could not be read.');
-        return;
-      }
-
-      const s = json.suggestion as Record<string, string | null>;
-      setValues((v) => ({
-        ...v,
-        display_name: s.display_name || v.display_name,
-        industry: s.industry || v.industry,
-        public_phone: s.public_phone || v.public_phone,
-        email: s.email || v.email,
-        address: s.address || v.address,
-        city: s.city || v.city,
-        state: s.state || v.state,
-        postal_code: s.postal_code || v.postal_code,
-        business_description:
-          (json.suggestion?.business?.business_description as string) || v.business_description,
-      }));
-      setImportNotice(
-        'Suggestions filled in below. Nothing has been saved yet — check each field, then press save.',
-      );
-    } catch {
-      setImportError('We could not reach that website.');
-    } finally {
-      setImporting(false);
-    }
-  }
-
   return (
     <form action={action} className="space-y-6">
-      {state?.ok && <Alert tone="positive" title={state.message ?? 'Saved'} />}
+      {state?.ok && state.warning && (
+        <Alert tone="caution" title="Saved here, but not live yet">
+          {state.warning}
+        </Alert>
+      )}
+      {state?.ok && !state.warning && <Alert tone="positive" title={state.message ?? 'Saved'} />}
       {state && !state.ok && (
         <Alert tone="critical" title={state.message ?? 'That did not save'}>
           {state.action && <p>{state.action}</p>}
         </Alert>
-      )}
-
-      {showImport && canEdit && (
-        <div className="rounded-lg border border-line bg-surface-sunken p-4">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <Sparkles className="size-4 text-brand-600" aria-hidden />
-            Import from your website
-          </h3>
-          <p className="mt-1 text-sm text-ink-muted">
-            We&rsquo;ll read your public site and suggest details. You review everything before it is
-            saved.
-          </p>
-          {importNotice && <Alert tone="positive" title={importNotice} className="mt-3" />}
-          {importError && <Alert tone="critical" title={importError} className="mt-3" />}
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <Input
-              value={importUrl}
-              onChange={(e) => setImportUrl(e.target.value)}
-              placeholder="danielshvac.com"
-              aria-label="Website address to import from"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              loading={importing}
-              disabled={!importUrl}
-              onClick={importFromWebsite}
-            >
-              <Download aria-hidden /> {importing ? 'Reading' : 'Import'}
-            </Button>
-          </div>
-        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
