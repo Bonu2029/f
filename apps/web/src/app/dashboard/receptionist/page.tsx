@@ -18,15 +18,10 @@ export default async function ReceptionistPage() {
   const canEdit = ctx.active.role !== 'staff';
   const organizationId = ctx.active.organizationId;
 
-  const [{ data: agent }, { data: rules }, { data: org }, { data: phone }, { data: subscription }, readiness] =
+  const [{ data: agent }, { data: rules }, { data: phone }, { data: subscription }, readiness] =
     await Promise.all([
       svc.from('ai_agents').select('*').eq('organization_id', organizationId).maybeSingle(),
       svc.from('ai_rules').select('*').eq('organization_id', organizationId).order('priority'),
-      svc
-        .from('organizations')
-        .select('vapi_assistant_id, vapi_synced_at, vapi_sync_error')
-        .eq('id', organizationId)
-        .maybeSingle(),
       svc
         .from('phone_numbers')
         .select('phone_number, is_demo')
@@ -77,9 +72,9 @@ export default async function ReceptionistPage() {
           <ReceptionistStatus
             canEdit={canEdit}
             canProvision={ctx.active.role === 'owner' && subscriptionActive}
-            assistantId={(org?.vapi_assistant_id as string) ?? null}
-            syncedAt={(org?.vapi_synced_at as string) ?? null}
-            syncError={(org?.vapi_sync_error as string) ?? null}
+            assistantId={(agent.vapi_assistant_id as string) ?? null}
+            syncedAt={(agent.vapi_synced_at as string) ?? null}
+            syncError={(agent.vapi_sync_error as string) ?? null}
             phoneNumber={(phone?.phone_number as string) ?? null}
             phoneIsDemo={Boolean(phone?.is_demo)}
             isLive={readiness.isLive}
@@ -106,8 +101,8 @@ export default async function ReceptionistPage() {
             canEdit={canEdit}
             organizationName={ctx.active.organizationName}
             initial={{
-              display_name: agent.display_name as string,
-              voice: agent.voice as string,
+              name: agent.name as string,
+              voice_id: agent.voice_id as string,
               personality: agent.personality as string,
               greeting: agent.greeting as string,
               instructions: (agent.instructions as string) ?? '',

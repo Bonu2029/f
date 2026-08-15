@@ -20,6 +20,7 @@ Work through it once for a staging environment and once for production.
 - [ ] Set `NEXT_PUBLIC_APP_URL` to your real origin, no trailing slash
 - [ ] Set `ADMIN_EMAILS` to the addresses that may reach `/admin`
 - [ ] Confirm `.env.local` is **not** committed (`.gitignore` covers it)
+- [ ] `npm run env:check` — lists what is still missing and what each one breaks
 
 ---
 
@@ -27,10 +28,13 @@ Work through it once for a staging environment and once for production.
 
 - [ ] **dashboard** Create a project
 - [ ] **dashboard** Project Settings → API → copy Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-- [ ] **dashboard** Copy `anon public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] **dashboard** Copy `service_role` key → `SUPABASE_SERVICE_ROLE_KEY`
-      *(server only — never prefix it `NEXT_PUBLIC_`)*
+      *(the bare origin, e.g. `https://abc.supabase.co` — not the `/rest/v1/` URL)*
+- [ ] **dashboard** Copy the publishable key → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+      *(older projects: the `anon public` JWT → `NEXT_PUBLIC_SUPABASE_ANON_KEY`)*
+- [ ] **dashboard** Copy the secret key → `SUPABASE_SERVICE_ROLE_KEY`
+      *(older projects: `service_role`. Server only — never prefix it `NEXT_PUBLIC_`)*
 - [ ] **dashboard** Project Settings → Database → copy the URI → `SUPABASE_DB_URL`
+      *(skip if you plan to apply `bundle.sql` in the SQL editor instead)*
 - [ ] **dashboard** Authentication → URL Configuration
   - [ ] Site URL = your origin
   - [ ] Redirect URLs include `<origin>/auth/callback`
@@ -38,7 +42,10 @@ Work through it once for a staging environment and once for production.
 - [ ] **dashboard** Decide on "Confirm email" (leave **on** for production)
 - [ ] **dashboard** Authentication → Email Templates — rewrite the default
       Supabase copy to match your brand
-- [ ] Run `npm run db:migrate`
+- [ ] Apply the schema, either:
+  - [ ] `npm run db:migrate` (needs `SUPABASE_DB_URL`), **or**
+  - [ ] `npm run db:bundle`, then paste `supabase/migrations/bundle.sql` into
+        **dashboard** SQL Editor → New query → Run
 - [ ] Verify in the SQL editor:
       `select count(*) from pg_policies where schemaname = 'public';`
       *(should be well over 50 — if it is 0, RLS did not apply and the database

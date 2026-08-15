@@ -5,6 +5,7 @@ import {
   DEFAULT_AVAILABILITY_SETTINGS,
   DEFAULT_BUSINESS_HOURS,
   defaultGreeting,
+  DEFAULT_VAPI_VOICE,
   slugify,
   getPlan,
   ONBOARDING_TOTAL_STEPS,
@@ -82,7 +83,8 @@ export async function createOrganization(input: CreateOrganizationInput) {
     }),
     svc.from('ai_agents').insert({
       organization_id: organizationId,
-      display_name: agentName,
+      name: agentName,
+      voice_id: DEFAULT_VAPI_VOICE,
       greeting: defaultGreeting(input.businessName, agentName),
       active: false,
     }),
@@ -179,12 +181,7 @@ export async function completeOnboarding(organizationId: string) {
  */
 export async function getReadinessChecklist(organizationId: string) {
   const svc = getServiceSupabase();
-  const [org, business, services, agent, phone, subscription] = await Promise.all([
-    svc
-      .from('organizations')
-      .select('vapi_assistant_id, vapi_sync_error')
-      .eq('id', organizationId)
-      .maybeSingle(),
+  const [business, services, agent, phone, subscription] = await Promise.all([
     svc
       .from('business_profiles')
       .select('display_name, business_description, business_hours')
@@ -197,7 +194,7 @@ export async function getReadinessChecklist(organizationId: string) {
       .eq('active', true),
     svc
       .from('ai_agents')
-      .select('greeting, voice, transfer_enabled, transfer_phone, active')
+      .select('greeting, voice_id, transfer_enabled, transfer_phone, active, vapi_assistant_id, vapi_sync_error')
       .eq('organization_id', organizationId)
       .maybeSingle(),
     svc
@@ -247,22 +244,22 @@ export async function getReadinessChecklist(organizationId: string) {
     {
       key: 'greeting',
       label: 'Has a greeting and a voice',
-      done: Boolean(agent.data?.greeting && agent.data.greeting.length > 10 && agent.data?.voice),
+      done: Boolean(agent.data?.greeting && agent.data.greeting.length > 10 && agent.data?.voice_id),
       required: true,
       href: '/dashboard/receptionist',
-      detail: agent.data?.voice ?? 'not set',
+      detail: (agent.data?.voice_id as string) ?? 'not set',
     },
     {
       // Without an assistant at the voice provider there is literally nothing to
       // answer the phone, so this is required rather than advisory.
       key: 'assistant',
       label: 'Published to the voice provider',
-      done: Boolean(org.data?.vapi_assistant_id) && !org.data?.vapi_sync_error,
+      done: Boolean(agent.data?.vapi_assistant_id) && !agent.data?.vapi_sync_error,
       required: true,
       href: '/dashboard/receptionist',
-      detail: org.data?.vapi_sync_error
+      detail: agent.data?.vapi_sync_error
         ? 'Last update failed'
-        : org.data?.vapi_assistant_id
+        : agent.data?.vapi_assistant_id
           ? 'Up to date'
           : 'Not published yet',
     },

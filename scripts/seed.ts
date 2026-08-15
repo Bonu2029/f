@@ -76,11 +76,6 @@ async function main() {
       status: 'active',
       onboarding_step: 4,
       onboarding_completed_at: new Date().toISOString(),
-      // A visibly fake assistant id: the demo tenant is fully configured in the
-      // UI without any assistant having been created at Vapi.
-      vapi_assistant_id: 'demo_asst_seed0001',
-      vapi_phone_number_id: 'demo_num_seed0001',
-      vapi_synced_at: new Date().toISOString(),
       is_demo: true,
     })
     .select('id')
@@ -127,9 +122,13 @@ async function main() {
 
   await db.from('ai_agents').insert({
     organization_id: orgId,
-    display_name: 'Mia',
-    voice: 'elliot',
+    name: 'Mia',
+    voice_id: 'elliot',
     personality: 'warm',
+    // A visibly fake assistant id: the demo tenant is fully configured in the
+    // UI without anything having been created at Vapi.
+    vapi_assistant_id: 'demo_asst_seed0001',
+    vapi_synced_at: new Date().toISOString(),
     greeting:
       "Thanks for calling Daniel's HVAC. This is Mia, the virtual receptionist. How can I help you today?",
     active: true,

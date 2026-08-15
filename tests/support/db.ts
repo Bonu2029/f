@@ -64,7 +64,12 @@ export async function resetSchema(): Promise<void> {
       await client.query(shim);
 
       const dir = path.join(process.cwd(), 'supabase/migrations');
-      const files = (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort();
+      // `bundle.sql` is the generated whole-history concatenation for the
+      // Supabase SQL editor, not a migration — applying it here would re-run
+      // everything on top of itself.
+      const files = (await readdir(dir))
+        .filter((f) => f.endsWith('.sql') && f !== 'bundle.sql')
+        .sort();
       for (const file of files) {
         await client.query(await readFile(path.join(dir, file), 'utf8'));
       }

@@ -30,7 +30,7 @@ export default async function AdminOverviewPage() {
   const [{ data }, assistants] = await Promise.all([
     svc.rpc('admin_platform_metrics'),
     svc
-      .from('organizations')
+      .from('ai_agents')
       .select('vapi_assistant_id, vapi_sync_error')
       .not('vapi_assistant_id', 'is', null),
   ]);
@@ -43,7 +43,7 @@ export default async function AdminOverviewPage() {
   // Voice health is derived from our own records rather than by polling Vapi, so
   // loading the admin page never depends on a third party being reachable.
   const assistantCount = assistants.data?.length ?? 0;
-  const outOfSync = (assistants.data ?? []).filter((o) => o.vapi_sync_error).length;
+  const outOfSync = (assistants.data ?? []).filter((a) => a.vapi_sync_error).length;
 
   const webhookTotal = Object.values(m.webhooks_24h ?? {}).reduce((a, b) => a + b, 0);
   const webhookFailed = (m.webhooks_24h ?? {}).failed ?? 0;

@@ -83,8 +83,8 @@ owner saves a form
   → Server Action writes the row (organization_id from the session, never the form)
   → syncAssistantQuietly() rebuilds the assistant payload from the tenant's rows
   → PATCH https://api.vapi.ai/assistant/:id
-  → success:  organizations.vapi_synced_at updated, vapi_sync_error cleared
-  → failure:  vapi_sync_error stored, and the form says
+  → success:  ai_agents.vapi_assistant_id + system_prompt + vapi_synced_at written
+  → failure:  ai_agents.vapi_sync_error stored, and the form says
               "saved here, but not live yet" — never a plain "Saved"
 ```
 
@@ -96,8 +96,8 @@ See [`tests/unit/assistant.test.ts`](tests/unit/assistant.test.ts).
 ### How a call is bound to a tenant
 
 The **only** trusted path from a call to a business is
-`organizations.vapi_assistant_id`, which only our server ever writes, resolved
-by `resolve_call_by_assistant()` in Postgres. Nothing a caller says, and nothing
+`ai_agents.vapi_assistant_id`, which only our server ever writes, resolved by
+`resolve_call_by_assistant()` in Postgres. Nothing a caller says, and nothing
 the model produces, can move a call into another organisation's account. The
 webhook verifies the `x-vapi-secret` shared secret in constant time before it
 reads the body, and claims each event in `webhook_events` so provider retries
@@ -161,10 +161,15 @@ calls. You still need Supabase for the database and auth.
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Project Settings → API** — copy into `.env.local`:
-   - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-   - `anon` `public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `service_role` key → `SUPABASE_SERVICE_ROLE_KEY` (**server only**, never
-     prefix it `NEXT_PUBLIC_`)
+   - Project URL → `NEXT_PUBLIC_SUPABASE_URL`. Use the bare origin
+     (`https://<ref>.supabase.co`), not the REST endpoint. Pasting the REST URL
+     works — the API path is stripped — but the bare origin is what you want.
+   - The public key → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Newer projects
+     issue `sb_publishable_…`; older ones a JWT-shaped `anon` key, which goes in
+     `NEXT_PUBLIC_SUPABASE_ANON_KEY` instead. The app reads either.
+   - The secret key (`sb_secret_…`, or `service_role` on older projects) →
+     `SUPABASE_SERVICE_ROLE_KEY`. **Server only** — never prefix it
+     `NEXT_PUBLIC_`.
 3. **Project Settings → Database** — copy the connection string into
    `SUPABASE_DB_URL`.
 4. **Authentication → URL Configuration**
@@ -184,14 +189,30 @@ npx supabase status          # copy the printed keys into .env.local
 
 ## Running migrations
 
+Two routes to the same schema — they produce byte-identical results, and there
+is a test that proves it.
+
+**With the database password** (preferred — it tracks what it applied):
+
 ```bash
-npm run db:migrate           # applies supabase/migrations in order
+SUPABASE_DB_URL='postgresql://...' npm run db:migrate
 npm run db:seed              # optional demo organisation
 ```
 
 The runner records applied files in `schema_migrations` with a checksum, so
 re-running is safe and an edited-after-the-fact migration is flagged rather than
 silently re-applied. Each file runs in a transaction; a failure rolls back.
+
+**Without it** — paste one file into the dashboard:
+
+```bash
+npm run db:bundle            # writes supabase/migrations/bundle.sql
+```
+
+Open Supabase → SQL Editor → New query, paste the whole file, Run. It is a
+one-time apply: it refuses to run against a database that has already been
+migrated, and it records the migrations so a later `npm run db:migrate` picks up
+cleanly from there.
 
 | File | Contents |
 | --- | --- |
@@ -200,6 +221,20 @@ silently re-applied. Each file runs in a transaction; a failure rolls back.
 | `0003_functions.sql` | Founder-slot reservation, usage recording, webhook idempotency, metrics |
 | `0004_storage.sql` | Private storage buckets and their access policies |
 | `0005_vapi.sql` | Vapi identifier columns, assistant-based call routing, and removal of the tables belonging to the retired SIP/Twilio flow |
+| `0006_mvp_schema.sql` | Assistant identity moved onto `ai_agents`, `onboarding_completed`, `calls.transcript` / `calls.ended_reason`, and a guard that fails the migration if any tenant table is missing `organization_id` or RLS |
+
+### Where each MVP field lives
+
+| Table | Vapi / MVP columns |
+| --- | --- |
+| `organizations` | `onboarding_completed` (generated from `onboarding_completed_at`) |
+| `ai_agents` | `vapi_assistant_id`, `voice_id`, `name`, `greeting`, `personality`, `system_prompt`, `transfer_phone`, `active`, `vapi_synced_at`, `vapi_sync_error` |
+| `phone_numbers` | `vapi_phone_number_id`, `phone_number`, `organization_id` |
+| `calls` | `vapi_call_id`, `caller_phone`, `started_at`, `ended_at`, `duration_seconds`, `transcript`, `summary`, `ended_reason` |
+
+`tests/integration/schema-contract.test.ts` asserts all of the above against a
+real database, plus that every tenant table carries `organization_id` and has
+RLS both enabled and **forced**.
 
 ---
 
@@ -284,6 +319,7 @@ browser redirect — only from a signed, verified webhook.
 ## Running the app
 
 ```bash
+npm run env:check        # what is set, what is missing, and what each one breaks
 npm run dev              # http://localhost:3000
 curl localhost:3000/api/health
 ```

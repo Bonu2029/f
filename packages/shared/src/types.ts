@@ -132,13 +132,9 @@ export interface Organization {
   status: OrganizationStatus;
   onboarding_step: number;
   onboarding_completed_at: Timestamp | null;
+  /** Generated from `onboarding_completed_at`; never written directly. */
+  onboarding_completed: boolean;
   ai_paused: boolean;
-  /** The assistant this organisation's calls are answered by. Server-written. */
-  vapi_assistant_id: string | null;
-  vapi_phone_number_id: string | null;
-  vapi_synced_at: Timestamp | null;
-  /** Non-null when the stored settings have not reached the voice provider. */
-  vapi_sync_error: string | null;
   is_demo: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
@@ -248,8 +244,9 @@ export interface ServiceArea {
 export interface AiAgent {
   id: Uuid;
   organization_id: Uuid;
-  display_name: string;
-  voice: string;
+  name: string;
+  /** Id from the Vapi voice catalogue in `vapi.ts`, not a provider voice id. */
+  voice_id: string;
   personality: string;
   greeting: string;
   instructions: string | null;
@@ -257,6 +254,13 @@ export interface AiAgent {
   transfer_enabled: boolean;
   transfer_phone: string | null;
   appointment_booking_enabled: boolean;
+  /** The assistant answering this business's calls. Server-written only. */
+  vapi_assistant_id: string | null;
+  /** The exact system prompt last pushed to Vapi. */
+  system_prompt: string | null;
+  vapi_synced_at: Timestamp | null;
+  /** Non-null when the saved settings have not reached the voice provider. */
+  vapi_sync_error: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
@@ -355,6 +359,10 @@ export interface Call {
   lead_id: Uuid | null;
   summary: string | null;
   summary_json: CallSummary | null;
+  /** Plain-text transcript as the provider rendered it. */
+  transcript: string | null;
+  /** Provider's reason the call ended, unparsed. */
+  ended_reason: string | null;
   call_tone: string | null;
   recording_enabled: boolean;
   error_message: string | null;

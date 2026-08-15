@@ -75,14 +75,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: org } = await svc
-      .from('organizations')
+    const { data: agent } = await svc
+      .from('ai_agents')
       .select('vapi_assistant_id')
-      .eq('id', organizationId)
+      .eq('organization_id', organizationId)
       .maybeSingle();
-    if (org?.vapi_assistant_id) {
+    if (agent?.vapi_assistant_id) {
       try {
-        await vapi.deleteAssistant(org.vapi_assistant_id as string);
+        await vapi.deleteAssistant(agent.vapi_assistant_id as string);
         releasedResources.push('vapi_assistant');
       } catch (err) {
         logger.warn('assistant deletion failed during deletion', { error: err });

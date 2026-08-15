@@ -36,6 +36,8 @@ export interface VapiEndOfCallReport {
   startedAt: string | null;
   endedAt: string | null;
   endedReason: string | null;
+  /** Flat transcript exactly as the provider rendered it. */
+  transcript: string | null;
   summary: string | null;
   transcriptTurns: Array<{ role: 'assistant' | 'user' | 'system'; text: string; secondsFromStart?: number }>;
   structured: {
@@ -72,6 +74,18 @@ function toUrgency(value: string | null | undefined): Urgency {
 function clean(value: string | null | undefined): string | null {
   const trimmed = (value ?? '').trim();
   return trimmed && trimmed.toLowerCase() !== 'unknown' ? trimmed : null;
+}
+
+/**
+ * Fallback plain-text transcript, built from the structured turns when the
+ * provider did not send a flat one. Returns null rather than an empty string so
+ * "no transcript" is distinguishable from "a transcript with nothing in it".
+ */
+function flattenTurns(turns: VapiEndOfCallReport['transcriptTurns']): string | null {
+  if (!turns.length) return null;
+  return turns
+    .map((t) => `${t.role === 'assistant' ? 'AI' : t.role === 'user' ? 'Caller' : 'System'}: ${t.text}`)
+    .join('\n');
 }
 
 export interface IngestResult {
@@ -146,6 +160,8 @@ export async function ingestCallReport(input: {
       appointment_booked: false,
       requested_appointment: clean(structured.requested_appointment),
       summary: report.summary,
+      transcript: report.transcript ?? flattenTurns(report.transcriptTurns),
+      ended_reason: report.endedReason,
       summary_json: {
         reason: clean(structured.service_requested) ?? report.summary ?? 'Not recorded',
         customer_name: clean(structured.customer_name),
@@ -441,6 +457,7 @@ export async function recordUnservedCall(input: {
       started_at: new Date().toISOString(),
       ended_at: new Date().toISOString(),
       result: 'failed',
+      ended_reason: input.reason,
       error_message: input.reason,
     },
     { onConflict: 'vapi_call_id' },

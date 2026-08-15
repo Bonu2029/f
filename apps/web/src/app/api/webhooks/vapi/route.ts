@@ -200,6 +200,9 @@ function toReport(callId: string, assistantId: string, message: VapiMessage): Va
     endedAt: message.endedAt ?? message.call?.endedAt ?? null,
     endedReason: message.endedReason ?? null,
     summary: message.analysis?.summary ?? message.summary ?? null,
+    // The provider's own flat rendering. Kept alongside the structured turns so
+    // a call still has a readable record when the message array is missing.
+    transcript: message.transcript ?? message.artifact?.transcript ?? null,
     transcriptTurns: turns,
     structured,
   };

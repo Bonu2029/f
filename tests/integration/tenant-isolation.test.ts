@@ -138,10 +138,10 @@ describeDb('tenant isolation (RLS)', () => {
 
   it('never exposes another tenant\'s Vapi identifiers', async () => {
     await asService(
-      `update public.organizations set vapi_assistant_id = 'asst_secret_b' where id = $1`,
+      `update public.ai_agents set vapi_assistant_id = 'asst_secret_b' where organization_id = $1`,
       [orgB.id],
     );
-    const rows = await asUser(alice.id, 'select vapi_assistant_id from public.organizations');
+    const rows = await asUser(alice.id, 'select vapi_assistant_id from public.ai_agents');
     expect(rows.rows.map((r) => (r as { vapi_assistant_id: string | null }).vapi_assistant_id)).not.toContain(
       'asst_secret_b',
     );

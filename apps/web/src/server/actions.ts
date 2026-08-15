@@ -333,8 +333,8 @@ export async function saveAgentAction(_prev: ActionResult | null, formData: Form
 
     const transferEnabled = formData.get('transfer_enabled') === 'on';
     const input = aiAgentSchema.parse({
-      display_name: formData.get('display_name'),
-      voice: formData.get('voice'),
+      name: formData.get('name'),
+      voice_id: formData.get('voice_id'),
       personality: formData.get('personality') || 'friendly',
       greeting: formData.get('greeting'),
       instructions: formData.get('instructions'),
@@ -361,7 +361,7 @@ export async function saveAgentAction(_prev: ActionResult | null, formData: Form
       actorEmail: ctx.user.email ?? null,
       action: AUDIT_ACTIONS.AGENT_UPDATED,
       targetType: 'ai_agent',
-      metadata: { voice: input.voice, personality: input.personality },
+      metadata: { voice_id: input.voice_id, personality: input.personality },
     });
 
     return syncAfterSave(

@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   buildAssistantConfig,
+  buildSystemPrompt,
   priceForPrompt,
   type AssistantBuildInput,
   type BusinessHoursDay,
@@ -17,8 +18,8 @@ import { errors } from '@/lib/errors';
  *
  * This is the single path from "the owner saved something" to "the receptionist
  * behaves differently on the next call". It runs only on the server, reads the
- * organisation's own rows, and records the resulting assistant id back on the
- * organisation so the webhook can map an inbound call to a tenant.
+ * organisation's own rows, and records the resulting assistant id back on
+ * `ai_agents` so the webhook can map an inbound call to a tenant.
  */
 
 export interface SyncResult {
@@ -115,9 +116,9 @@ async function loadAssistantInput(organizationId: string): Promise<AssistantBuil
       answer: f.answer as string,
     })),
     agent: {
-      displayName: agent.data.display_name as string,
+      displayName: agent.data.name as string,
       greeting: agent.data.greeting as string,
-      voice: agent.data.voice as string,
+      voice: agent.data.voice_id as string,
       personality: agent.data.personality as string,
       transferPhone: agent.data.transfer_enabled ? ((agent.data.transfer_phone as string) ?? null) : null,
       instructions: (agent.data.instructions as string) ?? null,
@@ -156,14 +157,17 @@ export async function syncAssistant(input: {
   }
 
   const config = buildAssistantConfig(buildInput);
+  // Stored alongside the id so an owner can read exactly what their receptionist
+  // was told, rather than inferring it from the settings that produced it.
+  const systemPrompt = buildSystemPrompt(buildInput);
 
-  const { data: org } = await svc
-    .from('organizations')
+  const { data: agent } = await svc
+    .from('ai_agents')
     .select('vapi_assistant_id')
-    .eq('id', input.organizationId)
+    .eq('organization_id', input.organizationId)
     .maybeSingle();
 
-  const existingId = (org?.vapi_assistant_id as string | null) ?? null;
+  const existingId = (agent?.vapi_assistant_id as string | null) ?? null;
 
   try {
     let assistantId: string;
@@ -179,13 +183,14 @@ export async function syncAssistant(input: {
     }
 
     await svc
-      .from('organizations')
+      .from('ai_agents')
       .update({
         vapi_assistant_id: assistantId,
+        system_prompt: systemPrompt,
         vapi_synced_at: new Date().toISOString(),
         vapi_sync_error: null,
       })
-      .eq('id', input.organizationId);
+      .eq('organization_id', input.organizationId);
 
     await recordAudit({
       organizationId: input.organizationId,
@@ -202,12 +207,12 @@ export async function syncAssistant(input: {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
 
-    // Record the failure on the organisation so the UI can say the receptionist
-    // is out of date rather than implying the save took effect.
+    // Record the failure on the agent so the UI can say the receptionist is out
+    // of date rather than implying the save took effect.
     await svc
-      .from('organizations')
+      .from('ai_agents')
       .update({ vapi_sync_error: message.slice(0, 500) })
-      .eq('id', input.organizationId);
+      .eq('organization_id', input.organizationId);
 
     await recordErrorEvent({
       organizationId: input.organizationId,
@@ -260,18 +265,27 @@ export async function provisionPhoneNumber(input: {
   const svc = getServiceSupabase();
   const vapi = getVapiProvider();
 
-  const { data: org } = await svc
-    .from('organizations')
-    .select('name, vapi_assistant_id, vapi_phone_number_id')
-    .eq('id', input.organizationId)
-    .maybeSingle();
+  const [{ data: org }, { data: agent }, { data: existingNumber }] = await Promise.all([
+    svc.from('organizations').select('name').eq('id', input.organizationId).maybeSingle(),
+    svc
+      .from('ai_agents')
+      .select('vapi_assistant_id')
+      .eq('organization_id', input.organizationId)
+      .maybeSingle(),
+    svc
+      .from('phone_numbers')
+      .select('phone_number')
+      .eq('organization_id', input.organizationId)
+      .eq('status', 'active')
+      .maybeSingle(),
+  ]);
   if (!org) throw errors.notFound('That business');
 
-  if (org.vapi_phone_number_id) {
+  if (existingNumber) {
     throw errors.conflict('This business already has an AI phone number.');
   }
 
-  let assistantId = org.vapi_assistant_id as string | null;
+  let assistantId = (agent?.vapi_assistant_id as string | null) ?? null;
   if (!assistantId) {
     const synced = await syncAssistant({
       organizationId: input.organizationId,
@@ -303,11 +317,6 @@ export async function provisionPhoneNumber(input: {
     await vapi.releasePhoneNumber(provisioned.id).catch(() => undefined);
     throw errors.phoneProvisioningFailed('The number could not be saved, so it was released.');
   }
-
-  await svc
-    .from('organizations')
-    .update({ vapi_phone_number_id: provisioned.id })
-    .eq('id', input.organizationId);
 
   await recordAudit({
     organizationId: input.organizationId,

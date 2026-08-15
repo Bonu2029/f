@@ -537,3 +537,23 @@ export function formatDuration(seconds: number): string {
   const s = Math.round(seconds % 60);
   return m ? `${m}m ${s}s` : `${s}s`;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Supabase configuration                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Normalises a Supabase project URL.
+ *
+ * The Supabase dashboard shows several URLs and it is easy to copy the wrong
+ * one: the REST endpoint (`https://<ref>.supabase.co/rest/v1/`) looks like the
+ * project URL but breaks every client call with a confusing 404. Rather than
+ * making that a support ticket, strip the API path and any trailing slash so
+ * either form works.
+ */
+export function normalizeSupabaseUrl(raw: string): string {
+  return raw
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/(rest|auth|storage|realtime|functions)\/v\d+$/i, '');
+}

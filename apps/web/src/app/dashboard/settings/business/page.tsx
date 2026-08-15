@@ -13,16 +13,16 @@ export default async function BusinessSettingsPage() {
   const svc = getServiceSupabase();
   const organizationId = ctx.active.organizationId;
 
-  const [{ data: business }, { data: services }, { data: areas }, { data: faqs }, { data: org }] =
+  const [{ data: business }, { data: services }, { data: areas }, { data: faqs }, { data: agent }] =
     await Promise.all([
       svc.from('business_profiles').select('*').eq('organization_id', organizationId).maybeSingle(),
       svc.from('services').select('*').eq('organization_id', organizationId).order('name'),
       svc.from('service_areas').select('*').eq('organization_id', organizationId).order('created_at'),
       svc.from('faqs').select('*').eq('organization_id', organizationId).order('created_at'),
       svc
-        .from('organizations')
+        .from('ai_agents')
         .select('vapi_sync_error, vapi_synced_at')
-        .eq('id', organizationId)
+        .eq('organization_id', organizationId)
         .maybeSingle(),
     ]);
 
@@ -41,11 +41,11 @@ export default async function BusinessSettingsPage() {
           </Alert>
         )}
 
-        {org?.vapi_sync_error ? (
+        {agent?.vapi_sync_error ? (
           <Alert tone="caution" title="Your receptionist is behind these settings">
             <p>
               The last change was saved here but did not reach the voice provider:{' '}
-              {org.vapi_sync_error as string}
+              {agent.vapi_sync_error as string}
             </p>
             <p>
               Use <strong>Update receptionist</strong> on the AI Receptionist page to retry.

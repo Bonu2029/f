@@ -1,4 +1,5 @@
 import 'server-only';
+import { normalizeSupabaseUrl } from '@afd/shared';
 
 /**
  * Typed, validated access to server environment variables.
@@ -70,17 +71,37 @@ export function absoluteUrl(path: string): string {
 /* -------------------------------------------------------------------------- */
 
 export const supabaseEnv = {
+  /**
+   * Project URL. The REST endpoint is a common mis-paste from the dashboard, so
+   * the API path is stripped rather than left to fail as a confusing 404.
+   */
   get url() {
-    return requireEnv('NEXT_PUBLIC_SUPABASE_URL', 'the database');
+    return normalizeSupabaseUrl(requireEnv('NEXT_PUBLIC_SUPABASE_URL', 'the database'));
   },
+  /**
+   * The public, RLS-constrained key. Supabase renamed this: newer projects
+   * issue `sb_publishable_…`, older ones a JWT-shaped anon key. Either is
+   * accepted so a project created at any point works without an edit here.
+   */
   get anonKey() {
-    return requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'the database');
+    const key = read('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY') ?? read('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    if (!key) {
+      throw new MissingEnvError('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'the database');
+    }
+    return key;
   },
+  /**
+   * Bypasses RLS. Server-only — this module imports `server-only`, so a client
+   * component that reaches for it fails the build rather than leaking it.
+   */
   get serviceRoleKey() {
     return requireEnv('SUPABASE_SERVICE_ROLE_KEY', 'privileged server operations');
   },
   get configured() {
-    return Boolean(read('NEXT_PUBLIC_SUPABASE_URL') && read('NEXT_PUBLIC_SUPABASE_ANON_KEY'));
+    return Boolean(
+      read('NEXT_PUBLIC_SUPABASE_URL') &&
+        (read('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY') ?? read('NEXT_PUBLIC_SUPABASE_ANON_KEY')),
+    );
   },
 };
 

@@ -47,7 +47,11 @@ async function main() {
     );
   `);
 
-  const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith('.sql')).sort();
+  // `bundle.sql` is the generated whole-history concatenation for the Supabase
+  // SQL editor, not a migration. Applying it here would re-run everything.
+  const files = (await readdir(MIGRATIONS_DIR))
+    .filter((f) => f.endsWith('.sql') && f !== 'bundle.sql')
+    .sort();
   const { rows: applied } = await client.query<{ filename: string; checksum: string }>(
     'select filename, checksum from public.schema_migrations',
   );
@@ -60,7 +64,11 @@ async function main() {
 
     const previous = appliedMap.get(file);
     if (previous) {
-      if (previous !== checksum) {
+      if (previous === 'bundled') {
+        // Applied by pasting bundle.sql into the Supabase SQL editor. Nothing
+        // is wrong; there is simply no checksum to compare against.
+        console.log(`· ${file} (already applied via bundle.sql)`);
+      } else if (previous !== checksum) {
         console.warn(
           `⚠ ${file} has changed since it was applied. Migrations are append-only — ` +
             'add a new file instead of editing an applied one.',

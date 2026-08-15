@@ -31,7 +31,7 @@ async function attachNumber(orgId: string, number: string, status = 'active') {
 
 /** Binds an assistant id to the organisation, the way a successful sync does. */
 async function attachAssistant(orgId: string, assistantId: string) {
-  await asService('update public.organizations set vapi_assistant_id = $2 where id = $1', [
+  await asService('update public.ai_agents set vapi_assistant_id = $2 where organization_id = $1', [
     orgId,
     assistantId,
   ]);

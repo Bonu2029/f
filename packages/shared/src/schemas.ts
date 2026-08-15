@@ -168,8 +168,8 @@ export const serviceAreaSchema = z
  */
 export const aiAgentSchema = z
   .object({
-    display_name: trimmed(60).min(1, 'Give your receptionist a name'),
-    voice: trimmed(40).refine(isValidVapiVoice, 'Choose one of the available voices'),
+    name: trimmed(60).min(1, 'Give your receptionist a name'),
+    voice_id: trimmed(40).refine(isValidVapiVoice, 'Choose one of the available voices'),
     personality: z.enum(['professional', 'friendly', 'warm', 'energetic', 'calm', 'direct']),
     greeting: trimmed(600).min(10, 'Write a greeting of at least 10 characters'),
     instructions: optionalText(4000),

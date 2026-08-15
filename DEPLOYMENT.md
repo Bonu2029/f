@@ -121,7 +121,10 @@ recorded.
 >
 > ```sql
 > -- find the affected tenants
-> select id, name from public.organizations where vapi_assistant_id is not null;
+> select o.id, o.name
+>   from public.ai_agents a
+>   join public.organizations o on o.id = a.organization_id
+>  where a.vapi_assistant_id is not null;
 > ```
 >
 > then press **Update receptionist** per business, or script it against
@@ -165,12 +168,13 @@ Alert on:
 - Rows in `error_events` with `scope = 'webhook.vapi'` — calls are happening
   that you are not recording, or not billing.
 - `webhook_events` with `status = 'failed'` in the last hour.
-- Organisations with a non-null `vapi_sync_error`:
+- Agents with a non-null `vapi_sync_error` — settings saved but not live:
 
   ```sql
-  select id, name, vapi_sync_error, vapi_synced_at
-    from public.organizations
-   where vapi_sync_error is not null;
+  select o.name, a.vapi_sync_error, a.vapi_synced_at
+    from public.ai_agents a
+    join public.organizations o on o.id = a.organization_id
+   where a.vapi_sync_error is not null;
   ```
 
 - A drop to zero calls during business hours, which is what a broken webhook
@@ -184,9 +188,10 @@ Alert on:
 
 **Database.** Migrations are forward-only. `0005_vapi.sql` **drops tables**
 (`knowledge_documents`, `upload_tokens`, `lead_photos`, `training_messages`,
-`calendar_connections`, `oauth_states`) — take a backup before applying it, and
-be aware that rolling the app back past that migration will not bring the data
-back. For anything else, write a new migration rather than editing an applied
+`sms_messages`, `calendar_connections`, `oauth_states`) and `0006_mvp_schema.sql`
+**drops columns** (`phone_numbers.twilio_sid`, the forwarding columns, and the
+unused `ai_agents` capability flags) — take a backup before applying either, and
+be aware that rolling the app back past them will not bring the data back. For anything else, write a new migration rather than editing an applied
 one; the checksum will reject the edit anyway.
 
 **Assistants.** Rolling the app back does **not** roll back what is configured

@@ -1,0 +1,206 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  asService,
+  closePool,
+  createOrganization,
+  createUser,
+  hasDatabase,
+  resetSchema,
+  truncateAll,
+} from '../support/db.js';
+
+/**
+ * The schema contract the MVP depends on.
+ *
+ * These are not "does Postgres work" tests. Every assertion here is something
+ * the application silently mis-behaves on if it drifts: a missing
+ * `organization_id` turns an RLS policy into a no-op, a missing
+ * `vapi_assistant_id` means inbound calls resolve to nobody, and a tenant table
+ * without RLS is a cross-customer data leak that no unit test would catch.
+ */
+const describeDb = hasDatabase ? describe : describe.skip;
+
+/** Every table the MVP reads or writes. */
+const MVP_TABLES = [
+  'profiles',
+  'organizations',
+  'organization_members',
+  'business_profiles',
+  'services',
+  'faqs',
+  'ai_agents',
+  'phone_numbers',
+  'calls',
+  'leads',
+  'appointments',
+  'subscriptions',
+  'usage_ledger',
+  'founder_claims',
+] as const;
+
+/** Tenant-scoped tables — `profiles` is keyed on the user instead. */
+const TENANT_TABLES = MVP_TABLES.filter((t) => t !== 'profiles' && t !== 'organizations');
+
+async function columns(table: string): Promise<Set<string>> {
+  const { rows } = await asService<{ column_name: string }>(
+    `select column_name from information_schema.columns
+      where table_schema = 'public' and table_name = $1`,
+    [table],
+  );
+  return new Set(rows.map((r) => r.column_name));
+}
+
+describeDb('schema contract', () => {
+  beforeAll(async () => {
+    await resetSchema();
+  }, 60_000);
+
+  afterAll(async () => {
+    await closePool();
+  });
+
+  it('has every table the MVP depends on', async () => {
+    const { rows } = await asService<{ table_name: string }>(
+      `select table_name from information_schema.tables
+        where table_schema = 'public' and table_type = 'BASE TABLE'`,
+    );
+    const present = new Set(rows.map((r) => r.table_name));
+    expect([...MVP_TABLES].filter((t) => !present.has(t))).toEqual([]);
+  });
+
+  it('carries organization_id on every tenant table', async () => {
+    const missing: string[] = [];
+    for (const table of TENANT_TABLES) {
+      if (!(await columns(table)).has('organization_id')) missing.push(table);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('enables AND forces row-level security on every tenant table', async () => {
+    const { rows } = await asService<{
+      relname: string;
+      relrowsecurity: boolean;
+      relforcerowsecurity: boolean;
+    }>(
+      `select c.relname, c.relrowsecurity, c.relforcerowsecurity
+         from pg_class c
+         join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public' and c.relname = any($1::text[])`,
+      [[...MVP_TABLES]],
+    );
+
+    // FORCE matters as much as ENABLE: without it the table owner — which is
+    // what a migration or a poorly-scoped connection runs as — bypasses every
+    // policy silently.
+    const unprotected = rows
+      .filter((r) => !r.relrowsecurity || !r.relforcerowsecurity)
+      .map((r) => r.relname);
+    expect(unprotected).toEqual([]);
+  });
+
+  it('has at least one policy on every tenant table', async () => {
+    const { rows } = await asService<{ tablename: string; n: string }>(
+      `select tablename, count(*)::text as n from pg_policies
+        where schemaname = 'public' group by tablename`,
+    );
+    const counted = new Map(rows.map((r) => [r.tablename, Number(r.n)]));
+    const without = [...MVP_TABLES].filter((t) => (counted.get(t) ?? 0) === 0);
+    expect(without).toEqual([]);
+  });
+
+  it('stores the Vapi assistant identity on ai_agents', async () => {
+    const cols = await columns('ai_agents');
+    for (const c of [
+      'vapi_assistant_id',
+      'voice_id',
+      'name',
+      'greeting',
+      'personality',
+      'system_prompt',
+      'transfer_phone',
+      'active',
+      'organization_id',
+    ]) {
+      expect(cols).toContain(c);
+    }
+  });
+
+  it('stores the Vapi phone number identity on phone_numbers', async () => {
+    const cols = await columns('phone_numbers');
+    for (const c of ['vapi_phone_number_id', 'phone_number', 'organization_id']) {
+      expect(cols).toContain(c);
+    }
+    // Twilio is gone; a leftover column invites code that half-supports it.
+    expect(cols).not.toContain('twilio_sid');
+  });
+
+  it('stores what the end-of-call report carries on calls', async () => {
+    const cols = await columns('calls');
+    for (const c of [
+      'vapi_call_id',
+      'caller_phone',
+      'started_at',
+      'ended_at',
+      'duration_seconds',
+      'transcript',
+      'summary',
+      'ended_reason',
+      'organization_id',
+    ]) {
+      expect(cols).toContain(c);
+    }
+  });
+
+  it('exposes onboarding_completed on organizations, derived from the timestamp', async () => {
+    expect(await columns('organizations')).toContain('onboarding_completed');
+
+    await truncateAll();
+    const user = await createUser('contract@schema.test');
+    const { id } = await createOrganization({
+      name: 'Contract Co',
+      slug: 'contract-co',
+      ownerId: user.id,
+    });
+
+    const read = async () =>
+      (
+        await asService<{ onboarding_completed: boolean }>(
+          'select onboarding_completed from public.organizations where id = $1',
+          [id],
+        )
+      ).rows[0]!.onboarding_completed;
+
+    expect(await read()).toBe(false);
+
+    await asService('update public.organizations set onboarding_completed_at = now() where id = $1', [
+      id,
+    ]);
+    expect(await read()).toBe(true);
+
+    // It is generated, so it cannot drift from the timestamp by being written.
+    await expect(
+      asService('update public.organizations set onboarding_completed = false where id = $1', [id]),
+    ).rejects.toThrow(/can only be updated to DEFAULT|generated/i);
+  });
+
+  it('refuses two agents claiming the same Vapi assistant', async () => {
+    await truncateAll();
+    const [a, b] = await Promise.all([
+      createUser('assistant-a@schema.test'),
+      createUser('assistant-b@schema.test'),
+    ]);
+    const orgA = await createOrganization({ name: 'Org A', slug: 'schema-org-a', ownerId: a.id });
+    const orgB = await createOrganization({ name: 'Org B', slug: 'schema-org-b', ownerId: b.id });
+
+    await asService(
+      `update public.ai_agents set vapi_assistant_id = 'asst_contract' where organization_id = $1`,
+      [orgA.id],
+    );
+    await expect(
+      asService(
+        `update public.ai_agents set vapi_assistant_id = 'asst_contract' where organization_id = $1`,
+        [orgB.id],
+      ),
+    ).rejects.toThrow(/duplicate key|unique/i);
+  });
+});

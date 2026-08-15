@@ -7,8 +7,8 @@ import { saveAgentAction } from '@/server/actions';
 import type { ActionResult } from '@/lib/errors';
 
 interface Initial {
-  display_name: string;
-  voice: string;
+  name: string;
+  voice_id: string;
   personality: string;
   greeting: string;
   instructions: string;
@@ -37,9 +37,9 @@ export function ReceptionistForm({
 }) {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(saveAgentAction, null);
 
-  const [voice, setVoice] = useState(initial.voice);
+  const [voice, setVoice] = useState(initial.voice_id);
   const [personality, setPersonality] = useState(initial.personality);
-  const [agentName, setAgentName] = useState(initial.display_name);
+  const [agentName, setAgentName] = useState(initial.name);
   const [greeting, setGreeting] = useState(initial.greeting);
   const [transferEnabled, setTransferEnabled] = useState(initial.transfer_enabled);
   const [bookingEnabled, setBookingEnabled] = useState(initial.appointment_booking_enabled);
@@ -58,13 +58,13 @@ export function ReceptionistForm({
 
       <Field
         label="Receptionist name"
-        htmlFor="display_name"
+        htmlFor="name"
         required
         hint="What it calls itself on the phone."
-        error={fields.display_name}
+        error={fields.name}
       >
         <Input
-          name="display_name"
+          name="name"
           value={agentName}
           onChange={(e) => setAgentName(e.target.value)}
           disabled={!canEdit}
@@ -105,8 +105,8 @@ export function ReceptionistForm({
         <p className="mt-1 text-xs text-ink-subtle">
           The voice callers hear. It changes on your next call after you save.
         </p>
-        {fields.voice && <p className="mt-1 text-xs text-critical-600">{fields.voice}</p>}
-        <input type="hidden" name="voice" value={voice} />
+        {fields.voice_id && <p className="mt-1 text-xs text-critical-600">{fields.voice_id}</p>}
+        <input type="hidden" name="voice_id" value={voice} />
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {voices.map((v) => (

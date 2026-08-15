@@ -57,7 +57,7 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
       .eq('organization_id', id)
       .order('created_at', { ascending: false })
       .limit(10),
-    svc.from('ai_agents').select('active, voice, display_name').eq('organization_id', id).maybeSingle(),
+    svc.from('ai_agents').select('active, voice_id, name, vapi_assistant_id, vapi_sync_error').eq('organization_id', id).maybeSingle(),
   ]);
 
   type Member = { role: string; profile: { email: string; first_name: string | null; last_name: string | null } | null };
@@ -130,9 +130,19 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-2 text-sm">
-              <Detail label="Name" value={(agent.data?.display_name as string) ?? '—'} />
-              <Detail label="Voice" value={(agent.data?.voice as string) ?? '—'} />
+              <Detail label="Name" value={(agent.data?.name as string) ?? '—'} />
+              <Detail label="Voice" value={(agent.data?.voice_id as string) ?? '—'} />
               <Detail label="Active" value={agent.data?.active ? 'Yes' : 'No'} />
+              <Detail
+                label="Assistant"
+                value={
+                  agent.data?.vapi_sync_error
+                    ? 'Out of sync'
+                    : agent.data?.vapi_assistant_id
+                      ? 'Published'
+                      : 'Not created'
+                }
+              />
               <Detail label="Industry" value={(business.data?.industry as string) ?? '—'} />
               <Detail
                 label="Phone"
