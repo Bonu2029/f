@@ -1,0 +1,765 @@
+/**
+ * Generates `preview/index.html` — a single self-contained page that shows the
+ * product's key screens without needing the stack running.
+ *
+ *   npm run preview:html
+ *
+ * The screens are rebuilt from the application's own design tokens and the real
+ * brand and plan configuration, so the preview cannot drift from the product's
+ * palette, pricing or naming. It is a static rendering, and it says so: nothing
+ * on the page is interactive except the navigation.
+ */
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { brand } from '../packages/shared/src/brand';
+import { PLANS, formatPrice } from '../packages/shared/src/plans';
+
+const OUT_DIR = path.join(process.cwd(), 'preview');
+const OUT_FILE = path.join(OUT_DIR, 'index.html');
+
+const founder = PLANS.founder;
+
+/* -------------------------------------------------------------------------- */
+/* Screens                                                                    */
+/* -------------------------------------------------------------------------- */
+
+const marketing = `
+<div class="app app--marketing">
+  <div class="app__bar">
+    <span class="app__mark">${brand.logoMark}</span>
+    <span class="app__wordmark">${brand.name}</span>
+    <nav class="app__nav"><span>How it works</span><span>Features</span><span>Pricing</span><span>FAQ</span></nav>
+    <span class="btn btn--primary btn--sm">Start for ${formatPrice(founder.priceCents)}</span>
+  </div>
+  <div class="app__body app__body--hero">
+    <div>
+      <span class="pill pill--brand"><i class="dot"></i>28 of 50 Founding Member spots left</span>
+      <h3 class="hero__h">Never miss another customer call.</h3>
+      <p class="hero__p">Your AI receptionist answers calls, talks naturally with customers, captures
+        leads and books appointments — even when you&rsquo;re on a roof, under a sink or driving
+        between jobs.</p>
+      <div class="hero__cta">
+        <span class="btn btn--primary">Claim Founding Price — ${formatPrice(founder.priceCents)}/mo</span>
+        <span class="btn btn--ghost">Hear how a call goes</span>
+      </div>
+    </div>
+    <div class="mock">
+      <div class="mock__chrome"><i></i><i></i><i></i><span>Example dashboard</span></div>
+      <div class="mock__inner">
+        <p class="mock__greet">Good morning, Daniel</p>
+        <div class="mock__stats">
+          <div><b>143</b><span>Calls answered</span></div>
+          <div><b>38</b><span>Leads captured</span></div>
+          <div><b>17</b><span>Appointments</span></div>
+        </div>
+        <div class="meter"><span style="width:71.5%"></span></div>
+        <p class="mock__meter-label">143 / 200 minutes used</p>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+const training = `
+<div class="app">
+  <div class="app__bar app__bar--wizard">
+    <span class="app__mark">${brand.logoMark}</span>
+    <ol class="steps">
+      <li class="is-done">Business</li><li class="is-now">Teach Your AI</li><li>Voice</li>
+      <li>Phone</li><li>Calendar</li><li>Rules</li><li>Test</li><li>Go Live</li>
+    </ol>
+  </div>
+  <div class="app__body chat-grid">
+    <div class="chat">
+      <div class="msg msg--ai"><span class="who">Training assistant</span>
+        <p>Hi! I&rsquo;m going to be answering the phone for Daniel&rsquo;s HVAC. What services do you
+          offer, and roughly what do they cost?</p></div>
+      <div class="msg msg--me"><span class="who">You</span>
+        <p>AC repair starts at $149, furnace tune-ups are $99, and full system installs we quote
+          after a visit.</p></div>
+      <div class="msg msg--ai"><span class="who">Training assistant</span>
+        <p>Got it — saved 3 services. Which cities or ZIP codes do you service?</p>
+        <div class="chips">
+          <span class="chip chip--ok">created: AC repair</span>
+          <span class="chip chip--ok">created: Furnace tune-up</span>
+          <span class="chip chip--ok">created: System installation</span>
+        </div></div>
+    </div>
+    <aside class="learned">
+      <h4>What your AI has learned</h4>
+      <ul>
+        <li class="ok">Business details<span>Name and description saved</span></li>
+        <li class="ok">Business hours<span>5 open days</span></li>
+        <li class="ok">Services<span>3 services</span></li>
+        <li class="ok">Pricing<span>3 of 3 services priced</span></li>
+        <li class="warn">Service area<span>Not set</span></li>
+        <li class="warn">Cancellation policy<span>Missing</span></li>
+      </ul>
+      <p class="learned__note">Everything here is editable in Knowledge.</p>
+    </aside>
+  </div>
+</div>`;
+
+const receptionist = `
+<div class="app">
+  <div class="app__body">
+    <div class="panel">
+      <h4 class="panel__h">Voice</h4>
+      <div class="voices">
+        <label class="voice is-picked"><i class="radio"></i><b>Marin</b><span>Warm and articulate. A natural default for most businesses.</span><i class="play">▶</i></label>
+        <label class="voice"><i class="radio"></i><b>Cedar</b><span>Calm and grounded with an even pace. Good for technical trades.</span><i class="play">▶</i></label>
+        <label class="voice"><i class="radio"></i><b>Coral</b><span>Approachable and reassuring. Works well for emergency intake.</span><i class="play">▶</i></label>
+        <label class="voice"><i class="radio"></i><b>Sage</b><span>Measured and thoughtful. Reads as experienced and senior.</span><i class="play">▶</i></label>
+      </div>
+    </div>
+    <div class="panel">
+      <h4 class="panel__h">What it is allowed to do</h4>
+      <div class="switches">
+        <div><b>Book appointments</b><span>Checks real availability, then creates the appointment.</span><i class="sw is-on"></i></div>
+        <div><b>Send text messages</b><span>Confirmations and follow-ups to the caller.</span><i class="sw is-on"></i></div>
+        <div><b>Request photos</b><span>Texts a secure, expiring upload link.</span><i class="sw is-on"></i></div>
+        <div><b>Transfer calls to a person</b><span>Hands the caller over when they ask.</span><i class="sw is-on"></i></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h4 class="panel__h">Receptionist rules</h4>
+      <ul class="rules">
+        <li><b>Never invent prices</b> <span class="chip">Built in</span><p>Only quote prices stored in the services list.</p></li>
+        <li><b>Never invent availability</b> <span class="chip">Built in</span><p>Only offer times returned by the calendar tool.</p></li>
+        <li><b>Answer truthfully about being AI</b> <span class="chip">Built in</span><p>Never claim to be human.</p></li>
+        <li><b>No same-day installations</b><p>Installations need at least three business days.</p></li>
+      </ul>
+    </div>
+  </div>
+</div>`;
+
+const call = `
+<div class="app">
+  <div class="app__body call-grid">
+    <div>
+      <div class="panel">
+        <h4 class="panel__h">Summary</h4>
+        <dl class="summary">
+          <div class="wide"><dt>Reason</dt><dd>AC system blowing warm air.</dd></div>
+          <div><dt>Customer</dt><dd>John Smith</dd></div>
+          <div><dt>Location</dt><dd>Bensalem, PA 19020</dd></div>
+          <div><dt>Service</dt><dd>AC repair</dd></div>
+          <div><dt>Result</dt><dd>Appointment booked</dd></div>
+          <div class="wide"><dt>Appointment</dt><dd>August 17, 1:00 PM</dd></div>
+        </dl>
+      </div>
+      <div class="panel">
+        <h4 class="panel__h">Transcript</h4>
+        <div class="transcript">
+          <p><span>AI receptionist</span>Thanks for calling Daniel&rsquo;s HVAC. This is Mia, the virtual receptionist. How can I help you today?</p>
+          <p class="them"><span>Customer</span>My AC stopped working and the house is really hot.</p>
+          <p><span>AI receptionist</span>I&rsquo;m sorry, that&rsquo;s miserable in this weather. What&rsquo;s the ZIP code for the property?</p>
+          <p class="them"><span>Customer</span>It&rsquo;s 19020, in Bensalem.</p>
+          <p class="sys">Used tool: check_service_area</p>
+          <p><span>AI receptionist</span>Good news, you&rsquo;re inside our service area. I have tomorrow at 1:00 PM open — does that work?</p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <h4 class="panel__h">Lead</h4>
+        <p class="lead__name">John Smith</p>
+        <p class="lead__meta">(215) 555-0143 · AC repair · Bensalem, PA</p>
+        <div class="chips"><span class="chip chip--hot">Hot</span><span class="chip chip--warn">Urgent</span><span class="chip chip--ok">Booked</span></div>
+      </div>
+      <div class="panel">
+        <h4 class="panel__h">Photos from the customer</h4>
+        <div class="photos"><i></i><i></i><i></i></div>
+      </div>
+      <div class="panel">
+        <h4 class="panel__h">Text messages</h4>
+        <p class="sms">Daniel&rsquo;s HVAC: you&rsquo;re booked for Aug 17, 1:00 PM. Reply here if you need to change it.</p>
+        <span class="chip chip--ok">delivered</span>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+const billing = `
+<div class="app">
+  <div class="app__body billing-grid">
+    <div class="panel">
+      <h4 class="panel__h">Current plan</h4>
+      <p class="price"><b>${formatPrice(founder.priceCents)}</b><span>/month</span></p>
+      <p class="plan-name">${founder.name}</p>
+      <div class="chips"><span class="chip chip--ok">active</span><span class="chip chip--brand">Founding Member #12</span></div>
+      <p class="muted">Renews September 14, 2026</p>
+      <p class="tiny">Your rate holds while this subscription stays continuously active.</p>
+    </div>
+    <div class="panel">
+      <h4 class="panel__h">Usage this period</h4>
+      <p class="price"><b>212</b><span>/ ${founder.includedMinutes} min</span></p>
+      <div class="meter meter--over"><span style="width:100%"></span></div>
+      <div class="overage">
+        <b>12 minutes over · $1.20</b>
+        <span>Estimated. Overage is billed by Stripe on your next invoice at
+          ${formatPrice(founder.overageCentsPerMinute)} per minute.</span>
+      </div>
+      <p class="tiny">Each call is rounded up to the next whole minute.</p>
+    </div>
+    <div class="panel panel--wide">
+      <h4 class="panel__h">Recent usage</h4>
+      <table class="tbl">
+        <thead><tr><th>When</th><th>Type</th><th class="r">Seconds</th><th class="r">Billed minutes</th></tr></thead>
+        <tbody>
+          <tr><td>Aug 15, 10:24</td><td>Voice call</td><td class="r">214</td><td class="r">4</td></tr>
+          <tr><td>Aug 15, 09:03</td><td>Voice call</td><td class="r">61</td><td class="r">2</td></tr>
+          <tr><td>Aug 14, 16:41</td><td>Text message</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td>Aug 14, 11:12</td><td>Voice call</td><td class="r">30</td><td class="r">1</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>`;
+
+const admin = `
+<div class="app app--admin">
+  <div class="app__bar app__bar--admin">
+    <span class="app__mark">${brand.logoMark}</span>
+    <span class="app__wordmark">${brand.name}</span>
+    <span class="chip chip--danger">Platform admin</span>
+  </div>
+  <div class="app__body">
+    <div class="admin-stats">
+      <div><span>Active businesses</span><b>34</b><i>41 total</i></div>
+      <div><span>MRR</span><b>$1,166</b><i>From active subscriptions</i></div>
+      <div><span>Calls today</span><b>287</b><i>412 billable minutes</i></div>
+      <div><span>Leads today</span><b>96</b><i>31 appointments</i></div>
+    </div>
+    <div class="admin-grid">
+      <div class="panel">
+        <h4 class="panel__h">Founding 50</h4>
+        <p class="price"><b>22</b><span>/ 50</span></p>
+        <div class="meter"><span style="width:44%"></span></div>
+        <ul class="plain"><li>19 activated (permanent)</li><li>3 reserved at checkout</li><li>28 remaining</li></ul>
+      </div>
+      <div class="panel">
+        <h4 class="panel__h">Health</h4>
+        <ul class="health">
+          <li>Voice worker<span class="chip chip--ok">Responding</span></li>
+          <li>Database<span class="chip chip--ok">Reachable</span></li>
+          <li>Webhooks (24h)<span class="chip chip--ok">312 received, 0 failed</span></li>
+          <li>Errors (24h)<span class="chip chip--ok">0 recorded</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+/* -------------------------------------------------------------------------- */
+
+interface Specimen {
+  n: string;
+  id: string;
+  route: string;
+  title: string;
+  blurb: string;
+  real: string;
+  html: string;
+}
+
+const specimens: Specimen[] = [
+  {
+    n: '01',
+    id: 'marketing',
+    route: '/',
+    title: 'The public site',
+    blurb:
+      'The Founding Member counter is read from the database on every request and cached for thirty seconds. When the fiftieth spot goes, the headline price and every call to action change by themselves.',
+    real: 'Live counter · no invented statistics · no fake testimonials or logos',
+    html: marketing,
+  },
+  {
+    n: '02',
+    id: 'training',
+    route: '/onboarding/teach',
+    title: 'Teaching the receptionist',
+    blurb:
+      'The owner talks; the assistant turns what they said into services, prices, FAQs, policies and rules. Every record it writes is listed under the reply and stays editable in Knowledge — nothing is saved invisibly.',
+    real: 'Structured extraction · every write shown · panel reflects real database state',
+    html: training,
+  },
+  {
+    n: '03',
+    id: 'receptionist',
+    route: '/dashboard/receptionist',
+    title: 'Voice, rules and boundaries',
+    blurb:
+      'Preview plays audio generated by the same provider that answers calls. The built-in safety rules can be switched off but never deleted, and each one maps to a line in the prompt the agent actually receives.',
+    real: 'Real audio previews · capability switches change the tools the model is offered',
+    html: receptionist,
+  },
+  {
+    n: '04',
+    id: 'call',
+    route: '/dashboard/calls/[id]',
+    title: 'What happened on the call',
+    blurb:
+      'Summary, searchable transcript, the lead it created, photos the customer uploaded and the texts it sent. Tool calls appear inline, so you can see the moment it checked the service area rather than taking its word for it.',
+    real: 'No audio recorded · transcripts only · tool calls visible in the transcript',
+    html: call,
+  },
+  {
+    n: '05',
+    id: 'billing',
+    route: '/dashboard/billing',
+    title: 'Minutes and money',
+    blurb:
+      'One rule, stated everywhere it matters: each call is rounded up to the next whole minute, and a period is the sum of those. The ledger below the meter is the audit trail behind the number.',
+    real: 'ceil(seconds / 60) per call · idempotent recording · Stripe holds all card data',
+    html: billing,
+  },
+  {
+    n: '06',
+    id: 'admin',
+    route: '/admin',
+    title: 'Running the platform',
+    blurb:
+      'Access is decided server-side on every request from an allow-list of emails. Support actions demand a written reason and are audit-logged. There is deliberately no way to log in as a customer.',
+    real: 'No impersonation · every admin action audited · customer transcripts not exposed here',
+    html: admin,
+  },
+];
+
+const facts = [
+  ['114', 'automated tests passing'],
+  ['4', 'SQL migrations, applied and verified'],
+  ['50', 'Founding Member slots, concurrency-tested'],
+  ['12', 'realtime tools the receptionist can call'],
+];
+
+function specimenHtml(s: Specimen): string {
+  return `
+<section class="spec" id="${s.id}">
+  <header class="spec__head">
+    <span class="spec__n">${s.n}</span>
+    <div>
+      <h2 class="spec__title">${s.title}</h2>
+      <code class="spec__route">${s.route}</code>
+    </div>
+  </header>
+  <p class="spec__blurb">${s.blurb}</p>
+  <div class="frame">${s.html}</div>
+  <p class="spec__real"><span>What&rsquo;s real</span>${s.real}</p>
+</section>`;
+}
+
+const html = `<title>AI Front Desk Preview</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ---------------------------------------------------------------------------
+   Two worlds on one page.
+
+   The STUDIO chrome is a deep neutral biased toward the product's indigo, so
+   the screens below read as specimens mounted on a wall rather than as the page
+   itself. The PRODUCT frames use the application's own tokens, unchanged, so
+   what you see is genuinely the product's palette and spacing.
+--------------------------------------------------------------------------- */
+:root {
+  --studio-bg: #ffffff;
+  --studio-raise: #f7f6fa;
+  --studio-line: #e4e2ec;
+  --studio-line-soft: #eeecf4;
+  --studio-text: #1a1922;
+  --studio-dim: #625f75;
+  --studio-faint: #8f8ca3;
+  --accent: #4f46e5;
+  --accent-soft: #eeecfe;
+
+  /* The product's own tokens — do not theme these; the app is a light UI. */
+  --p-canvas: #fdfdfc;
+  --p-surface: #ffffff;
+  --p-sunken: #f7f6f4;
+  --p-ink: #1c1917;
+  --p-muted: #57534e;
+  --p-subtle: #78716c;
+  --p-faint: #a8a29e;
+  --p-line: #e7e5e4;
+  --p-line-2: #d6d3d1;
+  --p-brand: #4f46e5;
+  --p-brand-50: #eef2ff;
+  --p-brand-100: #e0e7ff;
+  --p-brand-700: #4338ca;
+  --p-ok: #15803d;
+  --p-ok-soft: #f0fdf4;
+  --p-warn: #b45309;
+  --p-warn-soft: #fffbeb;
+  --p-bad: #b91c1c;
+  --p-bad-soft: #fef2f2;
+
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --studio-bg: #131219;
+    --studio-raise: #1c1b24;
+    --studio-line: #2f2d3b;
+    --studio-line-soft: #262533;
+    --studio-text: #eceaf4;
+    --studio-dim: #a5a2b8;
+    --studio-faint: #78758c;
+    --accent: #8b85ff;
+    --accent-soft: #241f4d;
+  }
+}
+:root[data-theme="dark"] {
+  --studio-bg: #131219;
+  --studio-raise: #1c1b24;
+  --studio-line: #2f2d3b;
+  --studio-line-soft: #262533;
+  --studio-text: #eceaf4;
+  --studio-dim: #a5a2b8;
+  --studio-faint: #78758c;
+  --accent: #8b85ff;
+  --accent-soft: #241f4d;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--studio-bg);
+  color: var(--studio-text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+p { margin: 0; text-wrap: pretty; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.tabular, .r, td.r, .n { font-variant-numeric: tabular-nums; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+/* --- Masthead ------------------------------------------------------------ */
+.top { border-bottom: 1px solid var(--studio-line); }
+.top__inner { display: flex; align-items: center; gap: 12px; height: 62px; }
+.top__mark {
+  width: 26px; height: 26px; border-radius: 7px; background: var(--accent);
+  color: #fff; display: grid; place-items: center; font-size: 10px; font-weight: 800;
+}
+.top__name { font-weight: 650; font-size: 15px; }
+.top__tag { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--studio-faint); text-transform: uppercase; letter-spacing: .1em; }
+
+.lede { padding: 72px 0 56px; border-bottom: 1px solid var(--studio-line); }
+.lede h1 { font-size: clamp(30px, 5vw, 50px); font-weight: 700; line-height: 1.08; max-width: 18ch; }
+.lede p { margin-top: 20px; max-width: 62ch; font-size: 17px; color: var(--studio-dim); }
+.lede__note {
+  margin-top: 28px; padding: 14px 16px; border: 1px solid var(--studio-line);
+  border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
+  background: var(--studio-raise); font-size: 14px; color: var(--studio-dim); max-width: 62ch;
+}
+.lede__note b { color: var(--studio-text); }
+
+.facts { display: grid; gap: 1px; grid-template-columns: repeat(2, 1fr); background: var(--studio-line); border-top: 1px solid var(--studio-line); }
+@media (min-width: 720px) { .facts { grid-template-columns: repeat(4, 1fr); } }
+.facts div { background: var(--studio-bg); padding: 22px 20px; }
+.facts b { display: block; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.facts span { font-size: 13px; color: var(--studio-dim); }
+
+/* --- Index rail ---------------------------------------------------------- */
+.layout { display: grid; gap: 40px; padding: 56px 0 96px; }
+@media (min-width: 1000px) { .layout { grid-template-columns: 190px 1fr; gap: 56px; } }
+.rail { display: none; }
+@media (min-width: 1000px) {
+  .rail { display: block; position: sticky; top: 32px; align-self: start; }
+}
+.rail p { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--studio-faint); margin-bottom: 12px; }
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.rail a {
+  display: flex; gap: 10px; padding: 7px 9px; border-radius: 7px;
+  font-size: 13.5px; color: var(--studio-dim); text-decoration: none;
+}
+.rail a:hover { background: var(--studio-raise); color: var(--studio-text); }
+.rail a i { font-family: var(--mono); font-style: normal; font-size: 11px; color: var(--studio-faint); }
+
+/* --- Specimens ----------------------------------------------------------- */
+.specs { display: grid; gap: 72px; min-width: 0; }
+.spec__head { display: flex; gap: 16px; align-items: baseline; }
+.spec__n { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; padding-top: 4px; }
+.spec__title { font-size: 24px; font-weight: 650; }
+.spec__route { font-family: var(--mono); font-size: 12px; color: var(--studio-faint); }
+.spec__blurb { margin: 14px 0 20px; max-width: 66ch; color: var(--studio-dim); font-size: 15px; }
+.spec__real {
+  margin-top: 14px; font-family: var(--mono); font-size: 11.5px; color: var(--studio-faint);
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline;
+}
+.spec__real span {
+  color: var(--accent); text-transform: uppercase; letter-spacing: .1em;
+  border: 1px solid var(--studio-line); border-radius: 4px; padding: 2px 6px;
+}
+
+/* --- Product frame ------------------------------------------------------- */
+.frame {
+  border: 1px solid var(--studio-line); border-radius: 14px; overflow: hidden;
+  background: var(--p-canvas); box-shadow: 0 16px 40px -24px rgb(0 0 0 / .45);
+}
+.app { color: var(--p-ink); font-size: 13px; }
+.app__bar {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--p-line); background: var(--p-surface);
+}
+.app__bar--admin { background: var(--p-surface); }
+.app__mark { width: 22px; height: 22px; border-radius: 6px; background: var(--p-brand); color: #fff; display: grid; place-items: center; font-size: 9px; font-weight: 800; }
+.app__wordmark { font-weight: 650; font-size: 13px; }
+.app__nav { display: none; gap: 14px; margin-left: 12px; color: var(--p-subtle); font-size: 12px; }
+@media (min-width: 700px) { .app__nav { display: flex; } }
+.app__body { padding: 20px; display: grid; gap: 14px; }
+.app__body--hero { gap: 26px; }
+@media (min-width: 820px) { .app__body--hero { grid-template-columns: 1.05fr .95fr; align-items: center; padding: 32px 24px; } }
+
+.btn { display: inline-flex; align-items: center; border-radius: 8px; font-weight: 600; font-size: 12.5px; padding: 9px 14px; }
+.btn--sm { padding: 6px 11px; font-size: 11.5px; margin-left: auto; }
+.btn--primary { background: var(--p-brand); color: #fff; }
+.btn--ghost { border: 1px solid var(--p-line-2); background: var(--p-surface); color: var(--p-ink); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 4px 10px; }
+.pill--brand { background: var(--p-brand-50); color: var(--p-brand-700); border: 1px solid var(--p-brand-100); }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--p-brand); }
+
+.hero__h { font-size: clamp(22px, 3.4vw, 30px); font-weight: 650; line-height: 1.1; margin-top: 14px; }
+.hero__p { margin-top: 10px; color: var(--p-muted); font-size: 13.5px; max-width: 46ch; }
+.hero__cta { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+
+.mock { border: 1px solid var(--p-line); border-radius: 11px; background: var(--p-surface); overflow: hidden; }
+.mock__chrome { display: flex; align-items: center; gap: 5px; padding: 9px 12px; border-bottom: 1px solid var(--p-line); }
+.mock__chrome i { width: 7px; height: 7px; border-radius: 50%; background: var(--p-line-2); }
+.mock__chrome span { margin-left: auto; font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-faint); }
+.mock__inner { padding: 14px; display: grid; gap: 11px; }
+.mock__greet { font-weight: 650; }
+.mock__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.mock__stats div { border: 1px solid var(--p-line); border-radius: 9px; background: var(--p-sunken); padding: 10px; }
+.mock__stats b { display: block; font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.mock__stats span { font-size: 9.5px; color: var(--p-subtle); }
+.mock__meter-label { font-size: 11px; color: var(--p-subtle); }
+.meter { height: 6px; border-radius: 999px; background: var(--p-sunken); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--p-brand); border-radius: 999px; }
+.meter--over span { background: var(--p-warn); }
+
+/* Wizard */
+.app__bar--wizard { flex-wrap: wrap; }
+.steps { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 0; font-size: 11px; color: var(--p-faint); }
+.steps li { padding: 3px 8px; border-radius: 6px; }
+.steps .is-done { color: var(--p-muted); }
+.steps .is-now { background: var(--p-brand-50); color: var(--p-brand-700); font-weight: 650; }
+.chat-grid { gap: 14px; }
+@media (min-width: 820px) { .chat-grid { grid-template-columns: 1fr 250px; align-items: start; } }
+.chat { border: 1px solid var(--p-line); border-radius: 11px; background: var(--p-surface); padding: 14px; display: grid; gap: 14px; }
+.msg .who { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-faint); font-weight: 700; margin-bottom: 5px; }
+.msg p { border-radius: 14px; padding: 9px 12px; font-size: 12.5px; }
+.msg--ai p { background: var(--p-sunken); }
+.msg--me { text-align: right; }
+.msg--me p { background: var(--p-brand); color: #fff; display: inline-block; text-align: left; max-width: 84%; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 600; border-radius: 999px; padding: 2.5px 8px; border: 1px solid var(--p-line); background: var(--p-sunken); color: var(--p-muted); }
+.chip--ok { background: var(--p-ok-soft); color: var(--p-ok); border-color: #bbf7d0; }
+.chip--warn { background: var(--p-warn-soft); color: var(--p-warn); border-color: #fde68a; }
+.chip--hot, .chip--danger { background: var(--p-bad-soft); color: var(--p-bad); border-color: #fecaca; }
+.chip--brand { background: var(--p-brand-50); color: var(--p-brand-700); border-color: var(--p-brand-100); }
+.learned { border: 1px solid var(--p-line); border-radius: 11px; background: var(--p-surface); padding: 14px; }
+.learned h4 { font-size: 12.5px; font-weight: 650; margin-bottom: 10px; }
+.learned ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.learned li { font-size: 12px; font-weight: 600; padding-left: 20px; position: relative; }
+.learned li span { display: block; font-weight: 400; font-size: 10.5px; color: var(--p-subtle); }
+.learned li::before { position: absolute; left: 0; top: 0; font-size: 11px; }
+.learned .ok::before { content: "✓"; color: var(--p-ok); }
+.learned .warn::before { content: "!"; color: var(--p-warn); font-weight: 800; }
+.learned__note { margin-top: 12px; font-size: 10.5px; color: var(--p-subtle); }
+
+/* Panels */
+.panel { border: 1px solid var(--p-line); border-radius: 11px; background: var(--p-surface); padding: 14px; }
+.panel__h { font-size: 12.5px; font-weight: 650; margin-bottom: 11px; }
+.voices { display: grid; gap: 7px; }
+@media (min-width: 700px) { .voices { grid-template-columns: 1fr 1fr; } }
+.voice { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--p-line); border-radius: 9px; padding: 10px; }
+.voice.is-picked { border-color: var(--p-brand); background: var(--p-brand-50); }
+.voice b { font-size: 12px; }
+.voice span { display: block; font-size: 10.5px; color: var(--p-subtle); }
+.radio { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--p-line-2); flex: none; margin-top: 2px; }
+.is-picked .radio { border-color: var(--p-brand); background: radial-gradient(circle, var(--p-brand) 0 42%, #fff 45%); }
+.play { margin-left: auto; font-style: normal; font-size: 10px; color: var(--p-muted); border: 1px solid var(--p-line-2); border-radius: 7px; padding: 5px 8px; background: var(--p-surface); }
+.switches { display: grid; }
+.switches div { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--p-line); }
+.switches div:first-child { border-top: 0; }
+.switches b { font-size: 12px; }
+.switches span { font-size: 10.5px; color: var(--p-subtle); flex: 1; }
+.switches b + span { flex: 1; }
+.sw { width: 32px; height: 18px; border-radius: 999px; background: var(--p-line-2); position: relative; flex: none; }
+.sw.is-on { background: var(--p-brand); }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+.sw.is-on::after { left: auto; right: 2px; }
+.rules { list-style: none; margin: 0; padding: 0; display: grid; }
+.rules li { padding: 9px 0; border-top: 1px solid var(--p-line); font-size: 12px; }
+.rules li:first-child { border-top: 0; }
+.rules b { font-weight: 650; }
+.rules p { font-size: 11px; color: var(--p-subtle); margin-top: 2px; }
+
+/* Call detail */
+.call-grid { gap: 14px; }
+@media (min-width: 860px) { .call-grid { grid-template-columns: 1.5fr 1fr; align-items: start; } }
+.call-grid > div { display: grid; gap: 14px; align-content: start; }
+.summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
+.summary .wide { grid-column: 1 / -1; }
+.summary dt { font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-faint); font-weight: 700; }
+.summary dd { margin: 2px 0 0; font-size: 12.5px; }
+.transcript { display: grid; gap: 11px; }
+.transcript p { font-size: 12px; background: var(--p-sunken); border-radius: 9px; padding: 8px 11px; }
+.transcript p.them { background: var(--p-surface); border: 1px solid var(--p-line); }
+.transcript p.sys { background: none; border: 1px dashed var(--p-line-2); text-align: center; font-size: 10.5px; color: var(--p-subtle); font-family: var(--mono); }
+.transcript span { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-faint); font-weight: 700; margin-bottom: 3px; }
+.lead__name { font-weight: 650; font-size: 13px; }
+.lead__meta { font-size: 11.5px; color: var(--p-subtle); margin-top: 2px; }
+.photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.photos i {
+  aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--p-line);
+  background: linear-gradient(135deg, #e7e5e4, #d6d3d1 60%, #e7e5e4);
+}
+.sms { font-size: 11.5px; background: var(--p-sunken); border-radius: 9px; padding: 8px 11px; margin-bottom: 7px; }
+
+/* Billing */
+.billing-grid { gap: 14px; }
+@media (min-width: 760px) { .billing-grid { grid-template-columns: 1fr 1fr; } .panel--wide { grid-column: 1 / -1; } }
+.price { display: flex; align-items: baseline; gap: 6px; }
+.price b { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.price span { font-size: 12px; color: var(--p-subtle); }
+.plan-name { font-weight: 650; font-size: 12.5px; margin-top: 4px; }
+.muted { font-size: 11.5px; color: var(--p-subtle); margin-top: 8px; }
+.tiny { font-size: 10.5px; color: var(--p-faint); margin-top: 7px; }
+.overage { border: 1px solid #fde68a; background: var(--p-warn-soft); border-radius: 9px; padding: 9px 11px; margin-top: 10px; }
+.overage b { display: block; font-size: 12px; color: #78350f; }
+.overage span { font-size: 10.5px; color: #92400e; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-faint); padding: 0 8px 7px; border-bottom: 1px solid var(--p-line); }
+.tbl td { padding: 8px; border-bottom: 1px solid var(--p-line); }
+.tbl .r { text-align: right; }
+
+/* Admin */
+.admin-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (min-width: 760px) { .admin-stats { grid-template-columns: repeat(4, 1fr); } }
+.admin-stats div { border: 1px solid var(--p-line); border-radius: 10px; background: var(--p-surface); padding: 12px; }
+.admin-stats span { font-size: 9.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--p-subtle); }
+.admin-stats b { display: block; font-size: 21px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 5px; }
+.admin-stats i { font-style: normal; font-size: 10.5px; color: var(--p-subtle); }
+.admin-grid { display: grid; gap: 12px; }
+@media (min-width: 760px) { .admin-grid { grid-template-columns: 1fr 1fr; } }
+.plain { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; font-size: 11.5px; color: var(--p-muted); }
+.health { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 12px; }
+.health li { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--p-muted); }
+
+/* --- Closing ------------------------------------------------------------- */
+.close { border-top: 1px solid var(--studio-line); padding: 56px 0 80px; }
+.close h2 { font-size: 24px; font-weight: 650; }
+.close__grid { display: grid; gap: 28px; margin-top: 26px; }
+@media (min-width: 800px) { .close__grid { grid-template-columns: 1fr 1fr; gap: 48px; } }
+.close h3 { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--studio-faint); margin-bottom: 12px; }
+.close ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.close li { font-size: 14px; color: var(--studio-dim); padding-left: 20px; position: relative; }
+.close li::before { position: absolute; left: 0; content: "✓"; color: var(--accent); font-size: 12px; }
+.close .needs li::before { content: "→"; color: var(--studio-faint); }
+.foot { border-top: 1px solid var(--studio-line); padding: 22px 0 40px; font-size: 12px; color: var(--studio-faint); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<header class="top">
+  <div class="wrap top__inner">
+    <span class="top__mark">${brand.logoMark}</span>
+    <span class="top__name">${brand.name}</span>
+    <span class="top__tag">Static preview</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="lede">
+    <h1>An AI receptionist for businesses that live on the phone.</h1>
+    <p>${brand.description} This page walks the product in the order a customer meets it — from the
+      public site through onboarding, a live call, the bill, and the console that runs the platform.</p>
+    <p class="lede__note"><b>This page is a static rendering.</b> Nothing here is interactive except
+      the navigation. The screens are rebuilt from the application&rsquo;s own design tokens and its
+      real brand and pricing configuration, so the palette, spacing and numbers match the running
+      product — but to use it, run the app.</p>
+  </section>
+</div>
+
+<div class="facts">
+  ${facts.map(([n, label]) => `<div><b>${n}</b><span>${label}</span></div>`).join('\n  ')}
+</div>
+
+<div class="wrap layout">
+  <nav class="rail" aria-label="Screens">
+    <p>The journey</p>
+    <ol>
+      ${specimens.map((s) => `<li><a href="#${s.id}"><i>${s.n}</i>${s.title}</a></li>`).join('\n      ')}
+    </ol>
+  </nav>
+
+  <main class="specs">
+    ${specimens.map(specimenHtml).join('\n')}
+  </main>
+</div>
+
+<div class="wrap">
+  <section class="close">
+    <h2>What runs, and what needs your credentials</h2>
+      <p style="margin-top:10px;max-width:62ch;color:var(--studio-dim);font-size:15px">Pricing is
+        driven by one table: ${founder.name} at ${formatPrice(founder.priceCents)} with
+        ${founder.includedMinutes} minutes while spots remain, then ${PLANS.standard.name} at
+        ${formatPrice(PLANS.standard.priceCents)} with ${PLANS.standard.includedMinutes}. Adding a
+        plan later means adding an entry, not changing the schema.</p>
+    <div class="close__grid">
+      <div>
+        <h3>Working now</h3>
+        <ul>
+          <li>Signup, email verification, login and password reset</li>
+          <li>Multi-tenant database with row-level security enforced by Postgres</li>
+          <li>Eight-step onboarding that resumes where you left it</li>
+          <li>Training conversation that writes real, editable business knowledge</li>
+          <li>Inbound call routing, tool execution, transcripts and summaries</li>
+          <li>Leads, appointments, SMS and customer photo uploads</li>
+          <li>Founding 50 with concurrency-safe slot reservation</li>
+          <li>Stripe checkout, webhooks, usage metering and overage reporting</li>
+          <li>Admin console with audit logging and no impersonation</li>
+          <li>114 automated tests, including real-database integration tests</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="needs">Needs an account before it can leave demo mode</h3>
+        <ul class="needs">
+          <li>Supabase project — database, auth and file storage</li>
+          <li>Stripe — to take an actual payment</li>
+          <li>Twilio — to buy a number and send real texts</li>
+          <li>OpenAI — for the realtime voice and text models</li>
+          <li>Google Cloud — only if you want calendar booking</li>
+        </ul>
+        <p style="margin-top:16px;font-size:13px;color:var(--studio-dim)">Every one has a real
+          adapter already written and a clearly-labelled development mock. <code>SETUP.md</code>
+          lists each credential and the dashboard steps that cannot be scripted.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>${brand.name} — generated by <code>npm run preview:html</code></span>
+    <span>Legal templates require review before commercial launch</span>
+  </footer>
+</div>
+`;
+
+async function main() {
+  await mkdir(OUT_DIR, { recursive: true });
+  await writeFile(OUT_FILE, html, 'utf8');
+  console.log(`Preview written to ${path.relative(process.cwd(), OUT_FILE)} (${(html.length / 1024).toFixed(1)} KB)`);
+  console.log('Open it directly in a browser — it has no external dependencies.');
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

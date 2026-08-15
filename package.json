@@ -1,0 +1,49 @@
+{
+  "name": "ai-front-desk",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AI Front Desk \u2014 multi-tenant AI receptionist SaaS for local service businesses",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@afd/web",
+    "dev:worker": "npm run dev --workspace=@afd/voice-worker",
+    "build": "npm run build --workspace=@afd/web && npm run build --workspace=@afd/voice-worker",
+    "build:web": "npm run build --workspace=@afd/web",
+    "start": "npm run start --workspace=@afd/web",
+    "typecheck": "tsc -p packages/shared/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit && tsc -p apps/voice-worker/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "stripe:setup": "tsx scripts/setup-stripe.ts",
+    "twilio:setup": "tsx scripts/setup-twilio-sip.ts",
+    "founder:expire": "tsx scripts/expire-founder-reservations.ts",
+    "preview:html": "tsx scripts/build-preview.ts",
+    "verify": "npm run typecheck && npm run lint && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.15.3",
+    "@types/pg": "^8.21.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "^16.3.1",
+    "globals": "^16.5.0",
+    "pg": "^8.23.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vitest": "^3.2.4"
+  }
+}
