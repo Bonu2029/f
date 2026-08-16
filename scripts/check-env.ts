@@ -10,9 +10,9 @@
  * Exit code is 1 when something in the REQUIRED group is missing, so this can
  * gate a deploy.
  */
-import { config as loadEnv } from 'dotenv';
+import { loadEnvFiles } from './load-env';
 
-loadEnv({ path: ['.env.local', '.env'], quiet: true });
+const envFiles = loadEnvFiles();
 
 type Group = 'required' | 'voice' | 'billing' | 'optional' | 'migrations';
 
@@ -131,6 +131,19 @@ let missingRequired = 0;
 let warnings = 0;
 
 console.log('\nAI Front Desk — environment check\n');
+console.log(
+  envFiles.length
+    ? dim(`Env loaded from: ${envFiles.join(', ')}`)
+    : yellow('No .env file found. Next.js reads apps/web/.env.local — put it there.'),
+);
+if (envFiles.includes('.env.local') && !envFiles.includes('apps/web/.env.local')) {
+  console.log(
+    yellow(
+      '\nOnly the root .env.local exists. Next.js does NOT read it: `npm run dev` will fail\n' +
+        'with MissingEnvError while this check reports fine. Move it to apps/web/.env.local.',
+    ),
+  );
+}
 if (isDemo) {
   console.log(
     yellow('DEMO_MODE=true') +

@@ -7,9 +7,9 @@
  *   npm run founder:expire
  */
 import { createClient } from '@supabase/supabase-js';
-import { config as loadEnv } from 'dotenv';
+import { loadEnvFiles } from './load-env';
 
-loadEnv({ path: ['.env.local', '.env'], quiet: true });
+loadEnvFiles();
 
 async function main() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

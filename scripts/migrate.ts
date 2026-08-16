@@ -13,9 +13,9 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { config as loadEnv } from 'dotenv';
+import { loadEnvFiles } from './load-env';
 
-loadEnv({ path: ['.env.local', '.env'], quiet: true });
+loadEnvFiles();
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase', 'migrations');
 

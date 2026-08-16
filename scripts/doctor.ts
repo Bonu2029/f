@@ -12,9 +12,9 @@
  * Exit code is 1 when something that blocks the app is broken, so it can gate a
  * deploy or a support handoff.
  */
-import { config as loadEnv } from 'dotenv';
+import { loadEnvFiles } from './load-env';
 
-loadEnv({ path: ['.env.local', '.env'], quiet: true });
+const envFiles = loadEnvFiles();
 
 /* -------------------------------------------------------------------------- */
 
@@ -346,6 +346,19 @@ async function checkStripe() {
 async function main() {
   console.log(`\n${bold('AI Front Desk — connection doctor')}`);
   console.log(dim('Read-only. Nothing is written, and no credential is printed.'));
+  console.log(
+    envFiles.length
+      ? dim(`Env loaded from: ${envFiles.join(', ')}`)
+      : yellow('No .env file found. Next.js reads apps/web/.env.local — put it there.'),
+  );
+  if (envFiles.includes('.env.local') && !envFiles.includes('apps/web/.env.local')) {
+    report(
+      'warn',
+      'Env file location',
+      'Only the root .env.local exists. Next.js does NOT read it — `npm run dev` will fail with MissingEnvError while this tool reports fine.',
+      'Move it to apps/web/.env.local.',
+    );
+  }
 
   await checkSupabase();
   await checkVapi();

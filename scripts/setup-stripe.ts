@@ -9,10 +9,10 @@
  * Prints the ids to paste into your environment.
  */
 import Stripe from 'stripe';
-import { config as loadEnv } from 'dotenv';
+import { loadEnvFiles } from './load-env';
 import { PLANS } from '../packages/shared/src/plans.js';
 
-loadEnv({ path: ['.env.local', '.env'], quiet: true });
+loadEnvFiles();
 
 const PRODUCT_TAG = 'ai_front_desk_receptionist';
 const OVERAGE_METER_NAME = process.env.STRIPE_OVERAGE_METER_EVENT ?? 'ai_minutes_overage';

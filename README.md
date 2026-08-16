@@ -141,7 +141,11 @@ and `record_call_usage()` in
 git clone <this repo> && cd ai-front-desk
 npm install
 
-cp .env.example .env.local
+# NOTE the location: Next.js reads .env.local from the APP directory, not the
+# repo root. A root-only file leaves `npm run dev` failing with MissingEnvError
+# while `npm run doctor` reports everything fine.
+cp .env.example apps/web/.env.local
+
 # Generate the secrets the app needs even in demo mode:
 node -e "console.log('APP_ENCRYPTION_KEY=' + require('crypto').randomBytes(32).toString('base64'))"
 node -e "console.log('VAPI_WEBHOOK_SECRET=' + require('crypto').randomBytes(32).toString('hex'))"

@@ -12,9 +12,9 @@
  * generated activity is replaced rather than duplicated.
  */
 import { createClient } from '@supabase/supabase-js';
-import { config as loadEnv } from 'dotenv';
+import { loadEnvFiles } from './load-env';
 
-loadEnv({ path: ['.env.local', '.env'], quiet: true });
+loadEnvFiles();
 
 const DEMO_SLUG = 'daniels-hvac-demo';
 const DEMO_EMAIL = process.env.SEED_OWNER_EMAIL ?? 'demo-owner@example.com';

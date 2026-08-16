@@ -10,7 +10,10 @@ Work through it once for a staging environment and once for production.
 ## 1. Repository and secrets
 
 - [ ] `npm install`
-- [ ] `cp .env.example .env.local`
+- [ ] `cp .env.example apps/web/.env.local`
+      *(the **app** directory, not the repo root — Next.js does not read a
+      root-level `.env.local` in this workspace, and the failure looks like a
+      missing credential rather than a missing file)*
 - [ ] Generate `APP_ENCRYPTION_KEY`
       `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
 - [ ] Generate `VAPI_WEBHOOK_SECRET`
@@ -19,8 +22,9 @@ Work through it once for a staging environment and once for production.
       `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 - [ ] Set `NEXT_PUBLIC_APP_URL` to your real origin, no trailing slash
 - [ ] Set `ADMIN_EMAILS` to the addresses that may reach `/admin`
-- [ ] Confirm `.env.local` is **not** committed (`.gitignore` covers it)
+- [ ] Confirm `.env.local` is **not** committed (`.gitignore` covers it at any depth)
 - [ ] `npm run env:check` — lists what is still missing and what each one breaks
+- [ ] `npm run doctor` — proves those values actually work against the providers
 
 ---
 
