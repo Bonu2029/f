@@ -183,6 +183,43 @@ describeDb('schema contract', () => {
     ).rejects.toThrow(/can only be updated to DEFAULT|generated/i);
   });
 
+  it('refuses one user owning two organisations', async () => {
+    // /onboarding/start creates the organisation on first visit, and that page
+    // is reachable by refresh and by double submit. Without this index a user
+    // ends up owning two businesses with their data split across them.
+    await truncateAll();
+    const user = await createUser('double@schema.test');
+    await createOrganization({ name: 'First', slug: 'schema-first', ownerId: user.id });
+
+    await expect(
+      createOrganization({ name: 'Second', slug: 'schema-second', ownerId: user.id }),
+    ).rejects.toThrow(/duplicate key|unique/i);
+  });
+
+  it('still allows a user to be a member of several organisations', async () => {
+    // Ownership is capped at one; membership is not. Team invitations must
+    // keep working.
+    await truncateAll();
+    const [owner, guest] = await Promise.all([
+      createUser('owner@schema.test'),
+      createUser('guest@schema.test'),
+    ]);
+    const a = await createOrganization({ name: 'Alpha Co', slug: 'schema-mem-a', ownerId: owner.id });
+    const b = await createOrganization({ name: 'Bravo Co', slug: 'schema-mem-b', ownerId: guest.id });
+
+    await asService(
+      `insert into public.organization_members (organization_id, user_id, role) values ($1, $2, 'staff')`,
+      [b.id, owner.id],
+    );
+
+    const { rows } = await asService<{ n: string }>(
+      'select count(*)::text as n from public.organization_members where user_id = $1',
+      [owner.id],
+    );
+    expect(Number(rows[0]!.n)).toBe(2);
+    expect(a.id).not.toBe(b.id);
+  });
+
   it('refuses two agents claiming the same Vapi assistant', async () => {
     await truncateAll();
     const [a, b] = await Promise.all([

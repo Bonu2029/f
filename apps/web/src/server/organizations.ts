@@ -37,6 +37,27 @@ export async function createOrganization(input: CreateOrganizationInput) {
   const svc = getServiceSupabase();
   const timezone = input.timezone || 'America/New_York';
 
+  // Idempotent by owner. /onboarding/start creates the organisation on first
+  // visit, and that page is reachable by refresh, back-button and a double
+  // submit — without this, an impatient user ends up owning two businesses,
+  // with their calls and subscription split across them. Returning the
+  // existing one is always what the caller wanted.
+  const { data: owned } = await svc
+    .from('organizations')
+    .select('id, slug, name')
+    .eq('owner_user_id', input.userId)
+    .order('created_at')
+    .limit(1)
+    .maybeSingle();
+
+  if (owned) {
+    log.info('organization already exists for owner, reusing', {
+      event: 'org.create_skipped',
+      organization_id: owned.id,
+    });
+    return { id: owned.id as string, slug: owned.slug as string, name: owned.name as string };
+  }
+
   // Slugs are globally unique; retry with a numeric suffix on collision.
   const base = slugify(input.businessName);
   let slug = base;
@@ -61,6 +82,25 @@ export async function createOrganization(input: CreateOrganizationInput) {
     .single();
 
   if (orgError || !org) {
+    // A concurrent request may have won the race between the check above and
+    // this insert. The unique index on owner_user_id is the real arbiter, so
+    // treat its violation as success and return the winner's row.
+    const { data: raced } = await svc
+      .from('organizations')
+      .select('id, slug, name')
+      .eq('owner_user_id', input.userId)
+      .order('created_at')
+      .limit(1)
+      .maybeSingle();
+
+    if (raced) {
+      log.info('lost the organization creation race, using the winner', {
+        event: 'org.create_raced',
+        organization_id: raced.id,
+      });
+      return { id: raced.id as string, slug: raced.slug as string, name: raced.name as string };
+    }
+
     log.error('organization create failed', { event: 'org.create_failed', error: orgError });
     throw errors.conflict('That business could not be created. Please try again.');
   }

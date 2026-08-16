@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getSessionContext, requireUser } from '@/lib/auth';
+import { getSessionContext, getSessionContextFresh, requireUser } from '@/lib/auth';
 import { createOrganization } from '@/server/organizations';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { StartCheckout } from './start-checkout';
@@ -31,7 +31,10 @@ export default async function OnboardingStartPage() {
       userEmail: user.email ?? '',
       businessName,
     });
-    ctx = await getSessionContext();
+    // Fresh read, not the cached one: getSessionContext() is memoised per
+    // request and would hand back the null captured before the organisation
+    // existed, making a successful bootstrap look like a failure.
+    ctx = await getSessionContextFresh();
   }
 
   if (!ctx) {

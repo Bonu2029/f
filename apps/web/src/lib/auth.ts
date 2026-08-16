@@ -54,13 +54,15 @@ export interface SessionContext {
  * Reads the signed-in user, or null. Cached per request so a page tree with
  * several server components makes one auth round trip.
  */
-export const getUser = cache(async (): Promise<User | null> => {
+async function getUserFresh(): Promise<User | null> {
   const supabase = await getServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user ?? null;
-});
+}
+
+export const getUser = cache(getUserFresh);
 
 /**
  * Resolves the caller's full context. Returns null when signed out or when the
@@ -70,8 +72,8 @@ export const getUser = cache(async (): Promise<User | null> => {
  * organisations first). It is never taken from a query string or header, so a
  * user cannot switch into an organisation they do not belong to.
  */
-export const getSessionContext = cache(async (): Promise<SessionContext | null> => {
-  const user = await getUser();
+async function loadSessionContext(): Promise<SessionContext | null> {
+  const user = await getUserFresh();
   if (!user) return null;
 
   const supabase = await getServerSupabase();
@@ -140,7 +142,26 @@ export const getSessionContext = cache(async (): Promise<SessionContext | null> 
     active,
     isPlatformAdmin: adminEnv.isAdmin(user.email),
   };
-});
+}
+
+/**
+ * Per-request memoised context. Several Server Components rendering in one
+ * request share a single set of queries.
+ */
+export const getSessionContext = cache(loadSessionContext);
+
+/**
+ * Re-reads the context, bypassing the request cache.
+ *
+ * Needed exactly once: after creating an organisation mid-request. `cache()`
+ * memoises per request, so calling `getSessionContext()` again would return the
+ * `null` captured *before* the organisation existed — the rows are really
+ * there, and the page still concludes the business could not be created.
+ * Use this only after a write that changes the answer.
+ */
+export async function getSessionContextFresh(): Promise<SessionContext | null> {
+  return loadSessionContext();
+}
 
 /** Redirects to sign-in when there is no session. */
 export async function requireUser(): Promise<User> {
