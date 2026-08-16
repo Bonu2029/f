@@ -15,8 +15,21 @@ const PROTECTED_PREFIXES = ['/dashboard', '/onboarding', '/admin'];
 const AUTH_ONLY_PREFIXES = ['/login', '/signup'];
 
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request);
+  const { response, user, configured } = await updateSession(request);
   const path = request.nextUrl.pathname;
+
+  // Supabase is not configured at all. Redirecting to /login here would produce
+  // an endless bounce that looks like a broken session, so let the request
+  // through: the page itself raises MissingEnvError naming the exact variable,
+  // which is the message someone can actually act on.
+  if (!configured) {
+    console.error(
+      '[middleware] Supabase is not configured — NEXT_PUBLIC_SUPABASE_URL and a ' +
+        'publishable/anon key are both required. Auth redirects are disabled until they are set. ' +
+        'Note that Next.js reads .env.local from apps/web/, not the repo root. Run: npm run doctor',
+    );
+    return response;
+  }
 
   if (!user && PROTECTED_PREFIXES.some((p) => path.startsWith(p))) {
     const url = request.nextUrl.clone();
