@@ -220,6 +220,85 @@ describeDb('schema contract', () => {
     expect(a.id).not.toBe(b.id);
   });
 
+  it('bootstraps a whole tenant exactly once under concurrency', async () => {
+    // /onboarding/start is reachable by refresh, back button and double
+    // submit. Eight simultaneous bootstraps must produce one tenant, and every
+    // caller must get a usable organisation id back — the loser of the race
+    // has a page to render too.
+    await truncateAll();
+    const user = await createUser('race@schema.test');
+
+    const call = () =>
+      asService<{ organization_id: string; was_created: boolean }>(
+        `select organization_id, was_created from public.bootstrap_organization(
+           $1::uuid, 'Levittown Plumbing', 'levittown-plumbing', 'America/New_York',
+           'plumbing', false, 'Mia', 'elliot', 'Thanks for calling Levittown Plumbing.',
+           $2::jsonb, $3::jsonb, $4::jsonb, 500)`,
+        [
+          user.id,
+          JSON.stringify([
+            { weekday: 1, closed: false, open: '08:00', close: '17:00' },
+            { weekday: 0, closed: true, open: '00:00', close: '00:00' },
+          ]),
+          JSON.stringify([
+            { title: 'Never invent prices', instruction: 'Only quote stored prices.', priority: 10, is_system: true },
+          ]),
+          JSON.stringify({ appointment_duration: 60 }),
+        ],
+      );
+
+    const results = await Promise.all(Array.from({ length: 8 }, call));
+    const rows = results.map((r) => r.rows[0]!);
+
+    // Exactly one creator, and everyone agrees which organisation it is.
+    expect(rows.filter((r) => r.was_created)).toHaveLength(1);
+    expect(new Set(rows.map((r) => r.organization_id)).size).toBe(1);
+
+    // Every table the app assumes exists has exactly one row.
+    for (const table of [
+      'organizations',
+      'organization_members',
+      'business_profiles',
+      'ai_agents',
+      'subscriptions',
+      'availability_settings',
+      'notification_preferences',
+    ]) {
+      const { rows: counted } = await asService<{ n: string }>(
+        `select count(*)::text as n from public.${table}`,
+      );
+      expect(Number(counted[0]!.n), `${table} should have exactly one row`).toBe(1);
+    }
+  });
+
+  it('leaves nothing behind when the bootstrap fails partway', async () => {
+    // The old implementation inserted the organisation, then eight child rows,
+    // then DELETED the organisation if any failed — a rollback that is itself a
+    // network call. One transaction removes the possibility of a tenant with no
+    // agent and no subscription, which every screen assumes cannot exist.
+    await truncateAll();
+    const user = await createUser('atomic@schema.test');
+
+    await expect(
+      asService(
+        `select public.bootstrap_organization(
+           $1::uuid, 'Atomic Test Co', 'atomic-test-co', 'America/New_York', null, false,
+           'Mia', 'elliot', 'Hello there, thanks for calling.',
+           '[]'::jsonb,
+           $2::jsonb,
+           '{}'::jsonb, 500)`,
+        // A rule with no title violates ai_rules.title NOT NULL, which fires
+        // after the organisation row is already inserted.
+        [user.id, JSON.stringify([{ instruction: 'no title', priority: 10 }])],
+      ),
+    ).rejects.toThrow(/not-null|null value/i);
+
+    const { rows } = await asService<{ n: string }>(
+      'select count(*)::text as n from public.organizations',
+    );
+    expect(Number(rows[0]!.n)).toBe(0);
+  });
+
   it('refuses two agents claiming the same Vapi assistant', async () => {
     await truncateAll();
     const [a, b] = await Promise.all([
