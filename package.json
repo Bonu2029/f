@@ -25,6 +25,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:bundle": "tsx scripts/bundle-migrations.ts",
     "env:check": "tsx scripts/check-env.ts",
+    "doctor": "tsx scripts/doctor.ts",
     "stripe:setup": "tsx scripts/setup-stripe.ts",
     "founder:expire": "tsx scripts/expire-founder-reservations.ts",
     "preview:html": "tsx scripts/build-preview.ts",

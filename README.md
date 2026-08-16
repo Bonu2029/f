@@ -320,9 +320,17 @@ browser redirect — only from a signed, verified webhook.
 
 ```bash
 npm run env:check        # what is set, what is missing, and what each one breaks
+npm run doctor           # whether those values actually WORK against the providers
 npm run dev              # http://localhost:3000
 curl localhost:3000/api/health
 ```
+
+`env:check` reads your `.env.local`. `doctor` goes further and makes real
+read-only calls: it proves the Supabase key is accepted, that all 14 tables
+exist, that an anonymous read of `organizations` returns nothing (so RLS is
+genuinely on), and that the Vapi and Stripe keys are live. It is the fastest way
+to tell "wrong credentials" apart from "schema never applied" — two failures
+that look identical from the browser.
 
 The health endpoint reports which integrations are *configured* — booleans only,
 never a value or a partial key.
