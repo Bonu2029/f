@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { roleAtLeast, type MemberRole } from '@afd/shared';
 import { getServerSupabase, getServiceSupabase } from '@/lib/supabase/server';
 import { adminEnv } from '@/lib/env';
+import { log } from '@/lib/logger';
 import { errors } from '@/lib/errors';
 
 /**
@@ -107,7 +108,26 @@ async function loadSessionContext(): Promise<SessionContext | null> {
     } | null;
   };
 
-  const memberships: Membership[] = ((memberRows ?? []) as unknown as Row[])
+  const rows = (memberRows ?? []) as unknown as Row[];
+
+  // A membership whose embedded organisation is null is NOT the same as having
+  // no membership, and treating them alike is how a working tenant reports
+  // itself as missing. The membership row is visible via `user_id = auth.uid()`;
+  // the embed carries its own RLS check (`is_org_member`). When that check has
+  // not caught up with a just-committed write, the embed is null, the row is
+  // dropped here, and every caller concludes the user has no organisation.
+  // Log it, so the next occurrence is one grep rather than an investigation.
+  const withoutOrganization = rows.filter((r) => !r.organization).length;
+  if (withoutOrganization > 0) {
+    log.warn('membership row had no readable organisation', {
+      event: 'auth.membership_org_unreadable',
+      user_id: user.id,
+      dropped: withoutOrganization,
+      readable: rows.length - withoutOrganization,
+    });
+  }
+
+  const memberships: Membership[] = rows
     .filter((r): r is Row & { organization: NonNullable<Row['organization']> } => Boolean(r.organization))
     .map((r) => ({
       organizationId: r.organization.id,
