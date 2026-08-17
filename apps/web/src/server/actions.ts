@@ -24,6 +24,7 @@ import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { actionError, actionOk, errors, type ActionResult } from '@/lib/errors';
 import { advanceOnboarding, completeOnboarding, getReadinessChecklist } from '@/server/organizations';
 import { syncAssistant, syncAssistantQuietly } from '@/server/vapi-sync';
+import { bookAppointment } from '@/server/booking';
 
 /**
  * Server Actions for every dashboard and onboarding mutation.
@@ -767,6 +768,59 @@ export async function saveEmployeeServicesAction(
       undefined,
       valid.length ? 'Services saved.' : 'Cleared — this person can be offered for any service.',
     );
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Booking against real availability                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Books one of the slots the engine offered.
+ *
+ * The slot is re-derived here rather than trusted from the form: a start time
+ * arriving from a browser is a request, not a fact, and the overlap constraint
+ * in Postgres is what finally decides. See server/booking.ts.
+ */
+export async function bookSlotAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireSession();
+
+    const startISO = String(formData.get('start_at') ?? '');
+    const endISO = String(formData.get('end_at') ?? '');
+    const employeeId = String(formData.get('employee_id') ?? '');
+    const customerName = String(formData.get('customer_name') ?? '').trim();
+
+    if (!startISO || !endISO || !employeeId) {
+      return actionError(errors.validation('Choose a time before booking.'));
+    }
+    if (!customerName) {
+      return actionError(
+        errors.validation('Enter the customer name.', { customer_name: 'Required' }),
+      );
+    }
+
+    const result = await bookAppointment({
+      organizationId: ctx.active.organizationId,
+      employeeId,
+      startISO,
+      endISO,
+      customerName,
+      customerPhone: normalizePhone(String(formData.get('customer_phone') ?? '')) ?? null,
+      customerEmail: String(formData.get('customer_email') ?? '') || null,
+      service: String(formData.get('service') ?? '') || null,
+      address: String(formData.get('address') ?? '') || null,
+      notes: String(formData.get('notes') ?? '') || null,
+      source: 'manual',
+    });
+
+    revalidatePath('/dashboard/appointments');
+    return actionOk({ appointmentId: result.appointmentId }, `Booked for ${customerName}.`);
   } catch (err) {
     return actionError(err);
   }

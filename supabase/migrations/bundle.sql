@@ -12,7 +12,7 @@
 -- indexes. The guard below stops a second pass before it can fail partway.
 -- For incremental changes afterwards, use `npm run db:migrate`.
 --
--- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql
+-- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql, 0010_no_overlapping_appointments.sql
 -- =============================================================================
 
 -- Refuse to run twice. Without this, a second pass fails partway through
@@ -28,7 +28,7 @@ begin
     -- does not exist yet, which is exactly the case this guard allows.
     execute
       'select exists (select 1 from public.schema_migrations where filename = $1)'
-      into already using '0009_employees_and_availability.sql';
+      into already using '0010_no_overlapping_appointments.sql';
   end if;
 
   if already then
@@ -2992,6 +2992,64 @@ end $$;
 
 
 -- ============================================================================
+-- BEGIN 0010_no_overlapping_appointments.sql
+-- ============================================================================
+
+-- =============================================================================
+-- 0010_no_overlapping_appointments.sql — one person, one place, one time
+--
+-- 0009 keyed double-booking on (employee_id, start_at). That catches two
+-- appointments starting at the same instant and nothing else: 14:00–15:00 and
+-- 14:30–15:30 have different start times, so both were accepted and the
+-- employee was booked into two places at once. Verified before writing this.
+--
+-- A unique index cannot express "these two spans must not overlap"; that needs
+-- an exclusion constraint over a range type, which is what this adds.
+--
+-- This is deliberately in the database rather than the booking engine. The
+-- engine will offer only free slots, but two callers can be offered the same
+-- slot a second apart and both accept — and by the time the second write
+-- arrives, the first is already committed. Application-side checking cannot
+-- close that window. The database can, and a booking that is refused is
+-- recoverable; a double-booked van is not.
+-- =============================================================================
+
+-- Required to mix an equality column with a range column in one GiST index.
+-- Available on Supabase; on a bare Postgres it ships with contrib.
+create extension if not exists btree_gist;
+
+-- The point-in-time index is now redundant: any pair it would have caught also
+-- overlaps, so the new constraint refuses them too.
+drop index if exists public.appointments_employee_slot_uniq;
+
+alter table public.appointments
+  drop constraint if exists appointments_no_overlap;
+
+alter table public.appointments
+  add constraint appointments_no_overlap
+  exclude using gist (
+    employee_id with =,
+    -- Half-open: an appointment ending at 15:00 and the next starting at 15:00
+    -- do not overlap, which is what back-to-back jobs mean in practice.
+    tstzrange(start_at, end_at, '[)') with &&
+  )
+  where (employee_id is not null and status in ('scheduled', 'confirmed'));
+
+-- Unassigned appointments keep their point-in-time rule. They belong to nobody,
+-- so "overlapping" has no meaning for them — but two at the same instant is
+-- still almost certainly a mistake in the manual form.
+create unique index if not exists appointments_unassigned_slot_uniq
+  on public.appointments (organization_id, start_at)
+  where employee_id is null and status in ('scheduled', 'confirmed');
+
+-- Cancelling frees the time: the constraint's WHERE clause only covers
+-- scheduled and confirmed, so a cancelled or completed row never blocks a
+-- rebooking of the same slot.
+
+-- END 0010_no_overlapping_appointments.sql
+
+
+-- ============================================================================
 -- Mark these migrations as applied, so `npm run db:migrate` against this
 -- same database later is a no-op rather than a second pass.
 --
@@ -3014,5 +3072,6 @@ insert into public.schema_migrations (filename, checksum) values
   ('0006_mvp_schema.sql', 'bundled'),
   ('0007_one_org_per_owner.sql', 'bundled'),
   ('0008_bootstrap_organization.sql', 'bundled'),
-  ('0009_employees_and_availability.sql', 'bundled')
+  ('0009_employees_and_availability.sql', 'bundled'),
+  ('0010_no_overlapping_appointments.sql', 'bundled')
 on conflict (filename) do nothing;

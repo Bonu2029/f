@@ -6,17 +6,42 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader, CardTitle, EmptyState, Table, Td, Th } from '@/components/ui';
 import { StatusBadge } from '@/components/dashboard/badges';
 import { AppointmentActions, NewAppointmentForm } from './appointment-forms';
+import { BookingPanel } from './booking-panel';
+import { findAvailableSlots } from '@/server/booking';
 
 export const metadata: Metadata = { title: 'Appointments' };
 export const dynamic = 'force-dynamic';
 
-export default async function AppointmentsPage() {
+export default async function AppointmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const ctx = await requireSession();
   const svc = getServiceSupabase();
   const tz = ctx.active.timezone;
   const now = new Date();
 
-  const [{ data: upcoming }, { data: past }] = await Promise.all([
+  const params = await searchParams;
+  const serviceId = params.service ?? '';
+
+  // Two weeks is enough to answer "when can you come" without producing a wall
+  // of times nobody reads.
+  const availability = await findAvailableSlots({
+    organizationId: ctx.active.organizationId,
+    serviceId: serviceId || null,
+    fromISO: now.toISOString(),
+    toISO: new Date(now.getTime() + 14 * 86_400_000).toISOString(),
+    limit: 60,
+  });
+
+  const [{ data: services }, { data: upcoming }, { data: past }] = await Promise.all([
+    svc
+      .from('services')
+      .select('id, name')
+      .eq('organization_id', ctx.active.organizationId)
+      .eq('active', true)
+      .order('name'),
     svc
       .from('appointments')
       .select('*')
@@ -44,6 +69,23 @@ export default async function AppointmentsPage() {
         </div>
         <NewAppointmentForm />
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Book a real time</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BookingPanel
+            slots={availability.slots}
+            employeeNames={availability.employeeNames}
+            timezone={availability.timezone}
+            durationMinutes={availability.durationMinutes}
+            emptyReason={availability.emptyReason}
+            services={(services ?? []).map((s) => ({ id: s.id as string, name: s.name as string }))}
+            selectedServiceId={serviceId}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

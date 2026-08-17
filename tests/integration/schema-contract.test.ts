@@ -337,13 +337,63 @@ describeDb('schema contract', () => {
     await book(dave, 'Smith', '2026-09-01T14:00:00Z');
     // Two vans, one instant. This is the whole point.
     await expect(book(priya, 'Jones', '2026-09-01T14:00:00Z')).resolves.toBeDefined();
-    // The same van twice is still refused.
-    await expect(book(dave, 'Clash', '2026-09-01T14:00:00Z')).rejects.toThrow(/duplicate key|unique/i);
+    // The same van twice is refused by the exclusion constraint from 0010,
+    // which reports differently from a unique index.
+    await expect(book(dave, 'Clash', '2026-09-01T14:00:00Z')).rejects.toThrow(
+      /exclusion constraint|duplicate key|unique/i,
+    );
 
     // Appointments with nobody assigned keep the old protection, so the manual
     // form cannot create two bookings at one time before employees are set up.
     await book(null, 'Walk-in', '2026-09-01T16:00:00Z');
     await expect(book(null, 'Clash', '2026-09-01T16:00:00Z')).rejects.toThrow(/duplicate key|unique/i);
+  });
+
+  it('refuses appointments that overlap without starting at the same instant', async () => {
+    // The rule before 0010 was keyed on (employee_id, start_at), which catches
+    // only an exact match. 14:00–15:00 and 14:30–15:30 have different starts,
+    // so both were accepted and the employee was in two places at once.
+    await truncateAll();
+    const user = await createUser('overlap@schema.test');
+    const org = await createOrganization({
+      name: 'Overlap Co',
+      slug: 'schema-overlap',
+      ownerId: user.id,
+    });
+    const { rows } = await asService<{ id: string }>(
+      'insert into public.employees (organization_id, name) values ($1, $2) returning id',
+      [org.id, 'Dave'],
+    );
+    const dave = rows[0]!.id;
+
+    const book = (customer: string, startISO: string, endISO: string, status = 'scheduled') =>
+      asService(
+        `insert into public.appointments
+           (organization_id, employee_id, customer_name, start_at, end_at, status)
+         values ($1, $2, $3, $4::timestamptz, $5::timestamptz, $6)`,
+        [org.id, dave, customer, startISO, endISO, status],
+      );
+
+    await book('First', '2026-09-02T14:00:00Z', '2026-09-02T15:00:00Z');
+
+    const overlapping: Array<[string, string, string]> = [
+      ['Straddles the end', '2026-09-02T14:30:00Z', '2026-09-02T15:30:00Z'],
+      ['Sits inside', '2026-09-02T14:15:00Z', '2026-09-02T14:45:00Z'],
+      ['Swallows it whole', '2026-09-02T13:30:00Z', '2026-09-02T16:30:00Z'],
+      ['Straddles the start', '2026-09-02T13:30:00Z', '2026-09-02T14:30:00Z'],
+    ];
+    for (const [label, startISO, endISO] of overlapping) {
+      await expect(book(label, startISO, endISO), label).rejects.toThrow(/exclusion constraint/i);
+    }
+
+    // Touching is not overlapping: back-to-back jobs are the normal case.
+    await expect(book('Before', '2026-09-02T13:00:00Z', '2026-09-02T14:00:00Z')).resolves.toBeDefined();
+    await expect(book('After', '2026-09-02T15:00:00Z', '2026-09-02T16:00:00Z')).resolves.toBeDefined();
+
+    // A cancelled appointment releases its time rather than blocking it.
+    await expect(
+      book('Rebooked over a cancellation', '2026-09-02T14:30:00Z', '2026-09-02T15:30:00Z', 'cancelled'),
+    ).resolves.toBeDefined();
   });
 
   it('scopes employee tables to the organisation and admins', async () => {

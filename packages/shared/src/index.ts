@@ -2,6 +2,7 @@ export * from './brand';
 export * from './plans';
 export * from './billing';
 export * from './vapi';
+export * from './booking';
 export * from './types';
 export * from './domain';
 export * from './defaults';
