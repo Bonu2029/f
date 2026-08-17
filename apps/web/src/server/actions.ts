@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 import {
   aiAgentSchema,
   aiRuleSchema,
+  employeeSchema,
+  employeeAvailabilitySchema,
+  employeeTimeOffSchema,
   businessProfileSchema,
   faqSchema,
   leadUpdateSchema,
@@ -498,6 +501,272 @@ export async function activateReceptionistAction(): Promise<ActionResult> {
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/receptionist');
     return actionOk(undefined, 'Your receptionist is live and answering calls.');
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Employees, working hours and time off                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * These do NOT trigger an assistant sync. Who is on shift changes what times
+ * can be offered, not what the receptionist knows about the business, and the
+ * booking engine reads availability live at call time. Re-publishing the
+ * assistant every time someone edits a rota would be pure noise.
+ */
+
+export async function saveEmployeeAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireRole('admin');
+    const id = formData.get('id') ? String(formData.get('id')) : null;
+
+    const input = employeeSchema.parse({
+      name: formData.get('name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      job_title: formData.get('job_title'),
+      notes: formData.get('notes'),
+      active: formData.get('active') !== 'false',
+    });
+
+    const svc = getServiceSupabase();
+    const payload = {
+      ...input,
+      phone: normalizePhone(input.phone) ?? input.phone,
+      organization_id: ctx.active.organizationId,
+    };
+
+    const { error } = id
+      ? await svc
+          .from('employees')
+          .update(payload)
+          .eq('id', id)
+          .eq('organization_id', ctx.active.organizationId)
+      : await svc.from('employees').insert(payload);
+
+    if (error) {
+      if (/employees_org_name_uniq/.test(error.message)) {
+        return actionError(
+          errors.validation('Someone with that name is already on your team.', {
+            name: 'Already exists',
+          }),
+        );
+      }
+      throw errors.conflict(`That person could not be saved: ${error.message}`);
+    }
+
+    revalidatePath('/dashboard/employees');
+    return actionOk(undefined, id ? 'Saved.' : `${input.name} added.`);
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+/**
+ * Deactivating rather than deleting is the default for a reason: an employee
+ * row is referenced by every appointment they ever worked, and removing them
+ * would orphan that history.
+ */
+export async function setEmployeeActiveAction(
+  employeeId: string,
+  active: boolean,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireRole('admin');
+    const svc = getServiceSupabase();
+    const { error } = await svc
+      .from('employees')
+      .update({ active })
+      .eq('id', employeeId)
+      .eq('organization_id', ctx.active.organizationId);
+    if (error) throw errors.conflict(error.message);
+
+    revalidatePath('/dashboard/employees');
+    return actionOk(
+      undefined,
+      active ? 'Back on the schedule.' : 'Off the schedule. Existing appointments are unchanged.',
+    );
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+export async function saveEmployeeHoursAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireRole('admin');
+    const employeeId = String(formData.get('employee_id') ?? '');
+    if (!employeeId) return actionError(errors.validation('No employee was specified.'));
+
+    // Sent as JSON because a week is several rows and a split shift is two rows
+    // on one day — flat form fields cannot express that without inventing an
+    // encoding.
+    const raw = JSON.parse(String(formData.get('blocks') ?? '[]')) as unknown[];
+    const blocks = raw.map((b) => employeeAvailabilitySchema.parse(b));
+
+    const svc = getServiceSupabase();
+
+    // Verify the employee belongs to this organisation before touching
+    // anything: the id came from a form.
+    const { data: employee } = await svc
+      .from('employees')
+      .select('id')
+      .eq('id', employeeId)
+      .eq('organization_id', ctx.active.organizationId)
+      .maybeSingle();
+    if (!employee) return actionError(errors.notFound('That person'));
+
+    // Replace the pattern wholesale. Diffing rows would be more code and the
+    // failure mode is worse: a half-applied rota.
+    await svc
+      .from('employee_availability')
+      .delete()
+      .eq('employee_id', employeeId)
+      .eq('organization_id', ctx.active.organizationId);
+
+    if (blocks.length) {
+      const { error } = await svc.from('employee_availability').insert(
+        blocks.map((b) => ({
+          ...b,
+          employee_id: employeeId,
+          organization_id: ctx.active.organizationId,
+        })),
+      );
+      if (error) throw errors.conflict(`Those hours could not be saved: ${error.message}`);
+    }
+
+    revalidatePath('/dashboard/employees');
+    return actionOk(
+      undefined,
+      blocks.length
+        ? 'Working hours saved.'
+        : 'Working hours cleared — this person will not be offered for new appointments.',
+    );
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+export async function saveTimeOffAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireRole('admin');
+    const employeeId = String(formData.get('employee_id') ?? '');
+
+    const input = employeeTimeOffSchema.parse({
+      starts_at: formData.get('starts_at'),
+      ends_at: formData.get('ends_at'),
+      reason: formData.get('reason'),
+    });
+
+    const svc = getServiceSupabase();
+    const { data: employee } = await svc
+      .from('employees')
+      .select('id')
+      .eq('id', employeeId)
+      .eq('organization_id', ctx.active.organizationId)
+      .maybeSingle();
+    if (!employee) return actionError(errors.notFound('That person'));
+
+    const { error } = await svc.from('employee_time_off').insert({
+      organization_id: ctx.active.organizationId,
+      employee_id: employeeId,
+      starts_at: new Date(input.starts_at).toISOString(),
+      ends_at: new Date(input.ends_at).toISOString(),
+      reason: input.reason,
+    });
+    if (error) throw errors.conflict(`That time off could not be saved: ${error.message}`);
+
+    revalidatePath('/dashboard/employees');
+    return actionOk(undefined, 'Time off saved.');
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+export async function deleteTimeOffAction(id: string): Promise<ActionResult> {
+  try {
+    const ctx = await requireRole('admin');
+    const svc = getServiceSupabase();
+    const { error } = await svc
+      .from('employee_time_off')
+      .delete()
+      .eq('id', id)
+      .eq('organization_id', ctx.active.organizationId);
+    if (error) throw errors.conflict(error.message);
+    revalidatePath('/dashboard/employees');
+    return actionOk(undefined, 'Removed.');
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+/**
+ * Which services this person can do.
+ *
+ * A service with nobody assigned is treated as "anyone active can do it" by the
+ * booking engine — the right default for a one-person business, and it stops a
+ * newly added service being unbookable until someone remembers to tick a box.
+ */
+export async function saveEmployeeServicesAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireRole('admin');
+    const employeeId = String(formData.get('employee_id') ?? '');
+    const serviceIds = formData.getAll('service_ids').map(String).filter(Boolean);
+
+    const svc = getServiceSupabase();
+    const { data: employee } = await svc
+      .from('employees')
+      .select('id')
+      .eq('id', employeeId)
+      .eq('organization_id', ctx.active.organizationId)
+      .maybeSingle();
+    if (!employee) return actionError(errors.notFound('That person'));
+
+    // Only accept services this organisation actually owns, so a tampered form
+    // cannot link another tenant's service.
+    const { data: owned } = await svc
+      .from('services')
+      .select('id')
+      .eq('organization_id', ctx.active.organizationId)
+      .in('id', serviceIds.length ? serviceIds : ['00000000-0000-0000-0000-000000000000']);
+
+    const valid = (owned ?? []).map((r) => r.id as string);
+
+    await svc
+      .from('service_employees')
+      .delete()
+      .eq('employee_id', employeeId)
+      .eq('organization_id', ctx.active.organizationId);
+
+    if (valid.length) {
+      const { error } = await svc.from('service_employees').insert(
+        valid.map((serviceId) => ({
+          organization_id: ctx.active.organizationId,
+          service_id: serviceId,
+          employee_id: employeeId,
+        })),
+      );
+      if (error) throw errors.conflict(`Those services could not be saved: ${error.message}`);
+    }
+
+    revalidatePath('/dashboard/employees');
+    return actionOk(
+      undefined,
+      valid.length ? 'Services saved.' : 'Cleared — this person can be offered for any service.',
+    );
   } catch (err) {
     return actionError(err);
   }

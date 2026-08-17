@@ -183,6 +183,50 @@ export const aiAgentSchema = z
     path: ['transfer_phone'],
   });
 
+/** Wall-clock time of day, "HH:MM" on a 24-hour clock. */
+const timeOfDay = z
+  .string()
+  .trim()
+  .regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, 'Use a 24-hour time like 08:00');
+
+export const employeeSchema = z.object({
+  name: trimmed(120).min(1, 'Enter a name'),
+  email: z
+    .string()
+    .trim()
+    .max(254)
+    .optional()
+    .nullable()
+    .transform((v) => (v === '' ? null : (v ?? null)))
+    .refine((v) => !v || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), 'Enter a valid email'),
+  phone: optionalText(30),
+  job_title: optionalText(80),
+  notes: optionalText(2000),
+  active: z.boolean().default(true),
+});
+
+export const employeeAvailabilitySchema = z
+  .object({
+    weekday: z.number().int().min(0).max(6),
+    start_time: timeOfDay,
+    end_time: timeOfDay,
+  })
+  .refine((v) => v.end_time > v.start_time, {
+    message: 'The end time must be after the start time',
+    path: ['end_time'],
+  });
+
+export const employeeTimeOffSchema = z
+  .object({
+    starts_at: z.string().min(1, 'Choose a start'),
+    ends_at: z.string().min(1, 'Choose an end'),
+    reason: optionalText(200),
+  })
+  .refine((v) => new Date(v.ends_at) > new Date(v.starts_at), {
+    message: 'The end must be after the start',
+    path: ['ends_at'],
+  });
+
 export const aiRuleSchema = z.object({
   title: trimmed(160).min(1, 'Give the rule a short title'),
   instruction: trimmed(2000).min(1, 'Describe what the receptionist should do'),

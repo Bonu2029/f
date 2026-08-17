@@ -265,6 +265,54 @@ export interface AiAgent {
   updated_at: Timestamp;
 }
 
+/**
+ * Someone whose time can be booked.
+ *
+ * Distinct from `OrganizationMember`, which is who can sign in. Most field
+ * staff never have an account; a working owner is both, linked via `user_id`.
+ */
+export interface Employee {
+  id: Uuid;
+  organization_id: Uuid;
+  user_id: Uuid | null;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  job_title: string | null;
+  /** Inactive keeps the history and stops new work. Not the same as deleted. */
+  active: boolean;
+  notes: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+/**
+ * One block of a recurring weekly pattern. Several rows per weekday are normal:
+ * a split shift is two rows, and the gap between them is the lunch break the
+ * booking engine must not offer.
+ */
+export interface EmployeeAvailability {
+  id: Uuid;
+  organization_id: Uuid;
+  employee_id: Uuid;
+  weekday: number;
+  /** Local wall-clock "HH:MM" in the organisation's timezone. */
+  start_time: string;
+  end_time: string;
+  created_at: Timestamp;
+}
+
+/** A specific absence, which beats the weekly pattern. */
+export interface EmployeeTimeOff {
+  id: Uuid;
+  organization_id: Uuid;
+  employee_id: Uuid;
+  starts_at: Timestamp;
+  ends_at: Timestamp;
+  reason: string | null;
+  created_at: Timestamp;
+}
+
 export interface AiRule {
   id: Uuid;
   organization_id: Uuid;
@@ -406,6 +454,8 @@ export interface Appointment {
   start_at: Timestamp;
   end_at: Timestamp;
   status: AppointmentStatus;
+  /** Whose time this consumes. Null for a manually added, unassigned job. */
+  employee_id: Uuid | null;
   notes: string | null;
   source: string;
   created_at: Timestamp;

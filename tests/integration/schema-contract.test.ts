@@ -36,6 +36,10 @@ const MVP_TABLES = [
   'subscriptions',
   'usage_ledger',
   'founder_claims',
+  'employees',
+  'employee_availability',
+  'employee_time_off',
+  'service_employees',
 ] as const;
 
 /** Tenant-scoped tables — `profiles` is keyed on the user instead. */
@@ -297,6 +301,63 @@ describeDb('schema contract', () => {
       'select count(*)::text as n from public.organizations',
     );
     expect(Number(rows[0]!.n)).toBe(0);
+  });
+
+  it('lets two employees work at the same instant, but neither twice', async () => {
+    // The original index was (organization_id, start_at): one appointment per
+    // BUSINESS at any moment. A three-van plumber could not book two jobs at
+    // once, which makes tracking employees pointless. Double-booking is a
+    // property of a person, not a company.
+    await truncateAll();
+    const user = await createUser('vans@schema.test');
+    const org = await createOrganization({
+      name: 'Vans Plumbing',
+      slug: 'schema-vans',
+      ownerId: user.id,
+    });
+
+    const employee = async (name: string) =>
+      (
+        await asService<{ id: string }>(
+          'insert into public.employees (organization_id, name) values ($1, $2) returning id',
+          [org.id, name],
+        )
+      ).rows[0]!.id;
+
+    const [dave, priya] = await Promise.all([employee('Dave'), employee('Priya')]);
+
+    const book = (employeeId: string | null, customer: string, at: string) =>
+      asService(
+        `insert into public.appointments
+           (organization_id, employee_id, customer_name, start_at, end_at)
+         values ($1, $2, $3, $4::timestamptz, $4::timestamptz + interval '1 hour')`,
+        [org.id, employeeId, customer, at],
+      );
+
+    await book(dave, 'Smith', '2026-09-01T14:00:00Z');
+    // Two vans, one instant. This is the whole point.
+    await expect(book(priya, 'Jones', '2026-09-01T14:00:00Z')).resolves.toBeDefined();
+    // The same van twice is still refused.
+    await expect(book(dave, 'Clash', '2026-09-01T14:00:00Z')).rejects.toThrow(/duplicate key|unique/i);
+
+    // Appointments with nobody assigned keep the old protection, so the manual
+    // form cannot create two bookings at one time before employees are set up.
+    await book(null, 'Walk-in', '2026-09-01T16:00:00Z');
+    await expect(book(null, 'Clash', '2026-09-01T16:00:00Z')).rejects.toThrow(/duplicate key|unique/i);
+  });
+
+  it('scopes employee tables to the organisation and admins', async () => {
+    const { rows } = await asService<{ tablename: string; cmd: string }>(
+      `select tablename, cmd from pg_policies
+        where schemaname = 'public'
+          and tablename in ('employees','employee_availability','employee_time_off','service_employees')`,
+    );
+    // One read policy and one write policy per table. A missing write policy
+    // would leave staff able to grant themselves working hours.
+    expect(rows).toHaveLength(8);
+    for (const t of ['employees', 'employee_availability', 'employee_time_off', 'service_employees']) {
+      expect(rows.filter((r) => r.tablename === t)).toHaveLength(2);
+    }
   });
 
   it('refuses two agents claiming the same Vapi assistant', async () => {
