@@ -25,13 +25,13 @@ export default async function AppointmentsPage({
   const params = await searchParams;
   const serviceId = params.service ?? '';
 
-  // Two weeks is enough to answer "when can you come" without producing a wall
-  // of times nobody reads.
+  // How far ahead to look is the organisation's own setting, not a constant
+  // here — otherwise "how far ahead to book" on the team page would save a
+  // number that changed nothing.
   const availability = await findAvailableSlots({
     organizationId: ctx.active.organizationId,
     serviceId: serviceId || null,
     fromISO: now.toISOString(),
-    toISO: new Date(now.getTime() + 14 * 86_400_000).toISOString(),
     limit: 60,
   });
 
@@ -80,6 +80,7 @@ export default async function AppointmentsPage({
             employeeNames={availability.employeeNames}
             timezone={availability.timezone}
             durationMinutes={availability.durationMinutes}
+            rules={availability.rules}
             emptyReason={availability.emptyReason}
             services={(services ?? []).map((s) => ({ id: s.id as string, name: s.name as string }))}
             selectedServiceId={serviceId}

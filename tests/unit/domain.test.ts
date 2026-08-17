@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_AVAILABILITY_SETTINGS,
   availabilityBlockProblem,
   formatPhone,
   generateSlots,
@@ -8,6 +9,7 @@ import {
   matchServiceArea,
   normalizePhone,
   overlappingAvailability,
+  schedulingSettingsSchema,
   scoreLead,
   slugify,
   type ServiceArea,
@@ -337,5 +339,47 @@ describe('the overlap case that looked silent in manual testing', () => {
 
   it('is silent for the same two rows on their own', () => {
     expect(overlappingAvailability([block(1, '08:00', '12:00'), block(1, '12:00', '17:00')])).toEqual([]);
+  });
+});
+
+describe('scheduling settings', () => {
+  const valid = {
+    appointment_duration: 60,
+    buffer_before: 0,
+    buffer_after: 15,
+    min_notice_minutes: 120,
+    max_horizon_days: 30,
+  };
+
+  it('accepts the defaults every organisation starts with', () => {
+    expect(schedulingSettingsSchema.parse(DEFAULT_AVAILABILITY_SETTINGS)).toEqual(valid);
+  });
+
+  /**
+   * The bounds here must match the CHECK constraints on availability_settings
+   * in migration 0001. If the form is looser than the table, a bad value gets
+   * past validation and comes back as a database error with no field attached
+   * — the owner sees a red banner and no indication of which box is wrong.
+   */
+  it.each([
+    ['appointment_duration', 10],
+    ['appointment_duration', 500],
+    ['buffer_before', -1],
+    ['buffer_after', 241],
+    ['min_notice_minutes', -1],
+    ['max_horizon_days', 0],
+    ['max_horizon_days', 366],
+  ])('rejects %s = %i, matching the table constraint', (field, value) => {
+    expect(() => schedulingSettingsSchema.parse({ ...valid, [field]: value })).toThrow();
+  });
+
+  it('rejects a fractional number of minutes', () => {
+    // A form posts strings; 22.5 would round somewhere invisible otherwise.
+    expect(() => schedulingSettingsSchema.parse({ ...valid, buffer_after: 22.5 })).toThrow();
+  });
+
+  it('accepts zero buffers — the setting that puts back-to-back times back', () => {
+    const parsed = schedulingSettingsSchema.parse({ ...valid, buffer_before: 0, buffer_after: 0 });
+    expect(parsed.buffer_after).toBe(0);
   });
 });

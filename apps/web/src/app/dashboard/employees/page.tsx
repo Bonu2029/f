@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { DEFAULT_AVAILABILITY_SETTINGS } from '@afd/shared';
 import { requireSession } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { Alert, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
@@ -8,6 +9,10 @@ import {
   type EmployeeRow,
   type ServiceRow,
 } from '@/components/dashboard/employee-manager';
+import {
+  SchedulingSettings,
+  type SchedulingSettingsValues,
+} from '@/components/dashboard/scheduling-settings';
 
 export const metadata: Metadata = { title: 'Team & availability' };
 export const dynamic = 'force-dynamic';
@@ -22,8 +27,14 @@ export default async function EmployeesPage() {
   // noise, and the booking engine only cares about the future.
   const now = new Date().toISOString();
 
-  const [{ data: employees }, { data: hours }, { data: timeOff }, { data: assignments }, { data: services }] =
-    await Promise.all([
+  const [
+    { data: employees },
+    { data: hours },
+    { data: timeOff },
+    { data: assignments },
+    { data: services },
+    { data: settings },
+  ] = await Promise.all([
       svc
         .from('employees')
         .select('id, name, email, phone, job_title, active')
@@ -52,6 +63,13 @@ export default async function EmployeesPage() {
         .eq('organization_id', organizationId)
         .eq('active', true)
         .order('name'),
+      svc
+        .from('availability_settings')
+        .select(
+          'appointment_duration, buffer_before, buffer_after, min_notice_minutes, max_horizon_days',
+        )
+        .eq('organization_id', organizationId)
+        .maybeSingle(),
     ]);
 
   const rows: EmployeeRow[] = (employees ?? []).map((e) => ({
@@ -86,6 +104,25 @@ export default async function EmployeesPage() {
     id: s.id as string,
     name: s.name as string,
   }));
+
+  // A pre-existing organisation created before the settings row existed falls
+  // back to the same defaults the booking engine uses, so the screen never
+  // shows numbers that differ from the ones actually being applied.
+  const scheduling: SchedulingSettingsValues = {
+    appointment_duration:
+      (settings?.appointment_duration as number | null) ??
+      DEFAULT_AVAILABILITY_SETTINGS.appointment_duration,
+    buffer_before:
+      (settings?.buffer_before as number | null) ?? DEFAULT_AVAILABILITY_SETTINGS.buffer_before,
+    buffer_after:
+      (settings?.buffer_after as number | null) ?? DEFAULT_AVAILABILITY_SETTINGS.buffer_after,
+    min_notice_minutes:
+      (settings?.min_notice_minutes as number | null) ??
+      DEFAULT_AVAILABILITY_SETTINGS.min_notice_minutes,
+    max_horizon_days:
+      (settings?.max_horizon_days as number | null) ??
+      DEFAULT_AVAILABILITY_SETTINGS.max_horizon_days,
+  };
 
   const bookable = rows.filter((r) => r.active && r.hours.length > 0).length;
 
@@ -125,6 +162,20 @@ export default async function EmployeesPage() {
             canEdit={canEdit}
             timezone={ctx.active.timezone}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Scheduling rules</CardTitle>
+          <CardDescription>
+            These apply to everyone above and decide which times can be offered at all. They have
+            been running with these values since your account was created — this is the first screen
+            that shows them.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SchedulingSettings settings={scheduling} canEdit={canEdit} />
         </CardContent>
       </Card>
 

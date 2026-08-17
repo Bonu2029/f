@@ -234,23 +234,28 @@ export const aiRuleSchema = z.object({
   enabled: z.boolean().default(true),
 });
 
-export const availabilitySettingsSchema = z.object({
-  appointment_duration: z.number().int().min(15).max(480),
-  buffer_before: z.number().int().min(0).max(240),
-  buffer_after: z.number().int().min(0).max(240),
-  min_notice_minutes: z.number().int().min(0).max(20160),
-  max_horizon_days: z.number().int().min(1).max(365),
-  blackout_dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(200).default([]),
-  rules: z
-    .array(
-      z.object({
-        weekday: z.number().int().min(0).max(6),
-        start_time: z.string().regex(/^\d{2}:\d{2}$/),
-        end_time: z.string().regex(/^\d{2}:\d{2}$/),
-        active: z.boolean().default(true),
-      }),
-    )
-    .max(50),
+/**
+ * The four numbers that shape every time the engine offers.
+ *
+ * They were previously defaults nobody could see or change: a business had a
+ * 15-minute gap enforced between every job, and no way to find out why. An
+ * invisible setting that alters what a customer is promised is worse than one
+ * that is merely wrong.
+ *
+ * `blackout_dates` and the old org-wide weekly `rules` are gone — availability
+ * belongs to employees now, and a field nothing reads is a promise unkept.
+ */
+export const schedulingSettingsSchema = z.object({
+  /** Used when a service does not carry its own duration. */
+  appointment_duration: z.number().int().min(15, 'At least 15 minutes').max(480, 'At most 8 hours'),
+  /** Travel or setup held before a job. */
+  buffer_before: z.number().int().min(0).max(240, 'At most 4 hours'),
+  /** Travel or cleanup held after a job. This is the one that surprises people. */
+  buffer_after: z.number().int().min(0).max(240, 'At most 4 hours'),
+  /** How soon a job may be booked — stops "in ten minutes" being offered. */
+  min_notice_minutes: z.number().int().min(0).max(20160, 'At most two weeks'),
+  /** How far ahead to offer. */
+  max_horizon_days: z.number().int().min(1, 'At least a day').max(365, 'At most a year'),
 });
 
 export const leadUpdateSchema = z.object({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import Link from 'next/link';
 import { CalendarClock } from 'lucide-react';
 import { Alert, Button, Field, Input, Select, Textarea, cn } from '@/components/ui';
 import { bookSlotAction } from '@/server/actions';
@@ -10,6 +11,14 @@ export interface OfferedSlot {
   startISO: string;
   endISO: string;
   employeeIds: string[];
+}
+
+/** The stored settings that produced this list. */
+export interface SchedulingRules {
+  bufferBeforeMinutes: number;
+  bufferAfterMinutes: number;
+  minNoticeMinutes: number;
+  horizonDays: number;
 }
 
 /**
@@ -25,6 +34,7 @@ export function SlotPicker({
   employeeNames,
   timezone,
   durationMinutes,
+  rules,
   emptyReason,
   services,
   selectedServiceId,
@@ -34,6 +44,7 @@ export function SlotPicker({
   employeeNames: Record<string, string>;
   timezone: string;
   durationMinutes: number;
+  rules: SchedulingRules;
   emptyReason: string | null;
   services: Array<{ id: string; name: string }>;
   selectedServiceId: string;
@@ -95,6 +106,15 @@ export function SlotPicker({
         <p className="pb-2 text-xs text-ink-subtle">Times shown in {timezone}.</p>
       </div>
 
+      <p className="text-xs text-ink-subtle">
+        Searching the next {rules.horizonDays} {rules.horizonDays === 1 ? 'day' : 'days'}.{' '}
+        {describeGaps(rules)}{' '}
+        <Link href="/dashboard/employees" className="font-medium text-brand-600 hover:underline">
+          Change scheduling rules
+        </Link>
+        .
+      </p>
+
       {state?.ok && <Alert tone="positive" title={state.message ?? 'Booked'} />}
       {state && !state.ok && (
         <Alert tone="critical" title={state.message ?? 'That could not be booked'}>
@@ -104,7 +124,8 @@ export function SlotPicker({
 
       {slots.length === 0 ? (
         <Alert tone="caution" title="No times to offer">
-          {emptyReason ?? 'Nothing is free in the next two weeks.'}
+          {emptyReason ??
+            `Nothing is free in the next ${rules.horizonDays} ${rules.horizonDays === 1 ? 'day' : 'days'}.`}
         </Alert>
       ) : (
         <div className="space-y-3">
@@ -203,4 +224,33 @@ export function SlotPicker({
       )}
     </div>
   );
+}
+
+/**
+ * Names the gaps that removed times from this list.
+ *
+ * Without it the buffers are invisible: a job ending at 1:00 with 15 minutes
+ * held after it makes 1:00 vanish from a grid that otherwise runs on the hour,
+ * and the only available reading is that the page is broken.
+ */
+function describeGaps(rules: SchedulingRules): string {
+  const parts: string[] = [];
+  if (rules.bufferBeforeMinutes > 0) parts.push(`${rules.bufferBeforeMinutes} minutes before`);
+  if (rules.bufferAfterMinutes > 0) parts.push(`${rules.bufferAfterMinutes} minutes after`);
+
+  const gaps =
+    parts.length === 0
+      ? 'No gap is held around a job, so back-to-back times are offered.'
+      : `A gap of ${parts.join(' and ')} each job is held, so the time straight after a booking is not offered.`;
+
+  const notice =
+    rules.minNoticeMinutes > 0
+      ? ` Nothing sooner than ${
+          rules.minNoticeMinutes < 60
+            ? `${rules.minNoticeMinutes} minutes`
+            : `${Math.round((rules.minNoticeMinutes / 60) * 10) / 10} hours`
+        } from now is offered.`
+      : '';
+
+  return gaps + notice;
 }

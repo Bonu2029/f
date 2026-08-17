@@ -13,6 +13,7 @@ import {
   appointmentSchema,
   notificationPrefsSchema,
   policySchema,
+  schedulingSettingsSchema,
   serviceAreaSchema,
   serviceSchema,
   normalizePhone,
@@ -768,6 +769,50 @@ export async function saveEmployeeServicesAction(
       undefined,
       valid.length ? 'Services saved.' : 'Cleared — this person can be offered for any service.',
     );
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+/**
+ * The scheduling numbers behind every offered time.
+ *
+ * These existed from the first migration but no screen ever showed them, so a
+ * business ran with a 15-minute gap enforced after every job and no way to find
+ * out why the hour immediately after a booking was never offered. A default
+ * that silently changes what a customer is promised has to be visible before
+ * the receptionist starts promising times on the phone.
+ */
+export async function saveSchedulingSettingsAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const ctx = await requireRole('admin');
+
+    const settings = schedulingSettingsSchema.parse({
+      appointment_duration: num(formData.get('appointment_duration')) ?? 60,
+      buffer_before: num(formData.get('buffer_before')) ?? 0,
+      buffer_after: num(formData.get('buffer_after')) ?? 0,
+      min_notice_minutes: num(formData.get('min_notice_minutes')) ?? 0,
+      max_horizon_days: num(formData.get('max_horizon_days')) ?? 30,
+    });
+
+    const svc = getServiceSupabase();
+    const { error } = await svc
+      .from('availability_settings')
+      .upsert(
+        { organization_id: ctx.active.organizationId, ...settings },
+        { onConflict: 'organization_id' },
+      );
+    if (error) throw errors.conflict(`Those settings could not be saved: ${error.message}`);
+
+    // The appointments page derives its whole window from these, so a stale
+    // render would show times the new settings no longer allow.
+    revalidatePath('/dashboard/employees');
+    revalidatePath('/dashboard/appointments');
+
+    return actionOk(undefined, 'Scheduling settings saved.');
   } catch (err) {
     return actionError(err);
   }

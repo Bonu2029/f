@@ -24,10 +24,25 @@ export interface AvailabilityQuery {
   /** Restricts to employees able to do this service, when it has any assigned. */
   serviceId?: string | null;
   fromISO: string;
-  toISO: string;
+  /** Omit to use the organisation's own booking horizon. */
+  toISO?: string;
   /** Overrides the service's own duration. */
   durationMinutes?: number;
   limit?: number;
+}
+
+/**
+ * The stored numbers that shaped this answer.
+ *
+ * Returned rather than kept private because they are the only explanation for
+ * an absent time. A slot missing because of a 15-minute buffer looks identical
+ * to a bug unless the caller can say which setting removed it.
+ */
+export interface AvailabilityRules {
+  bufferBeforeMinutes: number;
+  bufferAfterMinutes: number;
+  minNoticeMinutes: number;
+  horizonDays: number;
 }
 
 export interface AvailabilityResult {
@@ -36,6 +51,7 @@ export interface AvailabilityResult {
   durationMinutes: number;
   /** Names for display, so the caller does not need a second lookup. */
   employeeNames: Record<string, string>;
+  rules: AvailabilityRules;
   /**
    * Why there is nothing to offer, when there is nothing to offer. An empty
    * list with no explanation is the least useful answer a scheduler can give.
@@ -52,7 +68,9 @@ export async function findAvailableSlots(query: AvailabilityQuery): Promise<Avai
       svc.from('organizations').select('timezone').eq('id', organizationId).maybeSingle(),
       svc
         .from('availability_settings')
-        .select('appointment_duration, buffer_before, buffer_after, min_notice_minutes')
+        .select(
+          'appointment_duration, buffer_before, buffer_after, min_notice_minutes, max_horizon_days',
+        )
         .eq('organization_id', organizationId)
         .maybeSingle(),
       query.serviceId
@@ -81,11 +99,25 @@ export async function findAvailableSlots(query: AvailabilityQuery): Promise<Avai
     (employees ?? []).map((e) => [e.id as string, e.name as string]),
   );
 
+  const rules: AvailabilityRules = {
+    bufferBeforeMinutes: (settings?.buffer_before as number | null) ?? 0,
+    bufferAfterMinutes: (settings?.buffer_after as number | null) ?? 0,
+    minNoticeMinutes: (settings?.min_notice_minutes as number | null) ?? 0,
+    horizonDays: (settings?.max_horizon_days as number | null) ?? 30,
+  };
+
+  // The caller may pin the window; otherwise the organisation's own horizon
+  // decides it, so changing that setting actually changes what is offered.
+  const toISO =
+    query.toISO ??
+    new Date(new Date(query.fromISO).getTime() + rules.horizonDays * 86_400_000).toISOString();
+
   const empty = (reason: string): AvailabilityResult => ({
     slots: [],
     timezone,
     durationMinutes,
     employeeNames,
+    rules,
     emptyReason: reason,
   });
 
@@ -116,7 +148,7 @@ export async function findAvailableSlots(query: AvailabilityQuery): Promise<Avai
   // Fetch only what the window needs, with a day of slack either side so a
   // shift that straddles midnight in the business's zone is not clipped.
   const windowFrom = new Date(new Date(query.fromISO).getTime() - 86_400_000).toISOString();
-  const windowTo = new Date(new Date(query.toISO).getTime() + 86_400_000).toISOString();
+  const windowTo = new Date(new Date(toISO).getTime() + 86_400_000).toISOString();
 
   const [{ data: hours }, { data: timeOff }, { data: busy }] = await Promise.all([
     svc
@@ -164,13 +196,13 @@ export async function findAvailableSlots(query: AvailabilityQuery): Promise<Avai
 
   const slots = computeAvailableSlots({
     fromISO: query.fromISO,
-    toISO: query.toISO,
+    toISO,
     nowISO: new Date().toISOString(),
     timezone,
     durationMinutes,
-    bufferBeforeMinutes: (settings?.buffer_before as number | null) ?? 0,
-    bufferAfterMinutes: (settings?.buffer_after as number | null) ?? 0,
-    minNoticeMinutes: (settings?.min_notice_minutes as number | null) ?? 0,
+    bufferBeforeMinutes: rules.bufferBeforeMinutes,
+    bufferAfterMinutes: rules.bufferAfterMinutes,
+    minNoticeMinutes: rules.minNoticeMinutes,
     slotIntervalMinutes: 30,
     employees: bookable,
     ...(query.limit ? { limit: query.limit } : {}),
@@ -181,6 +213,7 @@ export async function findAvailableSlots(query: AvailabilityQuery): Promise<Avai
     timezone,
     durationMinutes,
     employeeNames,
+    rules,
     emptyReason: slots.length === 0 ? 'Every slot in this window is taken or outside working hours.' : null,
   };
 }

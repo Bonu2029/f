@@ -1,7 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { SlotPicker, type OfferedSlot } from '@/components/dashboard/slot-picker';
+import {
+  SlotPicker,
+  type OfferedSlot,
+  type SchedulingRules,
+} from '@/components/dashboard/slot-picker';
 
 /**
  * Keeps the chosen service in the URL.
@@ -15,6 +19,7 @@ export function BookingPanel(props: {
   employeeNames: Record<string, string>;
   timezone: string;
   durationMinutes: number;
+  rules: SchedulingRules;
   emptyReason: string | null;
   services: Array<{ id: string; name: string }>;
   selectedServiceId: string;
