@@ -209,7 +209,17 @@ function EmployeeCard({
         )}
       </div>
 
-      {tab === 'hours' && <HoursEditor employee={employee} timezone={timezone} />}
+      {tab === 'hours' && (
+        <HoursEditor
+          // Remount whenever the stored hours change. The editor holds the rows
+          // in local state, and without this a save leaves the screen showing
+          // what was typed rather than what was written — so a row that did not
+          // persist still looks present until a full reload.
+          key={employee.hours.map((h) => `${h.weekday}${h.start_time}${h.end_time}`).join('|')}
+          employee={employee}
+          timezone={timezone}
+        />
+      )}
       {tab === 'services' && <ServicesEditor employee={employee} services={services} />}
       {tab === 'time-off' && <TimeOffEditor employee={employee} timezone={timezone} />}
     </li>
@@ -261,6 +271,9 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
     saveEmployeeHoursAction,
     null,
   );
+  // The weekday shortcut replaces every row. That is destructive enough to be
+  // worth a second click when there is something to lose.
+  const [confirmingReplace, setConfirmingReplace] = useState(false);
 
   const update = (index: number, patch: Partial<Block>) =>
     setBlocks((b) => b.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -378,18 +391,31 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() =>
-            setBlocks(
-              [1, 2, 3, 4, 5].map((weekday) => ({
-                weekday,
-                start_time: '08:00',
-                end_time: '17:00',
-              })),
-            )
-          }
+          onClick={() => {
+            const weekdays = [1, 2, 3, 4, 5].map((weekday) => ({
+              weekday,
+              start_time: '08:00',
+              end_time: '17:00',
+            }));
+            if (blocks.length === 0 || confirmingReplace) {
+              setBlocks(weekdays);
+              setConfirmingReplace(false);
+              return;
+            }
+            setConfirmingReplace(true);
+          }}
         >
-          Weekdays, 8–5
+          {confirmingReplace
+            ? `Replace all ${blocks.length} block${blocks.length === 1 ? '' : 's'}?`
+            : blocks.length === 0
+              ? 'Weekdays, 8–5'
+              : 'Replace with weekdays 8–5'}
         </Button>
+        {confirmingReplace && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingReplace(false)}>
+            Keep what I have
+          </Button>
+        )}
         <Button type="submit" size="sm" loading={pending} disabled={hasProblem}>
           {pending ? 'Saving' : 'Save hours'}
         </Button>

@@ -312,3 +312,30 @@ describe('working-hours validation', () => {
     ]);
   });
 });
+
+describe('the overlap case that looked silent in manual testing', () => {
+  const block = (weekday: number, start_time: string, end_time: string) => ({
+    weekday,
+    start_time,
+    end_time,
+  });
+
+  it('flags touching blocks added ON TOP of an existing full day', () => {
+    // Reconstructing a manual test: "weekdays 8–5" leaves Monday 08:00–17:00,
+    // and adding 08:00–12:00 plus 12:00–17:00 to it is three Monday rows, not
+    // two. The two new rows do not clash with each other, but both sit inside
+    // the full day — so the warning SHOULD appear. Seeing no warning means the
+    // full day was no longer there, i.e. something replaced it.
+    const blocks = [
+      block(1, '08:00', '17:00'),
+      block(2, '08:00', '17:00'),
+      block(1, '08:00', '12:00'),
+      block(1, '12:00', '17:00'),
+    ];
+    expect(overlappingAvailability(blocks)).toEqual([0, 2, 3]);
+  });
+
+  it('is silent for the same two rows on their own', () => {
+    expect(overlappingAvailability([block(1, '08:00', '12:00'), block(1, '12:00', '17:00')])).toEqual([]);
+  });
+});
