@@ -557,3 +557,53 @@ export function normalizeSupabaseUrl(raw: string): string {
     .replace(/\/+$/, '')
     .replace(/\/(rest|auth|storage|realtime|functions)\/v\d+$/i, '');
 }
+
+/* -------------------------------------------------------------------------- */
+/* Working hours                                                              */
+/* -------------------------------------------------------------------------- */
+
+export interface AvailabilityBlock {
+  weekday: number;
+  start_time: string;
+  end_time: string;
+}
+
+/**
+ * Why a single block cannot be saved, or null when it is fine.
+ *
+ * Wall-clock "HH:MM" strings compare correctly with `<` because they are
+ * zero-padded and fixed width, which is one of the reasons they are stored that
+ * way rather than as minute counts.
+ */
+export function availabilityBlockProblem(block: AvailabilityBlock): string | null {
+  if (!block.start_time || !block.end_time) return 'Both times are needed.';
+  if (block.end_time <= block.start_time) return 'The end time must be after the start time.';
+  return null;
+}
+
+/**
+ * Indexes of blocks that overlap another block on the same day.
+ *
+ * Not an error: a split shift is two rows on one weekday, which is normal in
+ * trades. But two rows covering the same hours means the booking engine would
+ * offer that time twice, so it is worth saying out loud.
+ *
+ * Touching blocks (09:00–12:00 and 12:00–17:00) do not overlap — the boundary
+ * belongs to neither, and treating them as a clash would flag the most ordinary
+ * way of writing a day with a break in it.
+ */
+export function overlappingAvailability(blocks: AvailabilityBlock[]): number[] {
+  const clashing = new Set<number>();
+  for (let i = 0; i < blocks.length; i++) {
+    for (let j = i + 1; j < blocks.length; j++) {
+      const a = blocks[i]!;
+      const b = blocks[j]!;
+      if (a.weekday !== b.weekday) continue;
+      if (a.start_time < b.end_time && b.start_time < a.end_time) {
+        clashing.add(i);
+        clashing.add(j);
+      }
+    }
+  }
+  return [...clashing].sort((a, b) => a - b);
+}

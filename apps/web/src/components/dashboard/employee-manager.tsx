@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from 'react';
 import { CalendarOff, Clock, Plus, Trash2, UserPlus } from 'lucide-react';
+import { availabilityBlockProblem, overlappingAvailability } from '@afd/shared';
 import { Alert, Badge, Button, Field, Input, Select, Textarea, cn } from '@/components/ui';
 import {
   deleteTimeOffAction,
@@ -264,6 +265,23 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
   const update = (index: number, patch: Partial<Block>) =>
     setBlocks((b) => b.map((row, i) => (i === index ? { ...row, ...patch } : row)));
 
+  /**
+   * Which rows are impossible, checked as you type.
+   *
+   * The server refuses these too — it is the only check that counts — but a
+   * refusal that arrives as a banner after a round trip is easy to miss, and
+   * the row that caused it is not identified. Saying it here, next to the row,
+   * means the mistake cannot be saved without being seen first.
+   */
+  const problems = blocks.map(availabilityBlockProblem);
+  const firstProblem = problems.findIndex((p) => p !== null);
+  const hasProblem = firstProblem !== -1;
+
+  // Overlaps on one day are not an error — a split shift is two rows — but two
+  // rows covering the same hours means one is redundant, and the booking engine
+  // would offer that time twice.
+  const overlaps = overlappingAvailability(blocks).length > 0;
+
   return (
     <form action={action} className="border-t border-line p-4">
       <input type="hidden" name="employee_id" value={employee.id} />
@@ -276,6 +294,17 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
 
       <Result state={state} />
 
+      {hasProblem && (
+        <Alert tone="critical" title="This cannot be saved yet" className="mt-3">
+          {problems[firstProblem]} Fix the highlighted row.
+        </Alert>
+      )}
+      {!hasProblem && overlaps && (
+        <Alert tone="caution" title="Two blocks cover the same hours" className="mt-3">
+          That time would be offered twice. Merge them, or change one.
+        </Alert>
+      )}
+
       <div className="mt-3 space-y-2">
         {blocks.length === 0 && (
           <p className="text-sm text-ink-subtle">
@@ -283,7 +312,8 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
           </p>
         )}
         {blocks.map((block, i) => (
-          <div key={i} className="flex flex-wrap items-center gap-2">
+          <div key={i} className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
             <Select
               aria-label="Day"
               value={String(block.weekday)}
@@ -302,6 +332,7 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
               value={block.start_time}
               onChange={(e) => update(i, { start_time: e.target.value })}
               className="w-32"
+              aria-invalid={problems[i] ? true : undefined}
             />
             <span className="text-sm text-ink-subtle">to</span>
             <Input
@@ -309,7 +340,9 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
               type="time"
               value={block.end_time}
               onChange={(e) => update(i, { end_time: e.target.value })}
-              className="w-32"
+              className={cn('w-32', problems[i] && 'border-red-400')}
+              aria-invalid={problems[i] ? true : undefined}
+              aria-describedby={problems[i] ? `block-problem-${i}` : undefined}
             />
             <Button
               type="button"
@@ -320,6 +353,12 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
             >
               <Trash2 aria-hidden />
             </Button>
+          </div>
+          {problems[i] && (
+            <p id={`block-problem-${i}`} role="alert" className="text-xs font-medium text-red-700">
+              {problems[i]}
+            </p>
+          )}
           </div>
         ))}
       </div>
@@ -351,7 +390,7 @@ function HoursEditor({ employee, timezone }: { employee: EmployeeRow; timezone: 
         >
           Weekdays, 8–5
         </Button>
-        <Button type="submit" size="sm" loading={pending}>
+        <Button type="submit" size="sm" loading={pending} disabled={hasProblem}>
           {pending ? 'Saving' : 'Save hours'}
         </Button>
       </div>

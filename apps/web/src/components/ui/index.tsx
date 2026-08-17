@@ -331,7 +331,12 @@ export function Alert({
     critical: 'border-red-200 bg-critical-soft text-red-900',
   } as const;
   return (
-    <div role="status" className={cn('rounded-lg border px-4 py-3 text-sm', tones[tone], className)}>
+    <div
+      // Errors interrupt; everything else waits its turn. A refusal announced
+      // politely can be missed entirely by someone using a screen reader.
+      role={tone === 'critical' ? 'alert' : 'status'}
+      className={cn('rounded-lg border px-4 py-3 text-sm', tones[tone], className)}
+    >
       <p className="font-semibold">{title}</p>
       {children && <div className="mt-1 opacity-90">{children}</div>}
       {action && <div className="mt-3">{action}</div>}

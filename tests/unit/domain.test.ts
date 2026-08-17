@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  availabilityBlockProblem,
   formatPhone,
   generateSlots,
   isWithinBusinessHours,
   maskPhone,
   matchServiceArea,
   normalizePhone,
+  overlappingAvailability,
   scoreLead,
   slugify,
-  zonedTimeToUtc,
   type ServiceArea,
+  zonedTimeToUtc,
 } from '@afd/shared';
 
 const area = (over: Partial<ServiceArea>): ServiceArea => ({
@@ -254,5 +256,59 @@ describe('slugify', () => {
   it('always returns something usable', () => {
     expect(slugify('!!!')).toBe('business');
     expect(slugify('')).toBe('business');
+  });
+});
+
+describe('working-hours validation', () => {
+  const block = (weekday: number, start_time: string, end_time: string) => ({
+    weekday,
+    start_time,
+    end_time,
+  });
+
+  it('accepts an ordinary shift', () => {
+    expect(availabilityBlockProblem(block(1, '08:00', '17:00'))).toBeNull();
+  });
+
+  it('refuses a shift that ends before it starts', () => {
+    expect(availabilityBlockProblem(block(1, '17:00', '08:00'))).toMatch(/after the start/i);
+  });
+
+  it('refuses a zero-length shift', () => {
+    // Saving 09:00–09:00 would put a person on the rota for no time at all,
+    // which reads as available but offers nothing.
+    expect(availabilityBlockProblem(block(1, '09:00', '09:00'))).toMatch(/after the start/i);
+  });
+
+  it('refuses a half-filled row', () => {
+    expect(availabilityBlockProblem(block(1, '', '17:00'))).toMatch(/both times/i);
+    expect(availabilityBlockProblem(block(1, '08:00', ''))).toMatch(/both times/i);
+  });
+
+  it('does not treat a split shift as a clash', () => {
+    // The whole reason several rows per day are allowed: the gap is lunch.
+    expect(overlappingAvailability([block(1, '08:00', '12:00'), block(1, '13:00', '17:00')])).toEqual([]);
+  });
+
+  it('does not treat touching blocks as a clash', () => {
+    // The boundary belongs to neither, and flagging this would fail the most
+    // ordinary way of writing a day in two halves.
+    expect(overlappingAvailability([block(1, '09:00', '12:00'), block(1, '12:00', '17:00')])).toEqual([]);
+  });
+
+  it('reports both sides of a real overlap', () => {
+    expect(overlappingAvailability([block(1, '08:00', '13:00'), block(1, '12:00', '17:00')])).toEqual([
+      0, 1,
+    ]);
+  });
+
+  it('ignores identical hours on different days', () => {
+    expect(overlappingAvailability([block(1, '08:00', '17:00'), block(2, '08:00', '17:00')])).toEqual([]);
+  });
+
+  it('flags a block fully contained in another', () => {
+    expect(overlappingAvailability([block(3, '08:00', '18:00'), block(3, '10:00', '11:00')])).toEqual([
+      0, 1,
+    ]);
   });
 });
