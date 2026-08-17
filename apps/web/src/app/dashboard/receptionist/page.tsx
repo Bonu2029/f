@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { webhookUrlProblem } from '@afd/shared';
 import { requireSession } from '@/lib/auth';
+import { absoluteUrl, DEMO_MODE } from '@/lib/env';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { Alert, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { ReceptionistForm } from '@/components/dashboard/receptionist-form';
@@ -43,6 +45,12 @@ export default async function ReceptionistPage() {
   const subscriptionActive = ['active', 'trialing'].includes(subscription?.status ?? '');
   const missing = readiness.items.filter((i) => i.required && !i.done).map((i) => i.label);
 
+  // Where Vapi posts the record of each call. Shown because when it is wrong,
+  // every other indicator on this page still reads healthy — the assistant is
+  // synced, the number is live, and calls simply never appear.
+  const callbackUrl = absoluteUrl('/api/webhooks/vapi');
+  const callbackProblem = DEMO_MODE ? null : webhookUrlProblem(callbackUrl);
+
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -81,6 +89,8 @@ export default async function ReceptionistPage() {
             canGoLive={readiness.canGoLive}
             missing={missing}
             subscriptionActive={subscriptionActive}
+            callbackUrl={callbackUrl}
+            callbackProblem={callbackProblem}
           />
         </CardContent>
       </Card>

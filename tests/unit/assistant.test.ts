@@ -9,6 +9,7 @@ import {
   isValidVapiVoice,
   priceForPrompt,
   safetyRules,
+  webhookUrlProblem,
   type AssistantBuildInput,
 } from '@afd/shared';
 
@@ -221,5 +222,56 @@ describe('priceForPrompt', () => {
     expect(
       priceForPrompt({ ...base, priceType: 'fixed', exactPrice: 9900, priceNotes: 'per system' }),
     ).toBe('$99 (per system)');
+  });
+});
+
+/**
+ * The callback address is the difference between a call that becomes a lead and
+ * a call that vanishes. Vapi accepts any well-formed URL, so nothing downstream
+ * catches this — the check has to be here.
+ */
+describe('webhookUrlProblem', () => {
+  it('accepts a public https address', () => {
+    expect(webhookUrlProblem('https://aifrontdesk.example.com/api/webhooks/vapi')).toBeNull();
+  });
+
+  it('accepts a tunnel hostname', () => {
+    expect(webhookUrlProblem('https://odd-name-1234.trycloudflare.com/api/webhooks/vapi')).toBeNull();
+  });
+
+  it('accepts a public IP address', () => {
+    expect(webhookUrlProblem('https://203.0.113.10/api/webhooks/vapi')).toBeNull();
+  });
+
+  it.each([
+    'http://localhost:3000/api/webhooks/vapi',
+    'http://127.0.0.1:3000/api/webhooks/vapi',
+    'http://0.0.0.0:3000/api/webhooks/vapi',
+    'http://192.168.1.24:3000/api/webhooks/vapi',
+    'http://10.0.0.5/api/webhooks/vapi',
+    'http://172.16.4.1/api/webhooks/vapi',
+    'http://169.254.1.1/api/webhooks/vapi',
+    'http://macbook.local:3000/api/webhooks/vapi',
+    'http://web.internal/api/webhooks/vapi',
+    'http://devbox/api/webhooks/vapi',
+  ])('refuses %s', (url) => {
+    expect(webhookUrlProblem(url)).toBeTruthy();
+  });
+
+  it('names the address in the problem, so the fix is obvious', () => {
+    expect(webhookUrlProblem('http://localhost:3000/api/webhooks/vapi')).toContain(
+      'http://localhost:3000',
+    );
+  });
+
+  it('refuses a public address on the wrong protocol', () => {
+    expect(webhookUrlProblem('ftp://example.com/hook')).toBeTruthy();
+    expect(webhookUrlProblem('not a url')).toBeTruthy();
+  });
+
+  it('does not mistake a public host for a private one', () => {
+    // 172.32 is outside the private 172.16–172.31 block, and 11.x is public.
+    expect(webhookUrlProblem('https://172.32.0.1/hook')).toBeNull();
+    expect(webhookUrlProblem('https://11.0.0.1/hook')).toBeNull();
   });
 });

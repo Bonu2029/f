@@ -66,6 +66,72 @@ export function isValidVapiVoice(id: string): boolean {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Webhook reachability                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Whether Vapi's servers could actually reach the URL we hand them.
+ *
+ * This exists because the failure it prevents is invisible. Vapi accepts any
+ * syntactically valid `server.url`, so an assistant configured with
+ * `http://localhost:3000` is created successfully, answers a real call in a
+ * real voice, and posts its report to a machine that does not exist from the
+ * public internet. The dashboard then shows a healthy, up-to-date receptionist
+ * and zero calls — identical to a business whose phone simply has not rung.
+ *
+ * Returns null when the URL looks reachable, or a sentence naming the problem.
+ */
+export function webhookUrlProblem(rawUrl: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return `"${rawUrl}" is not a valid URL, so Vapi has nowhere to send call reports.`;
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return `Call reports can only be delivered over http or https, not ${url.protocol.replace(':', '')}.`;
+  }
+
+  const host = url.hostname.toLowerCase();
+
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') {
+    return `${url.origin} points at this machine. Vapi's servers cannot reach it, so every call would be answered and then lost.`;
+  }
+
+  if (host.endsWith('.local') || host.endsWith('.internal') || host === '0.0.0.0') {
+    return `${url.origin} is a local network name that Vapi cannot resolve.`;
+  }
+
+  // Private IPv4 ranges: reachable from a laptop, not from Vapi.
+  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (ipv4) {
+    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+    const isPrivate =
+      a === 10 ||
+      a === 127 ||
+      (a === 192 && b === 168) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 169 && b === 254);
+    if (isPrivate) {
+      return `${url.origin} is a private address. Vapi's servers cannot reach it.`;
+    }
+    return null;
+  }
+
+  // A bare hostname with no dot cannot resolve publicly.
+  if (!host.includes('.')) {
+    return `"${host}" is not a public hostname, so Vapi cannot deliver call reports to it.`;
+  }
+
+  return null;
+}
+
+/** What to do about it — the same advice wherever the problem is reported. */
+export const WEBHOOK_URL_FIX =
+  'Set NEXT_PUBLIC_APP_URL to a public HTTPS address — a tunnel such as `cloudflared tunnel --url http://localhost:3000` or your deployed site — then update the receptionist so Vapi is told the new address.';
+
+/* -------------------------------------------------------------------------- */
 /* Personalities                                                              */
 /* -------------------------------------------------------------------------- */
 

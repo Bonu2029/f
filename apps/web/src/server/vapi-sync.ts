@@ -3,6 +3,8 @@ import {
   buildAssistantConfig,
   buildSystemPrompt,
   priceForPrompt,
+  webhookUrlProblem,
+  WEBHOOK_URL_FIX,
   type AssistantBuildInput,
   type BusinessHoursDay,
 } from '@afd/shared';
@@ -11,7 +13,7 @@ import { getVapiProvider } from '@/lib/providers/vapi';
 import { absoluteUrl, vapiEnv } from '@/lib/env';
 import { AUDIT_ACTIONS, recordAudit, recordErrorEvent } from '@/lib/audit';
 import { childLogger } from '@/lib/logger';
-import { errors } from '@/lib/errors';
+import { AppError, errors } from '@/lib/errors';
 
 /**
  * Keeps each organisation's Vapi assistant in step with its stored settings.
@@ -154,6 +156,24 @@ export async function syncAssistant(input: {
   const buildInput = await loadAssistantInput(input.organizationId);
   if (!buildInput) {
     throw errors.notFound('That business configuration');
+  }
+
+  // Refuse before touching Vapi rather than after. A live assistant pointed at
+  // an unreachable callback URL is the worst state this system can be in: it
+  // answers real calls in a real voice and the business never learns anyone
+  // rang. The mock provider posts nothing anywhere, so it is exempt.
+  if (!vapi.isMock) {
+    const problem = webhookUrlProblem(buildInput.serverUrl);
+    if (problem) {
+      logger.error('refused to sync an assistant with an unreachable callback URL', {
+        server_url: buildInput.serverUrl,
+      });
+      throw new AppError(
+        'provider_not_configured',
+        `Your receptionist was not updated, because ${problem.charAt(0).toLowerCase()}${problem.slice(1)}`,
+        { action: WEBHOOK_URL_FIX },
+      );
+    }
   }
 
   const config = buildAssistantConfig(buildInput);

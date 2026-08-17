@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatPhone } from '@afd/shared';
+import { formatPhone, WEBHOOK_URL_FIX } from '@afd/shared';
 import { Alert, Badge, Button, Field, Input } from '@/components/ui';
 import { activateReceptionistAction } from '@/server/actions';
 
@@ -18,6 +18,10 @@ export interface ReceptionistStatusProps {
   canGoLive: boolean;
   missing: string[];
   subscriptionActive: boolean;
+  /** Where Vapi is told to post the record of each call. */
+  callbackUrl: string;
+  /** Set when that address cannot be reached from the public internet. */
+  callbackProblem: string | null;
 }
 
 /**
@@ -108,6 +112,18 @@ export function ReceptionistStatus(props: ReceptionistStatusProps) {
       {error && <Alert tone="critical" title={error} />}
       {notice && <Alert tone="positive" title={notice} />}
 
+      {/*
+        Reported above everything else because it invalidates everything else.
+        With an unreachable callback address the assistant still says "up to
+        date", the number still says "active", and no call is ever recorded.
+      */}
+      {props.callbackProblem && (
+        <Alert tone="critical" title="Calls would be answered but never recorded">
+          <p>{props.callbackProblem}</p>
+          <p className="mt-1">{WEBHOOK_URL_FIX}</p>
+        </Alert>
+      )}
+
       {/* Assistant --------------------------------------------------------- */}
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-line p-4">
         <div className="min-w-0">
@@ -127,6 +143,9 @@ export function ReceptionistStatus(props: ReceptionistStatusProps) {
               : props.syncedAt
                 ? `Last updated ${new Date(props.syncedAt).toLocaleString()}.`
                 : 'It is created the first time you save your business or receptionist settings.'}
+          </p>
+          <p className="mt-1 break-all text-xs text-ink-faint">
+            Call reports are sent to <span className="font-mono">{props.callbackUrl}</span>
           </p>
         </div>
         {props.canEdit && (

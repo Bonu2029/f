@@ -12,6 +12,7 @@
  * Exit code is 1 when something that blocks the app is broken, so it can gate a
  * deploy or a support handoff.
  */
+import { WEBHOOK_URL_FIX, webhookUrlProblem } from '@afd/shared';
 import { loadEnvFiles } from './load-env';
 
 const envFiles = loadEnvFiles();
@@ -289,13 +290,25 @@ async function checkVapi() {
     report('ok', 'Webhook secret set');
   }
 
-  const appUrl = read('NEXT_PUBLIC_APP_URL');
-  if (appUrl && /localhost|127\.0\.0\.1/.test(appUrl)) {
+  // The same predicate the app refuses to sync on, so this cannot drift from
+  // the behaviour it is meant to predict.
+  const callbackUrl = `${(read('NEXT_PUBLIC_APP_URL') ?? 'http://localhost:3000').replace(/\/+$/, '')}/api/webhooks/vapi`;
+  const problem = webhookUrlProblem(callbackUrl);
+
+  if (!problem) {
+    report('ok', 'Webhook URL', callbackUrl);
+  } else if (isDemo || !key) {
     report(
-      'warn',
+      'skip',
       'Webhook URL',
-      `Assistants would be told to call back on ${appUrl}, which Vapi cannot reach.`,
-      'Fine for UI work. For a real call, use a tunnel or a deployed URL, then re-sync.',
+      `${problem} No real assistant is created in this mode, so nothing is lost.`,
+    );
+  } else {
+    report(
+      'fail',
+      'Webhook URL',
+      `${problem} The app refuses to sync an assistant in this state, so no calls can be answered until it is fixed.`,
+      WEBHOOK_URL_FIX,
     );
   }
 }
