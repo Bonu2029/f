@@ -430,4 +430,62 @@ describeDb('schema contract', () => {
       ),
     ).rejects.toThrow(/duplicate key|unique/i);
   });
+
+  /**
+   * Every `ON CONFLICT` target the application actually uses.
+   *
+   * Postgres only infers a PARTIAL unique index when the statement repeats the
+   * index predicate, and supabase-js emits no predicate — so an upsert aimed at
+   * a partial index fails with 42P10 on every call, forever. That is how the
+   * unserved-call record was lost while its webhook reported success, and how
+   * team invitations failed for every user.
+   *
+   * Keep this list in step with `onConflict:` in the app. A new upsert whose
+   * target is partial fails here rather than in production.
+   */
+  const UPSERT_TARGETS: Array<{ table: string; columns: string; where: string }> = [
+    { table: 'calls', columns: 'vapi_call_id', where: 'server/calls.ts recordUnservedCall' },
+    { table: 'availability_settings', columns: 'organization_id', where: 'server/actions.ts scheduling settings' },
+    { table: 'notification_preferences', columns: 'organization_id', where: 'server/actions.ts notification prefs' },
+    { table: 'organization_members', columns: 'organization_id,user_id', where: 'server/team.ts accept invite' },
+  ];
+
+  it.each(UPSERT_TARGETS)(
+    'can infer a conflict target for $table ($columns), used by $where',
+    async ({ table, columns: cols }) => {
+      const { rows } = await asService<{ cols: string; predicate: string | null }>(
+        `select (select string_agg(a.attname, ',' order by a.attnum)
+                   from pg_attribute a
+                  where a.attrelid = i.indrelid and a.attnum = any (i.indkey)) as cols,
+                pg_get_expr(i.indpred, i.indrelid) as predicate
+           from pg_index i
+           join pg_class c on c.oid = i.indexrelid
+           join pg_class t on t.oid = i.indrelid
+           join pg_namespace n on n.oid = t.relnamespace
+          where n.nspname = 'public' and t.relname = $1 and i.indisunique`,
+        [table],
+      );
+
+      // Inferrable means: covers exactly these columns, and carries no predicate.
+      const usable = rows.filter((r) => r.cols === cols && r.predicate === null);
+      expect(
+        usable,
+        `No total unique index on ${table}(${cols}). Indexes present: ${JSON.stringify(rows)}`,
+      ).toHaveLength(1);
+    },
+  );
+
+  it('keeps the pending-invite rule partial, which is why invites do not upsert', async () => {
+    // The opposite assertion, stated so nobody "fixes" it by making it total:
+    // an accepted invitation is history, and a person who left may be invited
+    // back. server/team.ts deletes the pending row and inserts instead.
+    const { rows } = await asService<{ predicate: string | null }>(
+      `select pg_get_expr(i.indpred, i.indrelid) as predicate
+         from pg_index i
+         join pg_class c on c.oid = i.indexrelid
+        where c.relname = 'team_invites_pending_uniq'`,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.predicate).toMatch(/accepted_at IS NULL/i);
+  });
 });

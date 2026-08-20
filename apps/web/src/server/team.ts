@@ -89,18 +89,32 @@ export async function inviteMemberAction(
     const { token, hash } = generateToken(32);
     const expiresAt = new Date(Date.now() + 7 * 86_400_000);
 
-    const { error } = await svc.from('team_invites').upsert(
-      {
-        organization_id: ctx.active.organizationId,
-        email: input.email,
-        role,
-        token_hash: hash,
-        invited_by: ctx.user.id,
-        expires_at: expiresAt.toISOString(),
-        accepted_at: null,
-      },
-      { onConflict: 'organization_id,email' },
-    );
+    // Re-inviting replaces the pending invitation rather than upserting onto it.
+    //
+    // The uniqueness rule here is deliberately partial — one PENDING invite per
+    // address, with accepted ones kept as history so someone who leaves can be
+    // invited back. Postgres cannot infer a partial index for `ON CONFLICT
+    // (organization_id, email)`, so the upsert this replaced raised 42P10 every
+    // single time and nobody could invite a teammate at all. Clearing the
+    // pending row first expresses the same intent in a way the index supports,
+    // and it correctly retires the old token: a superseded invitation link must
+    // stop working.
+    await svc
+      .from('team_invites')
+      .delete()
+      .eq('organization_id', ctx.active.organizationId)
+      .eq('email', input.email)
+      .is('accepted_at', null);
+
+    const { error } = await svc.from('team_invites').insert({
+      organization_id: ctx.active.organizationId,
+      email: input.email,
+      role,
+      token_hash: hash,
+      invited_by: ctx.user.id,
+      expires_at: expiresAt.toISOString(),
+      accepted_at: null,
+    });
     if (error) throw errors.conflict(`The invitation could not be created: ${error.message}`);
 
     const inviterName =

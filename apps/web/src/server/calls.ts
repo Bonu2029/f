@@ -440,6 +440,12 @@ async function reportOverageToBilling(
 /**
  * Records a call that could not be served, so the business sees a missed call
  * rather than nothing at all.
+ *
+ * Throws when the call cannot be written. That matters more than it looks: this
+ * runs inside the Vapi webhook, and the caller turns a throw into a 500 so Vapi
+ * retries. Swallowing the error here — which is what happened before — produced
+ * a webhook marked `processed`, a notification saying a caller was missed, and
+ * no call row for the owner to look at.
  */
 export async function recordUnservedCall(input: {
   organizationId: string;
@@ -448,7 +454,7 @@ export async function recordUnservedCall(input: {
   reason: string;
 }): Promise<void> {
   const svc = getServiceSupabase();
-  await svc.from('calls').upsert(
+  const { error } = await svc.from('calls').upsert(
     {
       organization_id: input.organizationId,
       vapi_call_id: input.vapiCallId,
@@ -462,6 +468,10 @@ export async function recordUnservedCall(input: {
     },
     { onConflict: 'vapi_call_id' },
   );
+
+  if (error) {
+    throw new Error(`Could not record the unserved call: ${error.message}`);
+  }
 
   await svc.from('notifications').insert({
     organization_id: input.organizationId,
