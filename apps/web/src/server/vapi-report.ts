@@ -128,8 +128,8 @@ export function toReport(
     businessNumber: message.call?.phoneNumber?.number ?? null,
     startedAt: message.startedAt ?? message.call?.startedAt ?? null,
     endedAt: message.endedAt ?? message.call?.endedAt ?? null,
-    endedReason: message.endedReason ?? null,
-    summary: message.analysis?.summary ?? message.summary ?? null,
+    endedReason: emptyToNull(message.endedReason),
+    summary: emptyToNull(message.analysis?.summary) ?? emptyToNull(message.summary),
     // The provider's own flat rendering. Kept alongside the structured turns so
     // a call still has a readable record when the message array is missing.
     transcript: emptyToNull(message.transcript) ?? emptyToNull(message.artifact?.transcript),
@@ -139,15 +139,47 @@ export function toReport(
 }
 
 /**
- * An empty string is not a transcript.
+ * An empty string is not a transcript, a summary, or a reason.
  *
- * Vapi sends `transcript: ""` for a call where nobody spoke — which is exactly
- * what a failed-microphone call produces. Passing that through as a value meant
- * the `??` chain stopped at it and the fallback rendering never ran; storing it
- * meant "we have a transcript and it says nothing" instead of "there is no
- * transcript". Both readings are wrong and neither is visible.
+ * Vapi sends `""` rather than omitting the field for a call where nobody spoke
+ * — exactly what a failed-microphone call produces. An empty string satisfies
+ * `??`, so it both stopped the fallback chain before the alternative was tried
+ * and got stored as a value, turning "there is nothing here" into "here is
+ * nothing". Both readings are wrong and neither shows up as an error.
+ *
+ * Applied to every optional text field the provider sends, not just the one
+ * that was noticed first.
  */
 function emptyToNull(value: string | null | undefined): string | null {
   const trimmed = (value ?? '').trim();
   return trimmed === '' ? null : trimmed;
+}
+
+/**
+ * What actually happened on the call, for the `result` column.
+ *
+ * Vapi reports `status: completed` for a call that failed technically — its own
+ * `endedReason` says the assistant never received any audio. Storing that as a
+ * completed call puts a row on the owner's dashboard claiming a conversation
+ * took place when nothing did. The provider's status describes its own
+ * pipeline finishing; it is not a claim about the call being answered.
+ */
+export function callResultFor(input: {
+  endedReason: string | null;
+  transferred: boolean;
+  hasContent: boolean;
+}): 'transferred' | 'failed' | 'abandoned' | 'completed' {
+  if (input.transferred) return 'transferred';
+
+  const reason = (input.endedReason ?? '').toLowerCase();
+  if (reason.includes('error') || reason.includes('failed')) return 'failed';
+
+  // Nobody said anything and the line timed out. The call connected, so it is
+  // not a failure — but calling it completed would be generous to the point of
+  // being untrue.
+  if (!input.hasContent && (reason.includes('silence') || reason.includes('timed-out'))) {
+    return 'abandoned';
+  }
+
+  return 'completed';
 }

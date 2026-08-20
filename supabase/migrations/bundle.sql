@@ -12,7 +12,7 @@
 -- indexes. The guard below stops a second pass before it can fail partway.
 -- For incremental changes afterwards, use `npm run db:migrate`.
 --
--- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql, 0010_no_overlapping_appointments.sql, 0011_upsert_targets.sql
+-- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql, 0010_no_overlapping_appointments.sql, 0011_upsert_targets.sql, 0012_empty_strings_are_not_values.sql
 -- =============================================================================
 
 -- Refuse to run twice. Without this, a second pass fails partway through
@@ -28,7 +28,7 @@ begin
     -- does not exist yet, which is exactly the case this guard allows.
     execute
       'select exists (select 1 from public.schema_migrations where filename = $1)'
-      into already using '0011_upsert_targets.sql';
+      into already using '0012_empty_strings_are_not_values.sql';
   end if;
 
   if already then
@@ -3121,6 +3121,69 @@ end $$;
 
 
 -- ============================================================================
+-- BEGIN 0012_empty_strings_are_not_values.sql
+-- ============================================================================
+
+-- =============================================================================
+-- 0012 — an empty string is not a transcript
+-- =============================================================================
+--
+-- Vapi sends `""` rather than omitting a field when a call produced nothing —
+-- which is what happens when the caller's microphone never publishes audio. An
+-- empty string satisfies `??`, so the reader stored it as a value instead of
+-- falling through to the alternative rendering. The rows it produced say "this
+-- call has a transcript, and the transcript is nothing", which is not what
+-- happened and is not distinguishable in the UI from a call still being
+-- processed.
+--
+-- The reader now normalises at the boundary. This cleans up what it already
+-- wrote. Only literal empty and whitespace-only values are touched: anything a
+-- person could read is left exactly as it is.
+--
+-- Deliberately NOT changing `result` on existing rows. Several are recorded as
+-- `completed` for calls that failed technically, and the ingestion path now
+-- classifies those honestly — but rewriting the recorded outcome of past calls
+-- is a different act from removing a value that was never really there.
+-- =============================================================================
+
+update public.calls set transcript = null where btrim(coalesce(transcript, '')) = '' and transcript is not null;
+update public.calls set summary = null where btrim(coalesce(summary, '')) = '' and summary is not null;
+update public.calls set ended_reason = null where btrim(coalesce(ended_reason, '')) = '' and ended_reason is not null;
+update public.calls set error_message = null where btrim(coalesce(error_message, '')) = '' and error_message is not null;
+
+-- Leads carry the same free-text fields, written from the same reports.
+update public.leads set description = null where btrim(coalesce(description, '')) = '' and description is not null;
+update public.leads set notes = null where btrim(coalesce(notes, '')) = '' and notes is not null;
+
+-- -----------------------------------------------------------------------------
+-- Postcondition: nothing readable claims to be readable when it is not.
+-- -----------------------------------------------------------------------------
+do $$
+declare
+  v_calls int;
+  v_leads int;
+begin
+  select count(*) into v_calls
+    from public.calls
+   where btrim(coalesce(transcript, 'x')) = ''
+      or btrim(coalesce(summary, 'x')) = ''
+      or btrim(coalesce(ended_reason, 'x')) = '';
+
+  select count(*) into v_leads
+    from public.leads
+   where btrim(coalesce(description, 'x')) = ''
+      or btrim(coalesce(notes, 'x')) = '';
+
+  if v_calls > 0 or v_leads > 0 then
+    raise exception
+      'empty-string cleanup missed % call row(s) and % lead row(s)', v_calls, v_leads;
+  end if;
+end $$;
+
+-- END 0012_empty_strings_are_not_values.sql
+
+
+-- ============================================================================
 -- Mark these migrations as applied, so `npm run db:migrate` against this
 -- same database later is a no-op rather than a second pass.
 --
@@ -3145,5 +3208,6 @@ insert into public.schema_migrations (filename, checksum) values
   ('0008_bootstrap_organization.sql', 'bundled'),
   ('0009_employees_and_availability.sql', 'bundled'),
   ('0010_no_overlapping_appointments.sql', 'bundled'),
-  ('0011_upsert_targets.sql', 'bundled')
+  ('0011_upsert_targets.sql', 'bundled'),
+  ('0012_empty_strings_are_not_values.sql', 'bundled')
 on conflict (filename) do nothing;

@@ -13,7 +13,7 @@ import { getBillingProvider } from '@/lib/providers/billing';
 import { childLogger } from '@/lib/logger';
 import { recordErrorEvent } from '@/lib/audit';
 import { notifyNewLead, notifyUsageThreshold } from '@/server/notifications';
-import type { VapiEndOfCallReport } from '@/server/vapi-report';
+import { callResultFor, type VapiEndOfCallReport } from '@/server/vapi-report';
 
 export type { VapiEndOfCallReport };
 
@@ -114,6 +114,15 @@ export async function ingestCallReport(input: {
     OUTCOME_TO_DISPOSITION[structured.outcome ?? ''] ??
     (transferred ? 'transferred_to_human' : 'unresolved');
 
+  // Vapi's own status says "completed" for a call whose endedReason says the
+  // assistant never heard anyone. Believe the reason, not the status.
+  const flatTranscript = report.transcript ?? flattenTurns(report.transcriptTurns);
+  const result = callResultFor({
+    endedReason: report.endedReason,
+    transferred,
+    hasContent: Boolean(flatTranscript) || Boolean(report.summary),
+  });
+
   const { data: call, error: callError } = await svc
     .from('calls')
     .insert({
@@ -129,14 +138,14 @@ export async function ingestCallReport(input: {
       duration_seconds: durationSeconds,
       billed_seconds: billedSeconds,
       billable_minutes: billableMinutesForCall(billedSeconds),
-      result: transferred ? 'transferred' : 'completed',
+      result,
       disposition,
       transferred,
       transfer_succeeded: transferred ? true : null,
       appointment_booked: false,
       requested_appointment: clean(structured.requested_appointment),
       summary: report.summary,
-      transcript: report.transcript ?? flattenTurns(report.transcriptTurns),
+      transcript: flatTranscript,
       ended_reason: report.endedReason,
       summary_json: {
         reason: clean(structured.service_requested) ?? report.summary ?? 'Not recorded',

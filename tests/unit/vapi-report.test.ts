@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assistantIdFrom, toReport, type VapiMessage } from '@/server/vapi-report';
+import { assistantIdFrom, callResultFor, toReport, type VapiMessage } from '@/server/vapi-report';
 
 /**
  * Reading the end-of-call report.
@@ -162,5 +162,78 @@ describe('toReport', () => {
     expect(empty.structured).toBeNull();
     expect(empty.transcriptTurns).toEqual([]);
     expect(empty.startedAt).toBeNull();
+  });
+
+  /**
+   * The summary had exactly the same defect as the transcript, and only the
+   * transcript was fixed first. Real rows in the database proved it: six calls
+   * stored `summary = ''` rather than null.
+   */
+  it('treats an empty summary as absent too', () => {
+    const blank = toReport('call_8', 'asst_1', {
+      transcript: '',
+      analysis: { summary: '   ', structuredData: {} },
+      summary: '',
+      endedReason: '',
+    });
+    expect(blank.summary).toBeNull();
+    expect(blank.transcript).toBeNull();
+    expect(blank.endedReason).toBeNull();
+  });
+
+  it('falls back to the top-level summary when the analysis one is blank', () => {
+    const fallback = toReport('call_9', 'asst_1', {
+      analysis: { summary: '' },
+      summary: 'Caller asked about pricing.',
+    });
+    expect(fallback.summary).toBe('Caller asked about pricing.');
+  });
+});
+
+/**
+ * Vapi reports `status: completed` for a call its own endedReason says never
+ * received any audio. Storing that as completed puts a row on the dashboard
+ * claiming a conversation happened when nothing did.
+ */
+describe('callResultFor', () => {
+  const base = { transferred: false, hasContent: true };
+
+  it('calls a real conversation completed', () => {
+    expect(callResultFor({ ...base, endedReason: 'customer-ended-call' })).toBe('completed');
+    expect(callResultFor({ ...base, endedReason: 'assistant-ended-call' })).toBe('completed');
+  });
+
+  it('calls a technical failure a failure, whatever the provider status says', () => {
+    expect(
+      callResultFor({
+        ...base,
+        hasContent: false,
+        endedReason: 'call.in-progress.error-assistant-did-not-receive-customer-audio',
+      }),
+    ).toBe('failed');
+    expect(callResultFor({ ...base, endedReason: 'pipeline-error-openai-llm-failed' })).toBe('failed');
+  });
+
+  it('calls a silent line abandoned rather than completed', () => {
+    expect(callResultFor({ ...base, hasContent: false, endedReason: 'silence-timed-out' })).toBe(
+      'abandoned',
+    );
+  });
+
+  it('does not call a real conversation abandoned just because it ended in silence', () => {
+    // Someone talked, then stopped. That call happened and has a transcript.
+    expect(callResultFor({ ...base, hasContent: true, endedReason: 'silence-timed-out' })).toBe(
+      'completed',
+    );
+  });
+
+  it('reports a transfer as a transfer, ahead of everything else', () => {
+    expect(callResultFor({ ...base, transferred: true, endedReason: 'silence-timed-out' })).toBe(
+      'transferred',
+    );
+  });
+
+  it('defaults to completed when there is no reason at all', () => {
+    expect(callResultFor({ ...base, endedReason: null })).toBe('completed');
   });
 });
