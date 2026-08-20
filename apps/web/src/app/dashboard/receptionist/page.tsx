@@ -86,6 +86,7 @@ export default async function ReceptionistPage() {
             phoneNumber={(phone?.phone_number as string) ?? null}
             phoneIsDemo={Boolean(phone?.is_demo)}
             isLive={readiness.isLive}
+            isReachable={readiness.isReachable}
             canGoLive={readiness.canGoLive}
             missing={missing}
             subscriptionActive={subscriptionActive}

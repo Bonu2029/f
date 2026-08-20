@@ -15,6 +15,8 @@ export interface ReceptionistStatusProps {
   phoneNumber: string | null;
   phoneIsDemo: boolean;
   isLive: boolean;
+  /** A caller could actually get through — separate from being switched on. */
+  isReachable: boolean;
   canGoLive: boolean;
   missing: string[];
   subscriptionActive: boolean;
@@ -217,11 +219,23 @@ export function ReceptionistStatus(props: ReceptionistStatusProps) {
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm font-medium text-ink">
             Answering calls
-            {props.isLive ? <Badge tone="positive">Live</Badge> : <Badge tone="caution">Not live</Badge>}
+            {props.isLive ? (
+              props.isReachable ? (
+                <Badge tone="positive">Live</Badge>
+              ) : (
+                // Switched on, but no line points at it. Badging that "Live"
+                // would tell an owner their phone is covered when it is not.
+                <Badge tone="caution">On, but unreachable</Badge>
+              )
+            ) : (
+              <Badge tone="caution">Not live</Badge>
+            )}
           </p>
           <p className="mt-1 text-xs text-ink-subtle">
             {props.isLive
-              ? 'Your receptionist is answering. Pause it any time from the button at the top of this page.'
+              ? props.isReachable
+                ? 'Your receptionist is answering. Pause it any time from the button at the top of this page.'
+                : 'Your receptionist is switched on and would answer — but you have no number, so nobody can call it yet. Get a number below, or forward an existing line to one.'
               : props.canGoLive
                 ? 'Everything required is in place.'
                 : `Still needed: ${props.missing.join(', ')}.`}

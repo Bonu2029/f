@@ -226,10 +226,23 @@ export async function getReadinessChecklist(organizationId: string) {
           : 'Not published yet',
     },
     {
+      // Not required to activate.
+      //
+      // "The receptionist is configured well enough to answer" and "a phone
+      // line points at it" are different facts about different things, and
+      // fusing them made our own plumbing a precondition for the customer's
+      // own switch. A business may be forwarding an existing line, porting a
+      // number, or testing before either — none of which should stop it
+      // turning its receptionist on. The old rule did not even hold the
+      // invariant it implied: nothing revokes activation if the number goes
+      // away afterwards.
+      //
+      // Reachability is reported on its own instead, in the plainest words
+      // available: activated without a number means nobody can call you.
       key: 'phone',
-      label: 'Has a phone number',
+      label: 'Has a phone number callers can dial',
       done: Boolean(phone.data?.phone_number),
-      required: true,
+      required: false,
       href: '/dashboard/receptionist',
       detail: phone.data?.phone_number ?? 'None yet',
     },
@@ -245,7 +258,15 @@ export async function getReadinessChecklist(organizationId: string) {
 
   return {
     items,
+    /** Configured well enough to answer a call. */
     canGoLive: items.filter((i) => i.required).every((i) => i.done),
+    /** Switched on by the owner. */
     isLive: Boolean(agent.data?.active),
+    /**
+     * Whether a caller could actually get through. Deliberately separate from
+     * `isLive`: a receptionist can be switched on and unreachable, and saying
+     * "live" without saying that would be a lie of omission.
+     */
+    isReachable: Boolean(phone.data?.phone_number),
   };
 }

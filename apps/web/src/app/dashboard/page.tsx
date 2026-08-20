@@ -95,7 +95,9 @@ export default async function DashboardPage() {
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
             {readiness.isLive
-              ? 'Here is what your receptionist has handled in the last 30 days.'
+              ? readiness.isReachable
+                ? 'Here is what your receptionist has handled in the last 30 days.'
+                : 'Your receptionist is switched on, but has no number for callers to reach.'
               : 'Your receptionist is not answering calls yet.'}
           </p>
         </div>
@@ -125,6 +127,27 @@ export default async function DashboardPage() {
                 .filter((i) => i.required && !i.done)
                 .map((i) => i.label)
                 .join(', ')}.`}
+        </Alert>
+      )}
+
+      {/*
+        Switched on and unreachable is its own state, and the least obvious
+        one — every other indicator reads healthy while no call can arrive.
+      */}
+      {readiness.isLive && !readiness.isReachable && (
+        <Alert
+          tone="caution"
+          title="Nobody can call your receptionist yet"
+          action={
+            <Button asChild size="sm">
+              <Link href="/dashboard/receptionist">
+                Get a number <ArrowRight aria-hidden />
+              </Link>
+            </Button>
+          }
+        >
+          It is switched on and would answer, but you have no phone number. Get one, or forward
+          your existing business line to it.
         </Alert>
       )}
 

@@ -121,6 +121,18 @@ describeDb('inbound call routing', () => {
     expect((await resolve('asst_routing_org')).servable).toBe(true);
   });
 
+  it('serves a call to an organisation that has no phone number', async () => {
+    // A web call, or a business forwarding its own line, arrives with no number
+    // of ours involved. Whether a caller can be served is a question about the
+    // receptionist, not about whether we have sold them a number — and the
+    // readiness checklist now reflects that too.
+    await asService('delete from public.phone_numbers where organization_id = $1', [org.id]);
+    const result = await resolve('asst_routing_org');
+    expect(result.servable).toBe(true);
+    expect(result.reason).toBe('ok');
+    expect(result.organization_id).toBe(org.id);
+  });
+
   it('prevents two organisations sharing one assistant id', async () => {
     const other = await seedOrg('other-org');
     await expect(attachAssistant(other.id, 'asst_routing_org')).rejects.toThrow(
