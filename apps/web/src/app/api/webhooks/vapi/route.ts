@@ -5,7 +5,13 @@ import { childLogger, newRequestId } from '@/lib/logger';
 import { recordErrorEvent } from '@/lib/audit';
 import { sha256Hex } from '@/lib/crypto';
 import { constantTimeEqual } from '@/lib/crypto';
-import { ingestCallReport, recordUnservedCall, type VapiEndOfCallReport } from '@/server/calls';
+import { ingestCallReport, recordUnservedCall } from '@/server/calls';
+import {
+  assistantIdFrom,
+  toReport,
+  type VapiMessage,
+  type VapiWebhookPayload,
+} from '@/server/vapi-report';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -76,8 +82,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const assistantId =
-      message.call?.assistantId ?? message.assistant?.id ?? message.call?.assistant?.id ?? null;
+    const assistantId = assistantIdFrom(message);
 
     if (!assistantId) {
       await complete(eventId, 'skipped', 'No assistant id on the report');
@@ -139,74 +144,6 @@ export async function POST(request: NextRequest) {
 }
 
 /* -------------------------------------------------------------------------- */
-
-interface VapiWebhookPayload {
-  message?: {
-    type?: string;
-    endedReason?: string;
-    summary?: string;
-    startedAt?: string;
-    endedAt?: string;
-    transcript?: string;
-    assistant?: { id?: string };
-    analysis?: {
-      summary?: string;
-      structuredData?: Record<string, unknown>;
-    };
-    artifact?: {
-      messages?: Array<{ role?: string; message?: string; content?: string; secondsFromStart?: number }>;
-      transcript?: string;
-    };
-    call?: {
-      id?: string;
-      assistantId?: string;
-      phoneNumberId?: string;
-      assistant?: { id?: string };
-      customer?: { number?: string };
-      phoneNumber?: { number?: string };
-      startedAt?: string;
-      endedAt?: string;
-    };
-  };
-}
-
-type VapiMessage = NonNullable<VapiWebhookPayload['message']>;
-
-/** Normalises Vapi's payload into the shape the ingestion service expects. */
-function toReport(callId: string, assistantId: string, message: VapiMessage): VapiEndOfCallReport {
-  const turns = (message.artifact?.messages ?? [])
-    .map((m) => {
-      const role = m.role === 'bot' || m.role === 'assistant' ? 'assistant' : m.role === 'user' ? 'user' : 'system';
-      const text = (m.message ?? m.content ?? '').trim();
-      return text
-        ? {
-            role: role as 'assistant' | 'user' | 'system',
-            text,
-            ...(typeof m.secondsFromStart === 'number' ? { secondsFromStart: m.secondsFromStart } : {}),
-          }
-        : null;
-    })
-    .filter((t): t is NonNullable<typeof t> => t !== null);
-
-  const structured = (message.analysis?.structuredData ?? null) as VapiEndOfCallReport['structured'];
-
-  return {
-    callId,
-    assistantId,
-    phoneNumberId: message.call?.phoneNumberId ?? null,
-    customerNumber: message.call?.customer?.number ?? null,
-    businessNumber: message.call?.phoneNumber?.number ?? null,
-    startedAt: message.startedAt ?? message.call?.startedAt ?? null,
-    endedAt: message.endedAt ?? message.call?.endedAt ?? null,
-    endedReason: message.endedReason ?? null,
-    summary: message.analysis?.summary ?? message.summary ?? null,
-    // The provider's own flat rendering. Kept alongside the structured turns so
-    // a call still has a readable record when the message array is missing.
-    transcript: message.transcript ?? message.artifact?.transcript ?? null,
-    transcriptTurns: turns,
-    structured,
-  };
-}
 
 /**
  * Verifies the shared secret Vapi echoes back. Compared in constant time so the

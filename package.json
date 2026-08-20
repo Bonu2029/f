@@ -26,6 +26,7 @@
     "db:bundle": "tsx scripts/bundle-migrations.ts",
     "env:check": "tsx scripts/check-env.ts",
     "doctor": "tsx scripts/doctor.ts",
+    "calls:reconcile": "tsx scripts/reconcile-calls.ts",
     "test:user": "tsx scripts/create-test-user.ts",
     "stripe:setup": "tsx scripts/setup-stripe.ts",
     "founder:expire": "tsx scripts/expire-founder-reservations.ts",

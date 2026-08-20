@@ -13,6 +13,9 @@ import { getBillingProvider } from '@/lib/providers/billing';
 import { childLogger } from '@/lib/logger';
 import { recordErrorEvent } from '@/lib/audit';
 import { notifyNewLead, notifyUsageThreshold } from '@/server/notifications';
+import type { VapiEndOfCallReport } from '@/server/vapi-report';
+
+export type { VapiEndOfCallReport };
 
 /**
  * Call ingestion.
@@ -25,33 +28,6 @@ import { notifyNewLead, notifyUsageThreshold } from '@/server/notifications';
  * The whole operation is idempotent on `vapi_call_id`, because Vapi retries a
  * webhook that does not return 200.
  */
-
-/** The subset of Vapi's end-of-call report this product relies on. */
-export interface VapiEndOfCallReport {
-  callId: string;
-  assistantId: string | null;
-  phoneNumberId: string | null;
-  customerNumber: string | null;
-  businessNumber: string | null;
-  startedAt: string | null;
-  endedAt: string | null;
-  endedReason: string | null;
-  /** Flat transcript exactly as the provider rendered it. */
-  transcript: string | null;
-  summary: string | null;
-  transcriptTurns: Array<{ role: 'assistant' | 'user' | 'system'; text: string; secondsFromStart?: number }>;
-  structured: {
-    customer_name?: string | null;
-    customer_phone?: string | null;
-    customer_email?: string | null;
-    service_address?: string | null;
-    postal_code?: string | null;
-    service_requested?: string | null;
-    urgency?: string | null;
-    requested_appointment?: string | null;
-    outcome?: string | null;
-  } | null;
-}
 
 const OUTCOME_TO_DISPOSITION: Record<string, CallDisposition> = {
   lead_captured: 'lead_captured',
