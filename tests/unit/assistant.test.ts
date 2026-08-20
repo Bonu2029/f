@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_VAPI_VOICE,
+  DEMO_PROVIDER_ID_PREFIX,
   availableVapiVoices,
   buildAssistantConfig,
   buildSystemPrompt,
   getPersonality,
   getVapiVoice,
+  isPlaceholderProviderId,
   isValidVapiVoice,
   priceForPrompt,
   safetyRules,
@@ -273,5 +275,38 @@ describe('webhookUrlProblem', () => {
     // 172.32 is outside the private 172.16–172.31 block, and 11.x is public.
     expect(webhookUrlProblem('https://172.32.0.1/hook')).toBeNull();
     expect(webhookUrlProblem('https://11.0.0.1/hook')).toBeNull();
+  });
+});
+
+/**
+ * The mock provider promises its ids can never be mistaken for real ones. That
+ * promise is only worth anything if the code reading them back checks — which
+ * it did not, so a business that ran in DEMO_MODE first got "id must be a valid
+ * UUID" from Vapi and a receptionist that could not be fixed from the UI.
+ */
+describe('isPlaceholderProviderId', () => {
+  it('recognises the ids the mock provider invents', () => {
+    expect(isPlaceholderProviderId('demo_asst_87f157a3')).toBe(true);
+    expect(isPlaceholderProviderId('demo_num_1a2b3c4d')).toBe(true);
+  });
+
+  it('does not flag a real Vapi identifier', () => {
+    expect(isPlaceholderProviderId('7f3b1c2e-9d84-4a1f-8b6e-2c5a0d9e4f77')).toBe(false);
+  });
+
+  it('treats a missing id as not a placeholder, so it takes the create path', () => {
+    expect(isPlaceholderProviderId(null)).toBe(false);
+    expect(isPlaceholderProviderId(undefined)).toBe(false);
+    expect(isPlaceholderProviderId('')).toBe(false);
+  });
+
+  it('matches on the prefix only, not anywhere in the string', () => {
+    // A real id that happens to contain the word must not be retired.
+    expect(isPlaceholderProviderId('7f3b1c2e-demo_asst-4a1f')).toBe(false);
+  });
+
+  it('uses the same prefix the mock provider stamps on', () => {
+    expect(`${DEMO_PROVIDER_ID_PREFIX}asst_abc`).toBe('demo_asst_abc');
+    expect(isPlaceholderProviderId(`${DEMO_PROVIDER_ID_PREFIX}asst_abc`)).toBe(true);
   });
 });

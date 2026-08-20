@@ -249,6 +249,18 @@ async function checkVapi() {
   const demo = (read('DEMO_MODE') ?? 'false').toLowerCase();
   const isDemo = demo === 'true' || demo === '1';
 
+  if (key && isDemo) {
+    // Both set is a contradiction, and the losing one is the key. Without this
+    // line the symptom is a real key, a green-looking dashboard, and assistant
+    // ids that quietly begin `demo_`.
+    report(
+      'warn',
+      'API key is being ignored',
+      'VAPI_API_KEY is set but DEMO_MODE=true, so the app uses mock adapters and creates nothing at Vapi.',
+      'Set DEMO_MODE=false to use the key you configured.',
+    );
+  }
+
   if (!key) {
     report(
       isDemo ? 'skip' : 'warn',
@@ -258,6 +270,8 @@ async function checkVapi() {
         : 'Not set. The app falls back to mock adapters, so no real call is answered.',
       isDemo ? undefined : 'Add VAPI_API_KEY, or set DEMO_MODE=true to make the fallback explicit.',
     );
+  } else if (isDemo) {
+    /* Already reported above; do not also claim the key is in use. */
   } else {
     const res = await json('https://api.vapi.ai/assistant?limit=1', {
       headers: { Authorization: `Bearer ${key}` },

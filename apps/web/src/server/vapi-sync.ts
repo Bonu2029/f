@@ -3,6 +3,7 @@ import {
   buildAssistantConfig,
   buildSystemPrompt,
   priceForPrompt,
+  isPlaceholderProviderId,
   webhookUrlProblem,
   WEBHOOK_URL_FIX,
   type AssistantBuildInput,
@@ -12,7 +13,7 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 import { getVapiProvider } from '@/lib/providers/vapi';
 import { absoluteUrl, vapiEnv } from '@/lib/env';
 import { AUDIT_ACTIONS, recordAudit, recordErrorEvent } from '@/lib/audit';
-import { childLogger } from '@/lib/logger';
+import { childLogger, log } from '@/lib/logger';
 import { AppError, errors } from '@/lib/errors';
 
 /**
@@ -187,15 +188,42 @@ export async function syncAssistant(input: {
     .eq('organization_id', input.organizationId)
     .maybeSingle();
 
-  const existingId = (agent?.vapi_assistant_id as string | null) ?? null;
+  const storedId = (agent?.vapi_assistant_id as string | null) ?? null;
+
+  // An account that ran in DEMO_MODE carries a locally invented id. There is no
+  // assistant behind it, so updating it is not a thing that can succeed — Vapi
+  // answers "id must be a valid UUID" and the receptionist stays broken until
+  // someone edits the database by hand. Create the real one instead. The stored
+  // id is overwritten below, which is what retires the placeholder.
+  const replacingPlaceholder = !vapi.isMock && isPlaceholderProviderId(storedId);
+  if (replacingPlaceholder) {
+    logger.info('replacing a demo placeholder assistant with a real one', {
+      placeholder_id: storedId,
+    });
+  }
+
+  const existingId = replacingPlaceholder ? null : storedId;
 
   try {
     let assistantId: string;
     let created = false;
 
     if (existingId) {
-      const updated = await vapi.updateAssistant(existingId, config);
-      assistantId = updated.id;
+      try {
+        const updated = await vapi.updateAssistant(existingId, config);
+        assistantId = updated.id;
+      } catch (err) {
+        // Deleted at Vapi — by us during testing, or by someone in the
+        // dashboard. Rebuild it rather than leaving the business with a
+        // receptionist that exists only in our own database.
+        if (!(err instanceof AppError) || err.code !== 'not_found') throw err;
+        logger.warn('the recorded assistant no longer exists at Vapi; creating a replacement', {
+          assistant_id: existingId,
+        });
+        const rebuilt = await vapi.createAssistant(config);
+        assistantId = rebuilt.id;
+        created = true;
+      }
     } else {
       const createdAssistant = await vapi.createAssistant(config);
       assistantId = createdAssistant.id;
@@ -294,7 +322,7 @@ export async function provisionPhoneNumber(input: {
       .maybeSingle(),
     svc
       .from('phone_numbers')
-      .select('phone_number')
+      .select('id, phone_number, is_demo')
       .eq('organization_id', input.organizationId)
       .eq('status', 'active')
       .maybeSingle(),
@@ -302,7 +330,18 @@ export async function provisionPhoneNumber(input: {
   if (!org) throw errors.notFound('That business');
 
   if (existingNumber) {
-    throw errors.conflict('This business already has an AI phone number.');
+    // The placeholder from demo mode is not a number — it cannot ring, and
+    // refusing to buy a real one because of it would leave the business stuck
+    // with a phone line that does not exist. Retire it and continue.
+    if (existingNumber.is_demo && !vapi.isMock) {
+      await svc.from('phone_numbers').update({ status: 'released' }).eq('id', existingNumber.id);
+      log.info('retired a demo placeholder number before provisioning a real one', {
+        event: 'vapi.placeholder_number_retired',
+        organization_id: input.organizationId,
+      });
+    } else {
+      throw errors.conflict('This business already has an AI phone number.');
+    }
   }
 
   let assistantId = (agent?.vapi_assistant_id as string | null) ?? null;

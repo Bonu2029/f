@@ -66,6 +66,33 @@ export function isValidVapiVoice(id: string): boolean {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Placeholder identifiers                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Prefix the mock provider puts on every identifier it invents.
+ *
+ * The mock's promise is that its ids "can never be mistaken for a real one".
+ * That promise only holds if the code that reads them back actually checks, so
+ * the prefix lives here — shared by the adapter that writes it and the sync
+ * that has to recognise it.
+ */
+export const DEMO_PROVIDER_ID_PREFIX = 'demo_';
+
+/**
+ * True for an id invented locally rather than issued by Vapi.
+ *
+ * An account that ran in DEMO_MODE first has a `demo_asst_…` string sitting in
+ * `ai_agents.vapi_assistant_id`. Handing that to the live API as though it were
+ * an assistant to update earns `id must be a valid UUID` — the right answer is
+ * to create the real assistant instead, because there is nothing there to
+ * update.
+ */
+export function isPlaceholderProviderId(id: string | null | undefined): boolean {
+  return typeof id === 'string' && id.startsWith(DEMO_PROVIDER_ID_PREFIX);
+}
+
+/* -------------------------------------------------------------------------- */
 /* Webhook reachability                                                       */
 /* -------------------------------------------------------------------------- */
 

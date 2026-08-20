@@ -1,4 +1,5 @@
 import 'server-only';
+import { DEMO_PROVIDER_ID_PREFIX } from '@afd/shared';
 import { DEMO_MODE, vapiEnv, absoluteUrl } from '@/lib/env';
 import { errors } from '@/lib/errors';
 import { log } from '@/lib/logger';
@@ -123,7 +124,11 @@ class LiveVapiProvider implements VapiProvider {
       `/assistant/${encodeURIComponent(assistantId)}`,
       config,
     );
-    if (!updated?.id) throw errors.providerUnavailable('Vapi');
+    // A 404 arrives here as null: the assistant we recorded has been deleted at
+    // Vapi. Reporting that as "Vapi is not responding" would send someone
+    // looking for an outage, so it is named for what it is and the caller can
+    // create a replacement.
+    if (!updated?.id) throw errors.notFound('That assistant at Vapi');
     return updated;
   }
 
@@ -193,7 +198,7 @@ class MockVapiProvider implements VapiProvider {
   readonly isMock = true;
 
   private id(prefix: string): string {
-    return `demo_${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+    return `${DEMO_PROVIDER_ID_PREFIX}${prefix}_${crypto.randomUUID().slice(0, 8)}`;
   }
 
   async createAssistant(config: Record<string, unknown>): Promise<VapiAssistant> {
