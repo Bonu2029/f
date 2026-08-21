@@ -343,3 +343,42 @@ describe('classifyUnbookable', () => {
     expect(takenClaims).toEqual(['That time was taken while we were talking, and nothing was booked.']);
   });
 });
+
+/**
+ * The book tool never accepted an email address, so a caller who gave one had
+ * it dropped on the floor — and the email confirmation path could not run at
+ * all. Found by a probe that was meant to test the mock-adapter rule and
+ * instead discovered there was nothing to test.
+ */
+describe('what the book tool accepts', () => {
+  const [, bookTool] = bookingToolDefinitions({
+    serverUrl: 'https://example.com',
+    serverSecret: 's',
+    serviceNames: [],
+  });
+  const properties = (
+    bookTool as { function: { parameters: { properties: Record<string, unknown> } } }
+  ).function.parameters.properties;
+
+  it('takes every detail the confirmation and the job summary need', () => {
+    for (const field of [
+      'slot_id',
+      'customer_name',
+      'customer_phone',
+      'customer_email',
+      'address',
+      'service',
+      'notes',
+    ]) {
+      expect(properties, `book_appointment cannot accept ${field}`).toHaveProperty(field);
+    }
+  });
+
+  it('asks only for what a booking genuinely cannot do without', () => {
+    const required = (bookTool as { function: { parameters: { required: string[] } } }).function
+      .parameters.required;
+    // A caller who will not give an address still gets booked; the summary says
+    // the address is missing rather than the tool refusing.
+    expect(required).toEqual(['slot_id', 'customer_name']);
+  });
+});

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getPlan, initialsOf } from '@afd/shared';
 import { requireSession } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
+import { listOrganizationMembers } from '@/server/members';
 import { Alert, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { TeamManager } from './team-manager';
 
@@ -13,12 +14,11 @@ export default async function TeamPage() {
   const canManage = ctx.active.role !== 'staff';
   const svc = getServiceSupabase();
 
-  const [{ data: members }, { data: invites }, { data: subscription }] = await Promise.all([
-    svc
-      .from('organization_members')
-      .select('id, role, created_at, user_id, profile:profiles(first_name, last_name, email)')
-      .eq('organization_id', ctx.active.organizationId)
-      .order('created_at'),
+  const [members, { data: invites }, { data: subscription }] = await Promise.all([
+    // Not an embedded select: there is no foreign key between
+    // organization_members and profiles, so PostgREST cannot join them and this
+    // page listed memberships with nobody attached.
+    listOrganizationMembers(ctx.active.organizationId),
     canManage
       ? svc
           .from('team_invites')
@@ -30,26 +30,16 @@ export default async function TeamPage() {
     svc.from('subscriptions').select('plan').eq('organization_id', ctx.active.organizationId).maybeSingle(),
   ]);
 
-  type MemberRow = {
-    id: string;
-    role: string;
-    created_at: string;
-    user_id: string;
-    profile: { first_name: string | null; last_name: string | null; email: string } | null;
-  };
 
   const plan = getPlan(subscription?.plan);
-  const rows = ((members ?? []) as unknown as MemberRow[]).map((m) => ({
+  const rows = members.map((m) => ({
     id: m.id,
     role: m.role,
-    userId: m.user_id,
-    isSelf: m.user_id === ctx.user.id,
-    name:
-      [m.profile?.first_name, m.profile?.last_name].filter(Boolean).join(' ') ||
-      m.profile?.email ||
-      'Team member',
-    email: m.profile?.email ?? '',
-    initials: initialsOf(m.profile?.first_name, m.profile?.last_name, m.profile?.email),
+    userId: m.userId,
+    isSelf: m.userId === ctx.user.id,
+    name: [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email || 'Team member',
+    email: m.email ?? '',
+    initials: initialsOf(m.firstName, m.lastName, m.email),
   }));
 
   return (

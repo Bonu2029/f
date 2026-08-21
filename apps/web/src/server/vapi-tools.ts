@@ -198,6 +198,7 @@ async function book(input: {
     endISO: slot.endISO,
     customerName,
     customerPhone: normalizePhone(str(input.args.customer_phone)) ?? null,
+    customerEmail: str(input.args.customer_email),
     address: str(input.args.address) ?? null,
     service: requestedService ?? null,
     notes: str(input.args.notes) ?? null,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
+import { listOrganizationMembers } from '@/server/members';
 import { errorResponse } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { newRequestId } from '@/lib/logger';
@@ -61,10 +62,9 @@ export async function GET() {
       table('appointments'),
       table('usage_ledger'),
       table('subscriptions', 'plan, status, billing_period_start, billing_period_end, included_minutes, used_minutes, founder, founder_slot, created_at'),
-      svc
-        .from('organization_members')
-        .select('role, created_at, profile:profiles(first_name, last_name, email)')
-        .eq('organization_id', organizationId),
+      // An embedded select here silently exported a team list with no people
+      // in it — the opposite of what a data export is for.
+      listOrganizationMembers(organizationId),
     ]);
 
     const payload = {
@@ -81,7 +81,7 @@ export async function GET() {
       availability_rules: availability.data,
       availability_settings: availabilitySettings.data,
       phone_numbers: phoneNumbers.data,
-      team: members.data,
+      team: members,
       leads: leads.data,
       calls: calls.data,
       call_transcripts: transcripts.data,

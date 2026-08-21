@@ -35,7 +35,14 @@ export interface ConfirmationOutcome {
   customerSent: boolean;
   /** True when an adapter logged the message rather than delivering it. */
   customerSimulated: boolean;
-  ownerNotified: boolean;
+  /** The in-app notice, which needs no provider and so almost always lands. */
+  ownerNotifiedInApp: boolean;
+  /**
+   * How many people actually received the job summary. Separate from the
+   * in-app notice because they fail independently, and reporting one flag for
+   * both let a run where nobody was emailed report itself as a success.
+   */
+  ownerSummaryRecipients: number;
 }
 
 /** Decided before booking, so the receptionist only promises what will happen. */
@@ -76,7 +83,8 @@ export async function sendBookingConfirmations(input: {
       customerChannel: 'none',
       customerSent: false,
       customerSimulated: false,
-      ownerNotified: false,
+      ownerNotifiedInApp: false,
+      ownerSummaryRecipients: 0,
     };
   }
 
@@ -233,7 +241,8 @@ export async function sendBookingConfirmations(input: {
   /* ---- The business ------------------------------------------------------ */
 
   const summary = ownerJobSummaryEmail(facts);
-  let ownerNotified = false;
+  let ownerNotifiedInApp = false;
+  let ownerSummaryRecipients = 0;
 
   // In-app first. It does not depend on an email provider, so the job appears
   // in the dashboard even when nothing can be delivered.
@@ -245,7 +254,7 @@ export async function sendBookingConfirmations(input: {
       body: [facts.service ?? 'Visit', facts.address].filter(Boolean).join(' · '),
       link: '/dashboard/appointments',
     });
-    ownerNotified = true;
+    ownerNotifiedInApp = true;
   } catch (err) {
     logger.error('in-app booking notification failed', {
       error: err instanceof Error ? err.message : String(err),
@@ -257,9 +266,27 @@ export async function sendBookingConfirmations(input: {
     const wanted = await notificationPrefs(input.organizationId);
     if (wanted.email_appointment) {
       const provider = getEmailProvider();
-      for (const to of await notifiableEmails(input.organizationId)) {
+      const recipients = await notifiableEmails(input.organizationId);
+
+      if (recipients.length === 0) {
+        // Recorded rather than passed over: the owner asked for booking emails
+        // and is not getting one, which they would otherwise learn by missing
+        // a job.
+        await record({
+          channel: 'email',
+          recipient: 'no owner or admin with an email address',
+          purpose: 'owner_job_summary',
+          body: summary.text,
+          status: 'skipped',
+          simulated: false,
+          error: 'No owner or admin on this organisation has an email address on file.',
+        });
+      }
+
+      for (const to of recipients) {
         try {
           const sent = await provider.send({ to, subject: summary.subject, text: summary.text });
+          ownerSummaryRecipients += 1;
           await record({
             channel: 'email',
             recipient: to,
@@ -296,8 +323,15 @@ export async function sendBookingConfirmations(input: {
     channel,
     customer_sent: customerSent,
     simulated: customerSimulated,
-    owner_notified: ownerNotified,
+    owner_notified_in_app: ownerNotifiedInApp,
+    owner_summary_recipients: ownerSummaryRecipients,
   });
 
-  return { customerChannel: channel, customerSent, customerSimulated, ownerNotified };
+  return {
+    customerChannel: channel,
+    customerSent,
+    customerSimulated,
+    ownerNotifiedInApp,
+    ownerSummaryRecipients,
+  };
 }

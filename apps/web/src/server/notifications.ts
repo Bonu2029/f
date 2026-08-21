@@ -1,6 +1,7 @@
 import 'server-only';
 import type { NotificationKind } from '@afd/shared';
 import { getServiceSupabase } from '@/lib/supabase/server';
+import { listOrganizationMembers } from '@/server/members';
 import { emailTemplates, sendEmail } from '@/lib/providers/email';
 import { absoluteUrl } from '@/lib/env';
 import { log } from '@/lib/logger';
@@ -47,18 +48,26 @@ export async function notify(input: NotifyInput): Promise<void> {
   }
 }
 
-/** Owners and admins who should receive operational email. */
+/**
+ * Owners and admins who should receive operational email.
+ *
+ * Goes through `listOrganizationMembers` rather than an embedded select: there
+ * is no foreign key between `organization_members` and `profiles`, so the embed
+ * returned PGRST200 and this function returned an empty list every time it was
+ * called. Nobody ever received an operational email, and nothing reported it.
+ */
 export async function notifiableEmails(organizationId: string): Promise<string[]> {
-  const svc = getServiceSupabase();
-  const { data } = await svc
-    .from('organization_members')
-    .select('role, profile:profiles(email)')
-    .eq('organization_id', organizationId)
-    .in('role', ['owner', 'admin']);
-  type Row = { role: string; profile: { email: string } | null };
-  return ((data ?? []) as unknown as Row[])
-    .map((r) => r.profile?.email)
-    .filter((e): e is string => Boolean(e));
+  const members = await listOrganizationMembers(organizationId, { roles: ['owner', 'admin'] });
+  const emails = members.map((m) => m.email).filter((e): e is string => Boolean(e));
+
+  if (emails.length === 0) {
+    log.warn('no owner or admin has an email address on file', {
+      event: 'notification.no_recipients',
+      organization_id: organizationId,
+      members: members.length,
+    });
+  }
+  return emails;
 }
 
 export async function notificationPrefs(organizationId: string) {

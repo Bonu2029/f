@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { formatPhone } from '@afd/shared';
 import { requirePlatformAdmin } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
+import { listOrganizationMembers } from '@/server/members';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { Badge, Card, CardContent, CardHeader, CardTitle, Table, Td, Th } from '@/components/ui';
 import { StatusBadge } from '@/components/dashboard/badges';
@@ -41,10 +42,9 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
     svc.from('subscriptions').select('*').eq('organization_id', id).maybeSingle(),
     svc.from('business_profiles').select('*').eq('organization_id', id).maybeSingle(),
     svc.from('phone_numbers').select('*').eq('organization_id', id),
-    svc
-      .from('organization_members')
-      .select('role, profile:profiles(email, first_name, last_name)')
-      .eq('organization_id', id),
+    // Two queries behind one call: organization_members and profiles have no
+    // foreign key between them, so an embedded select returns nothing.
+    listOrganizationMembers(id),
     svc
       .from('calls')
       .select('id, started_at, duration_seconds, billable_minutes, result, disposition')
@@ -60,7 +60,6 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
     svc.from('ai_agents').select('active, voice_id, name, vapi_assistant_id, vapi_sync_error').eq('organization_id', id).maybeSingle(),
   ]);
 
-  type Member = { role: string; profile: { email: string; first_name: string | null; last_name: string | null } | null };
 
   return (
     <div className="space-y-5">
@@ -90,7 +89,7 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
         organizationId={id}
         aiPaused={Boolean(org.ai_paused)}
         usedMinutes={(subscription.data?.used_minutes as number) ?? 0}
-        ownerEmail={((members.data ?? []) as unknown as Member[]).find((m) => m.role === 'owner')?.profile?.email ?? ''}
+        ownerEmail={members.find((m) => m.role === 'owner')?.email ?? ''}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -164,10 +163,10 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
         </CardHeader>
         <CardContent>
           <ul className="space-y-1.5 text-sm">
-            {((members.data ?? []) as unknown as Member[]).map((m, i) => (
-              <li key={i} className="flex justify-between">
+            {members.map((m) => (
+              <li key={m.id} className="flex justify-between">
                 <span className="text-ink-muted">
-                  {[m.profile?.first_name, m.profile?.last_name].filter(Boolean).join(' ') || m.profile?.email}
+                  {[m.firstName, m.lastName].filter(Boolean).join(' ') || m.email || 'No profile'}
                 </span>
                 <Badge tone={m.role === 'owner' ? 'brand' : 'neutral'}>{m.role}</Badge>
               </li>

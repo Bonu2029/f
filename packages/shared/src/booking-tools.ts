@@ -82,6 +82,11 @@ export function bookingToolDefinitions(input: {
               type: 'string',
               description: 'The best callback number, digits only where possible.',
             },
+            customer_email: {
+              type: 'string',
+              description:
+                'Their email address, if they give one. Used to send the confirmation when no text can be sent.',
+            },
             address: { type: 'string', description: 'The service address for the visit.' },
             service: { type: 'string', description: 'What the work is.' },
             notes: {
