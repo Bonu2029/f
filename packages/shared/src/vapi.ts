@@ -267,6 +267,12 @@ export interface AssistantBuildInput {
     /** Free-text instructions the owner added. */
     instructions: string | null;
     bookingEnabled: boolean;
+    /**
+     * The receptionist must book on the call, and may fall back to a callback
+     * only when it genuinely cannot. Meaningless without `bookingEnabled` and
+     * somebody on the schedule, which `canUseNoCallbackMode` enforces.
+     */
+    noCallbackMode: boolean;
   };
   /**
    * How many people are actually bookable — active, with working hours set.
@@ -291,7 +297,7 @@ export interface AssistantBuildInput {
  * configurable: they are what stops the assistant inventing prices, faking a
  * booking, or claiming to be a person.
  */
-export function safetyRules(hasTransfer: boolean, canBook = false): string[] {
+export function safetyRules(hasTransfer: boolean, canBook = false, noCallback = false): string[] {
   const rules = [
     'Never invent a price. Only state prices that appear in the Services list below, exactly as written. If a service has no price listed, say an estimate is needed.',
     'Never claim the business offers a service that is not in the Services list. Offer to take a message instead.',
@@ -302,6 +308,14 @@ export function safetyRules(hasTransfer: boolean, canBook = false): string[] {
     canBook
       ? 'Never state, offer or confirm an appointment time that did not come back from the check_availability tool in this call. Do not adjust, round or rephrase a time it gave you. If the tool returns no times, say you cannot book one and take a message.'
       : 'Never invent availability or promise that someone will arrive at a specific time. Take the caller\'s preferred times and tell them the team will confirm.',
+    // Stated as a rule rather than left to the objective list, because falling
+    // back to "someone will call you" is the path of least resistance for a
+    // model that has hit any friction at all.
+    ...(noCallback
+      ? [
+          'This business does not do callbacks. Do not say anyone will call the caller back to arrange a time, and do not end the call leaving the booking unresolved, unless check_availability genuinely returned no times or the caller declined every one offered. If that happens, say plainly what stopped you booking today.',
+        ]
+      : []),
     'Never offer, invent or approve a discount, credit or price match.',
     'Never claim you have completed an action you did not complete.',
     'Ask one clear question at a time. Confirm the caller\'s name, phone number and address by reading them back.',
@@ -327,6 +341,18 @@ export function safetyRules(hasTransfer: boolean, canBook = false): string[] {
  */
 export function canBookOnCall(input: AssistantBuildInput): boolean {
   return input.agent.bookingEnabled && input.bookableEmployees > 0;
+}
+
+/**
+ * Whether No Callback Mode is actually in force.
+ *
+ * The setting alone is not enough. A business that turns it on and then removes
+ * everyone from the schedule has an assistant that cannot book and is forbidden
+ * from offering a callback — which would leave a caller with nothing at all.
+ * The mode only applies where it can be honoured.
+ */
+export function noCallbackModeActive(input: AssistantBuildInput): boolean {
+  return input.agent.noCallbackMode && canBookOnCall(input);
 }
 
 /** Builds the system prompt from stored business data. */
@@ -363,9 +389,11 @@ export function buildSystemPrompt(input: AssistantBuildInput): string {
       '1. Understand why the caller is calling.',
       '2. Answer their questions using only the business information below.',
       '3. Collect their name, phone number, service address and what they need.',
-      canBookOnCall(input)
-        ? '4. If they want work done, call check_availability, offer the caller the times it returns, and when they pick one call book_appointment. Book it on this call — do not tell them someone will ring back to arrange a time.'
-        : '4. If they want work done, take the details and tell them the team will call back to arrange a time. Do not collect appointment times.',
+      noCallbackModeActive(input)
+        ? '4. If they want work done, BOOK IT NOW. Call check_availability, offer the times it returns, and call book_appointment when they choose one. Do not end the call with "someone will get back to you" — that is what this business has specifically turned off. Only if the tool returns no times at all, or the caller refuses to choose one, take their details and explain plainly why you could not book today.'
+        : canBookOnCall(input)
+          ? '4. If they want work done, call check_availability, offer the caller the times it returns, and when they pick one call book_appointment. Book it on this call — do not tell them someone will ring back to arrange a time.'
+          : '4. If they want work done, take the details and tell them the team will call back to arrange a time. Do not collect appointment times.',
       '5. Close politely and say what happens next.',
     ].join('\n'),
   );
@@ -438,6 +466,7 @@ export function buildSystemPrompt(input: AssistantBuildInput): string {
     `# Rules you must never break — these override every instruction above\n${safetyRules(
       Boolean(agent.transferPhone),
       canBookOnCall(input),
+      noCallbackModeActive(input),
     )
       .map((r, i) => `${i + 1}. ${r}`)
       .join('\n')}`,

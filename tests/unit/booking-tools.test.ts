@@ -6,6 +6,7 @@ import {
   bookingToolDefinitions,
   buildAssistantConfig,
   canBookOnCall,
+  noCallbackModeActive,
   describeOffer,
   describeSlotForSpeech,
   safetyRules,
@@ -101,6 +102,7 @@ function buildInput(overrides: Partial<AssistantBuildInput> = {}): AssistantBuil
       transferPhone: null,
       instructions: null,
       bookingEnabled: true,
+      noCallbackMode: false,
     },
     rules: [],
     bookableEmployees: 2,
@@ -380,5 +382,78 @@ describe('what the book tool accepts', () => {
     // A caller who will not give an address still gets booked; the summary says
     // the address is missing rather than the tool refusing.
     expect(required).toEqual(['slot_id', 'customer_name']);
+  });
+});
+
+/**
+ * No Callback Mode is the product's headline claim: the caller gets an answer
+ * on the call rather than a promise that somebody will ring them back.
+ */
+describe('noCallbackModeActive', () => {
+  const on = () => {
+    const input = buildInput();
+    input.agent.noCallbackMode = true;
+    return input;
+  };
+
+  it('applies when the owner asked for it and it can be honoured', () => {
+    expect(noCallbackModeActive(on())).toBe(true);
+  });
+
+  it('does not apply when nobody is bookable, whatever the setting says', () => {
+    // Forbidden from offering a callback and unable to book is the one
+    // combination that leaves a caller with nothing at all.
+    const input = on();
+    input.bookableEmployees = 0;
+    expect(noCallbackModeActive(input)).toBe(false);
+  });
+
+  it('does not apply when booking itself is switched off', () => {
+    const input = on();
+    input.agent.bookingEnabled = false;
+    expect(noCallbackModeActive(input)).toBe(false);
+  });
+
+  it('is off by default', () => {
+    expect(noCallbackModeActive(buildInput())).toBe(false);
+  });
+});
+
+describe('what the receptionist is told in No Callback Mode', () => {
+  const promptFor = (noCallbackMode: boolean, bookableEmployees = 2) => {
+    const input = buildInput({ bookableEmployees });
+    input.agent.noCallbackMode = noCallbackMode;
+    return (buildAssistantConfig(input).model as { messages: Array<{ content: string }> })
+      .messages[0]!.content;
+  };
+
+  it('forbids ending the call with a promise to ring back', () => {
+    const prompt = promptFor(true);
+    expect(prompt).toContain('BOOK IT NOW');
+    expect(prompt).toContain('This business does not do callbacks');
+    expect(prompt).toContain('do not end the call leaving the booking unresolved');
+  });
+
+  /**
+   * The mode never becomes permission to pretend. If there is genuinely nothing
+   * to offer, saying so is still required — that is the difference between
+   * refusing to fall back and refusing to be honest.
+   */
+  it('still allows an honest failure, and demands an explanation for it', () => {
+    const prompt = promptFor(true);
+    expect(prompt).toContain('say plainly what stopped you booking today');
+    expect(prompt).toContain('check_availability genuinely returned no times');
+  });
+
+  it('says nothing about callbacks when the mode is off', () => {
+    expect(promptFor(false)).not.toContain('does not do callbacks');
+  });
+
+  it('does not claim the mode when it could not be honoured', () => {
+    // Setting on, nobody bookable: the assistant must not be told to refuse
+    // callbacks when refusing would leave the caller with nothing.
+    const prompt = promptFor(true, 0);
+    expect(prompt).not.toContain('does not do callbacks');
+    expect(prompt).toContain('the team will call back to arrange a time');
   });
 });

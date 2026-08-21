@@ -346,9 +346,31 @@ export async function saveAgentAction(_prev: ActionResult | null, formData: Form
       transfer_enabled: transferEnabled,
       transfer_phone: formData.get('transfer_phone'),
       appointment_booking_enabled: formData.get('appointment_booking_enabled') === 'on',
+      no_callback_mode: formData.get('no_callback_mode') === 'on',
     });
 
     const svc = getServiceSupabase();
+
+    // No Callback Mode forbids the receptionist from saying anyone will ring
+    // back. With nobody on the schedule it can neither book nor fall back, and
+    // the caller is left with nothing at all — so the switch is refused rather
+    // than saved into a state it cannot honour.
+    if (input.no_callback_mode) {
+      const { data: bookable } = await svc
+        .from('employees')
+        .select('id, employee_availability!inner(id)')
+        .eq('organization_id', organizationId)
+        .eq('active', true);
+
+      if (new Set((bookable ?? []).map((e) => e.id as string)).size === 0) {
+        return actionError(
+          errors.validation(
+            'No Callback Mode needs somebody who can take the work. Add a person with working hours under Team & availability first — with nobody on the schedule your receptionist could neither book the caller in nor offer them a callback.',
+            { no_callback_mode: 'Nobody is bookable yet' },
+          ),
+        );
+      }
+    }
     const { error } = await svc
       .from('ai_agents')
       .update({

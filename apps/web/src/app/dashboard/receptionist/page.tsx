@@ -20,8 +20,14 @@ export default async function ReceptionistPage() {
   const canEdit = ctx.active.role !== 'staff';
   const organizationId = ctx.active.organizationId;
 
-  const [{ data: agent }, { data: rules }, { data: phone }, { data: subscription }, readiness] =
-    await Promise.all([
+  const [
+    { data: agent },
+    { data: rules },
+    { data: phone },
+    { data: subscription },
+    readiness,
+    { data: bookable },
+  ] = await Promise.all([
       svc.from('ai_agents').select('*').eq('organization_id', organizationId).maybeSingle(),
       svc.from('ai_rules').select('*').eq('organization_id', organizationId).order('priority'),
       svc
@@ -32,7 +38,16 @@ export default async function ReceptionistPage() {
         .maybeSingle(),
       svc.from('subscriptions').select('status').eq('organization_id', organizationId).maybeSingle(),
       getReadinessChecklist(organizationId),
+      // The join is the point: an active employee with no hours cannot be
+      // offered to anyone, so No Callback Mode could not be honoured for them.
+      svc
+        .from('employees')
+        .select('id, employee_availability!inner(id)')
+        .eq('organization_id', organizationId)
+        .eq('active', true),
     ]);
+
+  const bookableCount = new Set((bookable ?? []).map((e) => e.id as string)).size;
 
   if (!agent) {
     return (
@@ -111,12 +126,14 @@ export default async function ReceptionistPage() {
           <ReceptionistForm
             canEdit={canEdit}
             organizationName={ctx.active.organizationName}
+            bookableCount={bookableCount}
             initial={{
               name: agent.name as string,
               voice_id: agent.voice_id as string,
               personality: agent.personality as string,
               greeting: agent.greeting as string,
               instructions: (agent.instructions as string) ?? '',
+              no_callback_mode: Boolean(agent.no_callback_mode),
               transfer_enabled: agent.transfer_enabled as boolean,
               transfer_phone: (agent.transfer_phone as string) ?? '',
               appointment_booking_enabled: agent.appointment_booking_enabled as boolean,

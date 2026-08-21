@@ -33,6 +33,7 @@ import {
 } from '@/components/ui';
 import { BarChart, OutcomeBreakdown, labelFor } from '@/components/dashboard/charts';
 import { getReadinessChecklist } from '@/server/organizations';
+import { noCallbackStats } from '@/server/no-callback';
 import { LeadScoreBadge, StatusBadge } from '@/components/dashboard/badges';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -56,7 +57,8 @@ export default async function DashboardPage() {
   const organizationId = ctx.active.organizationId;
   const svc = getServiceSupabase();
 
-  const [metricsRes, subscriptionRes, recentCalls, recentLeads, readiness] = await Promise.all([
+  const [metricsRes, subscriptionRes, recentCalls, recentLeads, readiness, agentRes, noCallback] =
+    await Promise.all([
     svc.rpc('dashboard_metrics', { p_organization_id: organizationId, p_days: 30 }),
     svc
       .from('subscriptions')
@@ -76,7 +78,15 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(6),
     getReadinessChecklist(organizationId),
+    svc
+      .from('ai_agents')
+      .select('no_callback_mode')
+      .eq('organization_id', organizationId)
+      .maybeSingle(),
+    noCallbackStats(organizationId),
   ]);
+
+  const noCallbackMode = Boolean(agentRes.data?.no_callback_mode);
 
   const metrics = (metricsRes.data ?? {}) as DashboardMetrics;
   const subscription = subscriptionRes.data;
@@ -149,6 +159,68 @@ export default async function DashboardPage() {
           It is switched on and would answer, but you have no phone number. Get one, or forward
           your existing business line to it.
         </Alert>
+      )}
+
+      {/*
+        The mode's own scoreboard. Turned on, its failures look like successes
+        from the dashboard — the caller was handled politely and a lead appeared
+        — so the count of people still waiting for a call back is stated
+        plainly, whether or not it flatters the setting.
+      */}
+      {noCallbackMode && noCallback.wantedWork > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex flex-wrap items-center gap-2">
+              No Callback Mode
+              {noCallback.leftForCallback === 0 ? (
+                <Badge tone="positive">Every caller booked</Badge>
+              ) : (
+                <Badge tone="caution">
+                  {noCallback.leftForCallback} still waiting on a call back
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-ink-muted">
+              Of {noCallback.wantedWork} caller{noCallback.wantedWork === 1 ? '' : 's'} who wanted
+              work done in the last 30 days, {noCallback.booked} left with a booked appointment
+              {noCallback.resolvedPercent !== null && ` — ${noCallback.resolvedPercent}%`}.
+            </p>
+
+            {noCallback.recentCallbacks.length > 0 && (
+              <>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                  These still need someone to ring them
+                </p>
+                <ul className="mt-1.5 divide-y divide-line rounded-lg border border-line">
+                  {noCallback.recentCallbacks.map((c) => (
+                    <li key={c.callId} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 p-3">
+                      <Link
+                        href={`/dashboard/calls/${c.callId}`}
+                        className="text-sm font-medium text-brand-600 hover:underline"
+                      >
+                        {formatPhone(c.callerPhone) || 'Unknown number'}
+                      </Link>
+                      <span className="text-xs text-ink-subtle">
+                        {new Date(c.startedAt).toLocaleString(undefined, {
+                          timeZone: ctx.active.timezone,
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-ink-muted">
+                        {c.summary ?? 'No summary recorded'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {ctx.active.aiPaused && readiness.isLive && (

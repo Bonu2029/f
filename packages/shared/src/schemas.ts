@@ -176,11 +176,21 @@ export const aiAgentSchema = z
     transfer_enabled: z.boolean(),
     transfer_phone: optionalText(30),
     appointment_booking_enabled: z.boolean(),
+    /**
+     * The product's headline behaviour. Refused when booking is off, because a
+     * receptionist that may not offer a callback and cannot book either would
+     * leave the caller with nothing.
+     */
+    no_callback_mode: z.boolean(),
     active: z.boolean().optional(),
   })
   .refine((v) => !v.transfer_enabled || !!v.transfer_phone, {
     message: 'Add a transfer number, or turn transfers off',
     path: ['transfer_phone'],
+  })
+  .refine((v) => !v.no_callback_mode || v.appointment_booking_enabled, {
+    message: 'No Callback Mode needs appointment booking switched on — otherwise there is no way to resolve the call.',
+    path: ['no_callback_mode'],
   });
 
 /** Wall-clock time of day, "HH:MM" on a 24-hour clock. */

@@ -15,6 +15,7 @@ interface Initial {
   transfer_enabled: boolean;
   transfer_phone: string;
   appointment_booking_enabled: boolean;
+  no_callback_mode: boolean;
 }
 
 /**
@@ -30,10 +31,13 @@ export function ReceptionistForm({
   initial,
   canEdit,
   organizationName,
+  bookableCount,
 }: {
   initial: Initial;
   canEdit: boolean;
   organizationName: string;
+  /** People who could actually take a job — active, with working hours. */
+  bookableCount: number;
 }) {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(saveAgentAction, null);
 
@@ -43,6 +47,7 @@ export function ReceptionistForm({
   const [greeting, setGreeting] = useState(initial.greeting);
   const [transferEnabled, setTransferEnabled] = useState(initial.transfer_enabled);
   const [bookingEnabled, setBookingEnabled] = useState(initial.appointment_booking_enabled);
+  const [noCallback, setNoCallback] = useState(initial.no_callback_mode);
 
   const fields = state?.fields ?? {};
   const voices = availableVapiVoices();
@@ -181,13 +186,35 @@ export function ReceptionistForm({
 
         <Switch
           id="appointment_booking_enabled"
-          label="Collect appointment requests"
-          description="Takes the caller's preferred day and time. Your team confirms it — the receptionist never promises a slot."
+          label="Book appointments on the call"
+          description="Reads your real schedule and books a time the caller can rely on. It can only offer times somebody is genuinely free for."
           checked={bookingEnabled}
-          onChange={setBookingEnabled}
+          onChange={(next) => {
+            setBookingEnabled(next);
+            // Turning booking off makes No Callback Mode unhonourable, so it
+            // goes with it rather than being saved into a state the server
+            // would refuse.
+            if (!next) setNoCallback(false);
+          }}
           disabled={!canEdit}
         />
         <input type="hidden" name="appointment_booking_enabled" value={bookingEnabled ? 'on' : 'off'} />
+
+        <Switch
+          id="no_callback_mode"
+          label="No Callback Mode"
+          description={
+            bookableCount === 0
+              ? 'Needs somebody on the schedule first. With nobody bookable your receptionist could neither book the caller in nor offer them a callback.'
+              : bookingEnabled
+                ? 'The receptionist resolves the call rather than ending it with "someone will get back to you". It still says plainly when it cannot book — it does not pretend.'
+                : 'Needs appointment booking switched on above.'
+          }
+          checked={noCallback}
+          onChange={setNoCallback}
+          disabled={!canEdit || !bookingEnabled || bookableCount === 0}
+        />
+        <input type="hidden" name="no_callback_mode" value={noCallback ? 'on' : 'off'} />
 
         <Switch
           id="transfer_enabled"

@@ -133,6 +133,7 @@ async function loadAssistantInput(organizationId: string): Promise<AssistantBuil
       transferPhone: agent.data.transfer_enabled ? ((agent.data.transfer_phone as string) ?? null) : null,
       instructions: (agent.data.instructions as string) ?? null,
       bookingEnabled: Boolean(agent.data.appointment_booking_enabled),
+      noCallbackMode: Boolean(agent.data.no_callback_mode),
     },
     rules: (rules.data ?? []).map((r) => ({
       title: r.title as string,
