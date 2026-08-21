@@ -1,5 +1,7 @@
 import 'server-only';
+import { WANTED_WORK_DISPOSITIONS } from '@afd/shared';
 import { getServiceSupabase } from '@/lib/supabase/server';
+import { log } from '@/lib/logger';
 
 /**
  * How often the receptionist actually resolved the call.
@@ -14,9 +16,6 @@ import { getServiceSupabase } from '@/lib/supabase/server';
  * appointment is a callback, and that is already recorded — a duplicate column
  * saying the same thing is a column that can disagree with it.
  */
-
-/** Dispositions that mean the caller wanted work done. */
-const WANTED_WORK = ['lead_captured', 'appointment_requested'] as const;
 
 export interface NoCallbackStats {
   /** Calls where the caller wanted work done. */
@@ -44,14 +43,27 @@ export async function noCallbackStats(
   const svc = getServiceSupabase();
   const since = new Date(Date.now() - (options.sinceDays ?? 30) * 86_400_000).toISOString();
 
-  const { data } = await svc
+  const { data, error } = await svc
     .from('calls')
     .select('id, started_at, caller_phone, summary, ended_reason, appointment_booked, disposition')
     .eq('organization_id', organizationId)
     .eq('is_demo', false)
-    .in('disposition', WANTED_WORK as unknown as string[])
+    // Values from the shared list, which an integration test holds identical to
+    // the database enum. An invented value fails with 22P02 at query time, not
+    // at compile time — and this query's error used to be discarded, so the
+    // dashboard showed a confident zero instead of a broken panel.
+    .in('disposition', [...WANTED_WORK_DISPOSITIONS])
     .gte('started_at', since)
     .order('started_at', { ascending: false });
+
+  if (error) {
+    log.error('No Callback statistics could not be read', {
+      event: 'no_callback.stats_failed',
+      organization_id: organizationId,
+      error: error.message,
+    });
+    throw new Error(`No Callback statistics could not be read: ${error.message}`);
+  }
 
   const rows = data ?? [];
   const booked = rows.filter((r) => r.appointment_booked === true);

@@ -53,16 +53,39 @@ export type CallResult =
   | 'failed'
   | 'rejected';
 
-export type CallDisposition =
-  | 'lead_captured'
-  | 'appointment_booked'
-  | 'question_answered'
-  | 'transferred_to_human'
-  | 'spam'
-  | 'wrong_number'
-  | 'out_of_service_area'
-  | 'no_intent'
-  | 'unresolved';
+/**
+ * How a call ended, as stored in the `call_disposition` enum.
+ *
+ * A runtime array rather than a bare union, because code needs to filter on
+ * these and a value that is not in the enum does not fail at compile time — it
+ * fails in Postgres with 22P02, in a query whose error nobody reads. An
+ * integration test asserts this list and the database enum are identical.
+ */
+export const CALL_DISPOSITIONS = [
+  'lead_captured',
+  'appointment_booked',
+  'question_answered',
+  'transferred_to_human',
+  'spam',
+  'wrong_number',
+  'out_of_service_area',
+  'no_intent',
+  'unresolved',
+] as const;
+
+export type CallDisposition = (typeof CALL_DISPOSITIONS)[number];
+
+/**
+ * The dispositions that mean the caller wanted work done.
+ *
+ * `appointment_booked` and `lead_captured` are the two ends of the same
+ * journey: someone who needed a job doing, and whether the receptionist
+ * finished it or left them waiting.
+ */
+export const WANTED_WORK_DISPOSITIONS = [
+  'lead_captured',
+  'appointment_booked',
+] as const satisfies readonly CallDisposition[];
 
 export type LeadStatus =
   | 'new'

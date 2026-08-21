@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { CALL_DISPOSITIONS, WANTED_WORK_DISPOSITIONS } from '@afd/shared';
 import {
   asService,
   closePool,
@@ -516,5 +517,35 @@ describeDb('schema contract', () => {
           and column_name = 'simulated'`,
     );
     expect(rows[0]?.is_nullable).toBe('NO');
+  });
+
+  /**
+   * A disposition the code invents does not fail at compile time. It fails in
+   * Postgres with 22P02, inside a query whose error nobody reads — which is how
+   * the No Callback panel came to filter on `appointment_requested`, a value the
+   * enum has never contained, and report a confident zero.
+   */
+  it('has exactly the call dispositions the code believes in', async () => {
+    const { rows } = await asService<{ value: string }>(
+      `select e.enumlabel as value
+         from pg_enum e join pg_type t on t.oid = e.enumtypid
+        where t.typname = 'call_disposition'
+        order by e.enumsortorder`,
+    );
+
+    expect(rows.map((r) => r.value).sort()).toEqual([...CALL_DISPOSITIONS].sort());
+  });
+
+  it('only counts callers as wanting work using dispositions that exist', async () => {
+    const { rows } = await asService<{ value: string }>(
+      `select e.enumlabel as value
+         from pg_enum e join pg_type t on t.oid = e.enumtypid
+        where t.typname = 'call_disposition'`,
+    );
+    const valid = new Set(rows.map((r) => r.value));
+
+    for (const disposition of WANTED_WORK_DISPOSITIONS) {
+      expect(valid.has(disposition), `call_disposition has no value "${disposition}"`).toBe(true);
+    }
   });
 });

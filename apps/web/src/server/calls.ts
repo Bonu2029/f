@@ -202,7 +202,13 @@ export async function ingestCallReport(input: {
 
   const appointmentIds = (booked ?? []).map((a) => a.id as string);
   if (appointmentIds.length) {
-    await svc.from('calls').update({ appointment_booked: true }).eq('id', callId);
+    // `appointment_booked` is the disposition for exactly this: a caller who
+    // wanted work done and left with a time. It could not be set at insert
+    // time, because whether an appointment existed was not yet known.
+    await svc
+      .from('calls')
+      .update({ appointment_booked: true, disposition: 'appointment_booked' })
+      .eq('id', callId);
     logger.info('linked appointments booked during the call', {
       call_id: callId,
       appointments: appointmentIds.length,
