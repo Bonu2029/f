@@ -1,6 +1,8 @@
 import 'server-only';
 import {
   BOOKING_TOOL_NAMES,
+  classifyUnbookable,
+  unbookableSentence,
   describeOffer,
   describeSlotForSpeech,
   spreadSlots,
@@ -157,12 +159,25 @@ async function book(input: {
 
   const slot = availability.slots.find((s) => s.startISO === slotId);
   if (!slot) {
-    const alternatives = spreadSlots(availability.slots, OFFER_COUNT, availability.timezone);
     const nowISO = new Date().toISOString();
+
+    // Say which of the several different things went wrong. "No longer free"
+    // for a time that was never offered invents a history, and the model reads
+    // whatever it is handed straight out to the caller.
+    const reason = unbookableSentence(
+      classifyUnbookable({
+        slotId,
+        nowISO,
+        horizonDays: availability.rules.horizonDays,
+        alreadyBooked: await isAlreadyBooked(input.organizationId, slotId),
+      }),
+    );
+
+    const alternatives = spreadSlots(availability.slots, OFFER_COUNT, availability.timezone);
     return {
       result: alternatives.length
-        ? `That time is no longer free and nothing was booked. Offer these instead: ${describeOffer(alternatives, availability.timezone, nowISO)}. ${JSON.stringify({ slots: alternatives.map((s) => ({ slot_id: s.startISO, spoken: describeSlotForSpeech(s.startISO, availability.timezone, nowISO) })) })}`
-        : 'That time is no longer free and nothing was booked. Do not offer another time. Take the caller\'s details and tell them the team will call to arrange it.',
+        ? `${reason} Offer these instead: ${describeOffer(alternatives, availability.timezone, nowISO)}. ${JSON.stringify({ slots: alternatives.map((s) => ({ slot_id: s.startISO, spoken: describeSlotForSpeech(s.startISO, availability.timezone, nowISO) })) })}`
+        : `${reason} Do not offer another time. Take the caller's details and tell them the team will call to arrange it.`,
     };
   }
 
@@ -227,6 +242,30 @@ async function matchServiceId(organizationId: string, spoken: string): Promise<s
       String(s.name).toLowerCase().includes(needle) || needle.includes(String(s.name).toLowerCase()),
   );
   return partial ? (partial.id as string) : null;
+}
+
+/**
+ * Whether something already occupies that exact time.
+ *
+ * Only used to choose the wording of a refusal, so a miss costs a slightly
+ * vaguer sentence rather than a wrong booking — the exclusion constraint is
+ * what actually prevents a double booking.
+ */
+async function isAlreadyBooked(organizationId: string, slotId: string): Promise<boolean> {
+  const at = new Date(slotId);
+  if (Number.isNaN(at.getTime())) return false;
+
+  const svc = getServiceSupabase();
+  const { data } = await svc
+    .from('appointments')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .in('status', ['scheduled', 'confirmed'])
+    .lte('start_at', at.toISOString())
+    .gt('end_at', at.toISOString())
+    .limit(1);
+
+  return (data ?? []).length > 0;
 }
 
 /** Tool arguments arrive as whatever the model produced. */

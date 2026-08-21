@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOOKING_TOOL_NAMES,
+  classifyUnbookable,
+  unbookableSentence,
   bookingToolDefinitions,
   buildAssistantConfig,
   canBookOnCall,
@@ -292,5 +294,52 @@ describe('toolCallsFrom', () => {
   it('returns nothing for a message with no tool calls', () => {
     expect(toolCallsFrom({})).toEqual([]);
     expect(toolCallsFrom({ type: 'tool-calls' })).toEqual([]);
+  });
+});
+
+/**
+ * "That time is no longer free" was returned for every unbookable request,
+ * including times the model invented. The receptionist then tells the caller
+ * someone just took it — a history for a time that never existed, and a
+ * business that sounds busier than it is.
+ */
+describe('classifyUnbookable', () => {
+  const now = '2026-09-02T13:00:00Z';
+  const base = { nowISO: now, horizonDays: 30, alreadyBooked: false };
+
+  it('knows a genuinely taken time from one that was never offered', () => {
+    expect(classifyUnbookable({ ...base, slotId: '2026-09-03T14:00:00Z', alreadyBooked: true })).toBe(
+      'taken',
+    );
+    expect(classifyUnbookable({ ...base, slotId: '2026-09-03T14:07:00Z' })).toBe('not_offered');
+  });
+
+  it('recognises a time that is not a time', () => {
+    expect(classifyUnbookable({ ...base, slotId: 'next Tuesday' })).toBe('not_a_time');
+    expect(classifyUnbookable({ ...base, slotId: '' })).toBe('not_a_time');
+  });
+
+  it('recognises the past', () => {
+    expect(classifyUnbookable({ ...base, slotId: '2026-09-01T14:00:00Z' })).toBe('in_the_past');
+  });
+
+  it('recognises further ahead than the business books', () => {
+    expect(classifyUnbookable({ ...base, slotId: '2027-01-01T14:00:00Z' })).toBe('beyond_horizon');
+    // And respects the organisation's own setting rather than a constant.
+    expect(
+      classifyUnbookable({ ...base, horizonDays: 2, slotId: '2026-09-10T14:00:00Z' }),
+    ).toBe('beyond_horizon');
+  });
+
+  it('gives each case its own sentence, and never claims a time was taken unless it was', () => {
+    const sentences = (
+      ['not_a_time', 'in_the_past', 'beyond_horizon', 'taken', 'not_offered'] as const
+    ).map(unbookableSentence);
+
+    expect(new Set(sentences).size).toBe(5);
+    for (const s of sentences) expect(s).toContain('nothing was booked');
+
+    const takenClaims = sentences.filter((s) => /taken/i.test(s));
+    expect(takenClaims).toEqual(['That time was taken while we were talking, and nothing was booked.']);
   });
 });

@@ -97,6 +97,55 @@ export function bookingToolDefinitions(input: {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Why a requested time cannot be booked                                      */
+/* -------------------------------------------------------------------------- */
+
+export type UnbookableReason = 'not_a_time' | 'in_the_past' | 'beyond_horizon' | 'taken' | 'not_offered';
+
+/**
+ * Which of the several different things "that time is unavailable" can mean.
+ *
+ * They were all reported as "that time is no longer free", which is only true
+ * for one of them. Told that, a receptionist says "sorry, someone just took
+ * that" — inventing a history for a time the model made up, and teaching the
+ * caller that the business is busier than it is. The distinction between "you
+ * asked for something I never offered" and "that has genuinely just gone" is
+ * the difference between a truthful sentence and a plausible one.
+ */
+export function classifyUnbookable(input: {
+  slotId: string;
+  nowISO: string;
+  horizonDays: number;
+  /** Whether an appointment already occupies that time. */
+  alreadyBooked: boolean;
+}): UnbookableReason {
+  const requested = new Date(input.slotId).getTime();
+  if (!Number.isFinite(requested)) return 'not_a_time';
+
+  const now = new Date(input.nowISO).getTime();
+  if (requested < now) return 'in_the_past';
+  if (requested > now + input.horizonDays * 86_400_000) return 'beyond_horizon';
+
+  return input.alreadyBooked ? 'taken' : 'not_offered';
+}
+
+/** What the receptionist should say, for each of those. */
+export function unbookableSentence(reason: UnbookableReason): string {
+  switch (reason) {
+    case 'not_a_time':
+      return 'That was not a time I offered, and nothing was booked.';
+    case 'in_the_past':
+      return 'That time has already passed, so nothing was booked.';
+    case 'beyond_horizon':
+      return 'That is further ahead than this business takes bookings, so nothing was booked.';
+    case 'taken':
+      return 'That time was taken while we were talking, and nothing was booked.';
+    case 'not_offered':
+      return 'That time is not one this business can take, and nothing was booked.';
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Saying a time out loud                                                     */
 /* -------------------------------------------------------------------------- */
 

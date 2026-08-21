@@ -271,9 +271,11 @@ describe('computeAvailableSlots', () => {
 describe('spreadSlots', () => {
   const slot = (startISO: string) => ({ startISO, endISO: startISO, employeeIds: ['dave'] });
 
-  it('spreads options across days instead of one morning', () => {
-    // Three consecutive half-hours on one day is a worse answer on the phone
-    // than three genuinely different times.
+  it('spreads options across days, and apart within a day', () => {
+    // Consecutive slots on one day are a worse answer on the phone than
+    // genuinely different times. Within a day the second option has to be far
+    // enough from the first to be a real alternative: offering "eight, or half
+    // past eight" asks the caller to choose between the same thing twice.
     const slots = [
       slot('2026-09-02T12:00:00Z'),
       slot('2026-09-02T13:00:00Z'),
@@ -283,9 +285,21 @@ describe('spreadSlots', () => {
     const picked = spreadSlots(slots, 3, TZ);
     expect(picked.map((s) => s.startISO)).toEqual([
       '2026-09-02T12:00:00Z',
-      '2026-09-02T13:00:00Z',
+      // 13:00 skipped — only an hour after the first.
+      '2026-09-02T14:00:00Z',
       '2026-09-03T12:00:00Z',
     ]);
+  });
+
+  it('takes a close second option rather than offering fewer', () => {
+    // A business with one short window still gets three offers. Separation is
+    // a preference; returning less than exists is not.
+    const slots = [
+      slot('2026-09-02T12:00:00Z'),
+      slot('2026-09-02T12:30:00Z'),
+      slot('2026-09-02T13:00:00Z'),
+    ];
+    expect(spreadSlots(slots, 3, TZ)).toHaveLength(3);
   });
 
   it('falls back rather than returning fewer options than exist', () => {

@@ -267,6 +267,9 @@ export function computeAvailableSlots(request: SlotRequest): Slot[] {
     }));
 }
 
+/** How far apart two options on the same day should be, when there is a choice. */
+const SAME_DAY_GAP_MS = 2 * 60 * 60 * 1000;
+
 /**
  * The next few distinct times to read out on a call.
  *
@@ -276,15 +279,27 @@ export function computeAvailableSlots(request: SlotRequest): Slot[] {
  */
 export function spreadSlots(slots: Slot[], count: number, timeZone: string): Slot[] {
   const chosen: Slot[] = [];
-  const perDay = new Map<string, number>();
+  const dayKey = (slot: Slot) => {
+    const { year, month, day } = localDateIn(new Date(slot.startISO), timeZone);
+    return `${year}-${month}-${day}`;
+  };
 
   for (const slot of slots) {
     if (chosen.length >= count) break;
-    const { year, month, day } = localDateIn(new Date(slot.startISO), timeZone);
-    const key = `${year}-${month}-${day}`;
-    const taken = perDay.get(key) ?? 0;
-    if (taken >= 2) continue;
-    perDay.set(key, taken + 1);
+    const key = dayKey(slot);
+    const sameDay = chosen.filter((s) => dayKey(s) === key);
+    if (sameDay.length >= 2) continue;
+
+    // Two options an hour apart is barely a choice — "eight, or half past
+    // eight" asks a caller to pick between the same thing twice. A morning and
+    // an afternoon is a real question.
+    if (sameDay.length === 1) {
+      const gap = Math.abs(
+        new Date(slot.startISO).getTime() - new Date(sameDay[0]!.startISO).getTime(),
+      );
+      if (gap < SAME_DAY_GAP_MS) continue;
+    }
+
     chosen.push(slot);
   }
 
