@@ -233,6 +233,12 @@ export interface BookingInput {
   notes?: string | null;
   leadId?: string | null;
   callId?: string | null;
+  /**
+   * Set when booked during a live call. The `calls` row does not exist yet —
+   * it is written from the end-of-call report — so the provider's id is stored
+   * and the two are joined up when that report arrives.
+   */
+  vapiCallId?: string | null;
   source?: string;
 }
 
@@ -283,6 +289,7 @@ export async function bookAppointment(input: BookingInput): Promise<BookingResul
       notes: input.notes ?? null,
       lead_id: input.leadId ?? null,
       call_id: input.callId ?? null,
+      vapi_call_id: input.vapiCallId ?? null,
       source: input.source ?? 'manual',
     })
     .select('id')

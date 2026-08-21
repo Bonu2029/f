@@ -183,6 +183,32 @@ export async function ingestCallReport(input: {
 
   const callId = call.id as string;
 
+  /* Appointments booked during this call ---------------------------------- */
+  //
+  // The receptionist books while the caller is on the line, minutes before this
+  // row exists, so the link can only be made now. Without it the owner sees an
+  // appointment and a call with no way to tell they were the same conversation.
+  const { data: booked, error: linkError } = await svc
+    .from('appointments')
+    .update({ call_id: callId })
+    .eq('organization_id', organizationId)
+    .eq('vapi_call_id', report.callId)
+    .is('call_id', null)
+    .select('id');
+
+  if (linkError) {
+    logger.warn('could not link appointments to their call', { error: linkError.message });
+  }
+
+  const appointmentIds = (booked ?? []).map((a) => a.id as string);
+  if (appointmentIds.length) {
+    await svc.from('calls').update({ appointment_booked: true }).eq('id', callId);
+    logger.info('linked appointments booked during the call', {
+      call_id: callId,
+      appointments: appointmentIds.length,
+    });
+  }
+
   /* Transcript ------------------------------------------------------------ */
   if (report.transcriptTurns.length) {
     const rows = report.transcriptTurns.slice(0, 500).map((turn, index) => ({
@@ -215,6 +241,18 @@ export async function ingestCallReport(input: {
       structured,
       disposition,
     });
+  }
+
+  // An appointment booked on the call belongs to the same person as the lead
+  // it came from. Done after the lead exists rather than before, so the link
+  // points at something.
+  if (leadId && appointmentIds.length) {
+    const { error } = await svc
+      .from('appointments')
+      .update({ lead_id: leadId })
+      .in('id', appointmentIds)
+      .is('lead_id', null);
+    if (error) logger.warn('could not link appointments to their lead', { error: error.message });
   }
 
   /* Usage ----------------------------------------------------------------- */

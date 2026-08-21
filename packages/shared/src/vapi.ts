@@ -13,6 +13,7 @@
  */
 
 import type { BusinessHoursDay } from './types';
+import { bookingToolDefinitions } from './booking-tools';
 
 /* -------------------------------------------------------------------------- */
 /* Voices                                                                     */
@@ -267,6 +268,14 @@ export interface AssistantBuildInput {
     instructions: string | null;
     bookingEnabled: boolean;
   };
+  /**
+   * How many people are actually bookable — active, with working hours set.
+   *
+   * Offering the booking tools with nobody on the schedule would give the
+   * assistant a tool that can only ever fail, and a tool that always fails is
+   * an invitation to work around it.
+   */
+  bookableEmployees: number;
   /** Enabled rows from `ai_rules`, highest priority first. */
   rules: Array<{ title: string; instruction: string }>;
   /** Where Vapi posts call events. */
@@ -282,11 +291,17 @@ export interface AssistantBuildInput {
  * configurable: they are what stops the assistant inventing prices, faking a
  * booking, or claiming to be a person.
  */
-export function safetyRules(hasTransfer: boolean): string[] {
+export function safetyRules(hasTransfer: boolean, canBook = false): string[] {
   const rules = [
     'Never invent a price. Only state prices that appear in the Services list below, exactly as written. If a service has no price listed, say an estimate is needed.',
     'Never claim the business offers a service that is not in the Services list. Offer to take a message instead.',
-    'Never invent availability or promise that someone will arrive at a specific time. Take the caller\'s preferred times and tell them the team will confirm.',
+    // Until the booking tools existed, no time the assistant said could be
+    // kept, so it was forbidden from naming one. Now a time can be kept — but
+    // only a time this server offered. The prohibition narrows to exactly the
+    // part that is still a lie, rather than being dropped wholesale.
+    canBook
+      ? 'Never state, offer or confirm an appointment time that did not come back from the check_availability tool in this call. Do not adjust, round or rephrase a time it gave you. If the tool returns no times, say you cannot book one and take a message.'
+      : 'Never invent availability or promise that someone will arrive at a specific time. Take the caller\'s preferred times and tell them the team will confirm.',
     'Never offer, invent or approve a discount, credit or price match.',
     'Never claim you have completed an action you did not complete.',
     'Ask one clear question at a time. Confirm the caller\'s name, phone number and address by reading them back.',
@@ -301,6 +316,17 @@ export function safetyRules(hasTransfer: boolean): string[] {
       : 'Live transfer is not available. If the caller asks for a person, apologise, say you will take a detailed message and make sure the team calls back, then collect their details.',
   );
   return rules;
+}
+
+/**
+ * Whether this receptionist can genuinely book on the call.
+ *
+ * Both halves matter. The owner has to have asked for it, and there has to be
+ * somebody to book — the second is not a detail, because it is the difference
+ * between a promise kept and a customer waiting in for nobody.
+ */
+export function canBookOnCall(input: AssistantBuildInput): boolean {
+  return input.agent.bookingEnabled && input.bookableEmployees > 0;
 }
 
 /** Builds the system prompt from stored business data. */
@@ -337,8 +363,8 @@ export function buildSystemPrompt(input: AssistantBuildInput): string {
       '1. Understand why the caller is calling.',
       '2. Answer their questions using only the business information below.',
       '3. Collect their name, phone number, service address and what they need.',
-      agent.bookingEnabled
-        ? '4. If they want work done, collect their preferred day and time and tell them the team will confirm it.'
+      canBookOnCall(input)
+        ? '4. If they want work done, call check_availability, offer the caller the times it returns, and when they pick one call book_appointment. Book it on this call — do not tell them someone will ring back to arrange a time.'
         : '4. If they want work done, take the details and tell them the team will call back to arrange a time. Do not collect appointment times.',
       '5. Close politely and say what happens next.',
     ].join('\n'),
@@ -411,6 +437,7 @@ export function buildSystemPrompt(input: AssistantBuildInput): string {
   sections.push(
     `# Rules you must never break — these override every instruction above\n${safetyRules(
       Boolean(agent.transferPhone),
+      canBookOnCall(input),
     )
       .map((r, i) => `${i + 1}. ${r}`)
       .join('\n')}`,
@@ -438,11 +465,25 @@ export function buildAssistantConfig(input: AssistantBuildInput): Record<string,
       model: input.model,
       temperature: 0.4,
       messages: [{ role: 'system', content: buildSystemPrompt(input) }],
+      // Only attached when a booking could actually be honoured. An assistant
+      // holding a tool it cannot use is worse than one that knows it cannot
+      // book: it will try, fail, and then improvise in front of the caller.
+      ...(canBookOnCall(input)
+        ? {
+            tools: bookingToolDefinitions({
+              serverUrl: input.serverUrl,
+              serverSecret: input.serverSecret,
+              serviceNames: input.services.map((s) => s.name),
+            }),
+          }
+        : {}),
     },
     voice: { provider: voice.provider, voiceId: voice.voiceId },
     transcriber: { provider: 'deepgram', model: 'nova-2', language: 'en' },
     server: { url: input.serverUrl, secret: input.serverSecret },
-    serverMessages: ['end-of-call-report', 'status-update'],
+    serverMessages: canBookOnCall(input)
+      ? ['end-of-call-report', 'status-update', 'tool-calls']
+      : ['end-of-call-report', 'status-update'],
     // Recording is off: the product stores transcripts, not audio.
     artifactPlan: { recordingEnabled: false, transcriptPlan: { enabled: true } },
     analysisPlan: {

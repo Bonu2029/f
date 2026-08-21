@@ -35,7 +35,7 @@ export interface SyncResult {
 async function loadAssistantInput(organizationId: string): Promise<AssistantBuildInput | null> {
   const svc = getServiceSupabase();
 
-  const [org, business, agent, services, areas, faqs, rules] = await Promise.all([
+  const [org, business, agent, services, areas, faqs, rules, bookable] = await Promise.all([
     svc.from('organizations').select('name, timezone').eq('id', organizationId).maybeSingle(),
     svc.from('business_profiles').select('*').eq('organization_id', organizationId).maybeSingle(),
     svc.from('ai_agents').select('*').eq('organization_id', organizationId).maybeSingle(),
@@ -63,6 +63,13 @@ async function loadAssistantInput(organizationId: string): Promise<AssistantBuil
       .eq('enabled', true)
       .order('priority')
       .limit(40),
+    // Who could actually take a job. `employee_availability` is the join that
+    // matters: an active employee with no hours cannot be offered to anyone.
+    svc
+      .from('employees')
+      .select('id, employee_availability!inner(id)')
+      .eq('organization_id', organizationId)
+      .eq('active', true),
   ]);
 
   if (!org.data || !agent.data) return null;
@@ -131,6 +138,7 @@ async function loadAssistantInput(organizationId: string): Promise<AssistantBuil
       title: r.title as string,
       instruction: r.instruction as string,
     })),
+    bookableEmployees: new Set((bookable.data ?? []).map((e) => e.id as string)).size,
     serverUrl: absoluteUrl('/api/webhooks/vapi'),
     serverSecret: vapiEnv.webhookSecretOrPlaceholder,
     model: vapiEnv.openaiModel,

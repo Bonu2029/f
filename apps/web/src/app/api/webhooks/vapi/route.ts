@@ -9,9 +9,11 @@ import { ingestCallReport, recordUnservedCall } from '@/server/calls';
 import {
   assistantIdFrom,
   toReport,
+  toolCallsFrom,
   type VapiMessage,
   type VapiWebhookPayload,
 } from '@/server/vapi-report';
+import { runBookingTool } from '@/server/vapi-tools';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,6 +52,18 @@ export async function POST(request: NextRequest) {
   const message: VapiMessage = payload.message ?? {};
   const type = message.type ?? 'unknown';
   const vapiCallId = message.call?.id ?? null;
+
+  // Tool calls happen while the caller is still on the line, so they are
+  // answered here rather than queued: the model is waiting for the reply, and
+  // a slow or absent answer becomes silence on a live phone call.
+  //
+  // Deliberately handled before the idempotency claim below. That ledger exists
+  // to stop a retried terminal report being ingested twice; a conversation may
+  // legitimately call the same tool several times, and de-duplicating those
+  // would leave the model waiting for an answer that never comes.
+  if (type === 'tool-calls') {
+    return await handleToolCalls(message, vapiCallId, logger);
+  }
 
   // Only the terminal report carries the transcript and analysis. Status
   // updates are acknowledged so Vapi stops retrying them.
@@ -144,6 +158,77 @@ export async function POST(request: NextRequest) {
 }
 
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Answers the tools the receptionist called mid-conversation.
+ *
+ * The tenant is resolved the same way a call report is — from the assistant id
+ * in this secret-verified request — never from the tool arguments. That is what
+ * stops anything a caller says from reaching another business's diary.
+ *
+ * Every path returns 200 with a sentence. A non-200 leaves the model with no
+ * result at all, and a model with no result improvises — which on a live call
+ * means inventing an appointment.
+ */
+async function handleToolCalls(
+  message: VapiMessage,
+  vapiCallId: string | null,
+  logger: ReturnType<typeof childLogger>,
+): Promise<NextResponse> {
+  const calls = toolCallsFrom(message);
+  if (calls.length === 0) {
+    return NextResponse.json({ results: [] });
+  }
+
+  const assistantId = assistantIdFrom(message);
+  const refuse = (reason: string) =>
+    NextResponse.json({
+      results: calls.map((c) => ({
+        toolCallId: c.id,
+        result: `${reason} Do not offer or confirm any appointment time. Take the caller's name, number, address and what they need, and tell them the team will call to arrange it.`,
+      })),
+    });
+
+  if (!assistantId) {
+    logger.warn('tool call with no assistant id');
+    return refuse('This call could not be identified, so the diary was not read.');
+  }
+
+  const svc = getServiceSupabase();
+  const { data: rows } = await svc.rpc('resolve_call_by_assistant', { p_assistant_id: assistantId });
+  const resolution = (Array.isArray(rows) ? rows[0] : rows) as
+    | { organization_id: string | null; servable: boolean; reason: string }
+    | undefined;
+
+  if (!resolution?.organization_id) {
+    logger.warn('tool call for an unknown assistant', { assistant_id: assistantId });
+    return refuse('This call could not be matched to a business, so nothing was booked.');
+  }
+  if (!resolution.servable) {
+    // Same gate as a call report: an account that cannot be served must not be
+    // able to write appointments into its own diary through the back door.
+    logger.info('tool call refused for an unservable organisation', { reason: resolution.reason });
+    return refuse(`Booking is unavailable: ${humanReason(resolution.reason)}`);
+  }
+
+  const results = [];
+  for (const call of calls) {
+    const { result } = await runBookingTool({
+      organizationId: resolution.organization_id,
+      vapiCallId: vapiCallId ?? '',
+      name: call.name,
+      args: call.args,
+    });
+    results.push({ toolCallId: call.id, result });
+  }
+
+  logger.info('tool calls answered', {
+    organization_id: resolution.organization_id,
+    tools: calls.map((c) => c.name),
+  });
+
+  return NextResponse.json({ results });
+}
 
 /**
  * Verifies the shared secret Vapi echoes back. Compared in constant time so the

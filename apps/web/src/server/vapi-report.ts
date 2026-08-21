@@ -39,9 +39,18 @@ export interface VapiEndOfCallReport {
   } | null;
 }
 
+interface RawToolCall {
+  id?: string;
+  function?: { name?: string; arguments?: unknown };
+  toolCall?: { id?: string; function?: { name?: string; arguments?: unknown } };
+}
+
 export interface VapiWebhookPayload {
   message?: {
     type?: string;
+    toolCallList?: RawToolCall[];
+    toolCalls?: RawToolCall[];
+    toolWithToolCallList?: RawToolCall[];
     endedReason?: string;
     summary?: string;
     startedAt?: string;
@@ -75,6 +84,54 @@ export interface VapiWebhookPayload {
 }
 
 export type VapiMessage = NonNullable<VapiWebhookPayload['message']>;
+
+/** One function the model asked us to run, normalised. */
+export interface ParsedToolCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
+}
+
+/**
+ * Reads the tool calls out of a `tool-calls` message.
+ *
+ * Vapi has used more than one field name for this list, and `arguments` arrives
+ * either as a JSON string or as an already-parsed object depending on the
+ * model. Missing one of those shapes would not throw — it would return no
+ * calls, the model would get an empty result, and it would carry on and invent
+ * an answer on a live phone line. So every known shape is read, and anything
+ * unreadable is dropped rather than guessed at.
+ */
+export function toolCallsFrom(message: VapiMessage): ParsedToolCall[] {
+  const raw = message.toolCallList ?? message.toolCalls ?? message.toolWithToolCallList ?? [];
+  if (!Array.isArray(raw)) return [];
+
+  return raw
+    .map((entry): ParsedToolCall | null => {
+      const fn = entry?.function ?? entry?.toolCall?.function;
+      const id = entry?.id ?? entry?.toolCall?.id;
+      const name = fn?.name;
+      if (typeof id !== 'string' || typeof name !== 'string' || name === '') return null;
+
+      let args: Record<string, unknown> = {};
+      const rawArgs = fn?.arguments;
+      if (typeof rawArgs === 'string') {
+        try {
+          const parsed = JSON.parse(rawArgs) as unknown;
+          if (parsed && typeof parsed === 'object') args = parsed as Record<string, unknown>;
+        } catch {
+          // Malformed JSON from the model. An empty argument set makes the tool
+          // answer "tell me the caller's name", which is recoverable on a call;
+          // guessing at the intent would not be.
+        }
+      } else if (rawArgs && typeof rawArgs === 'object') {
+        args = rawArgs as Record<string, unknown>;
+      }
+
+      return { id, name, args };
+    })
+    .filter((c): c is ParsedToolCall => c !== null);
+}
 
 /**
  * The assistant id, wherever Vapi put it.

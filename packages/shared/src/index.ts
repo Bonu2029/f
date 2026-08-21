@@ -3,6 +3,7 @@ export * from './plans';
 export * from './billing';
 export * from './vapi';
 export * from './booking';
+export * from './booking-tools';
 export * from './types';
 export * from './domain';
 export * from './defaults';

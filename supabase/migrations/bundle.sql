@@ -12,7 +12,7 @@
 -- indexes. The guard below stops a second pass before it can fail partway.
 -- For incremental changes afterwards, use `npm run db:migrate`.
 --
--- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql, 0010_no_overlapping_appointments.sql, 0011_upsert_targets.sql, 0012_empty_strings_are_not_values.sql
+-- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql, 0010_no_overlapping_appointments.sql, 0011_upsert_targets.sql, 0012_empty_strings_are_not_values.sql, 0013_appointments_from_calls.sql
 -- =============================================================================
 
 -- Refuse to run twice. Without this, a second pass fails partway through
@@ -28,7 +28,7 @@ begin
     -- does not exist yet, which is exactly the case this guard allows.
     execute
       'select exists (select 1 from public.schema_migrations where filename = $1)'
-      into already using '0012_empty_strings_are_not_values.sql';
+      into already using '0013_appointments_from_calls.sql';
   end if;
 
   if already then
@@ -3184,6 +3184,52 @@ end $$;
 
 
 -- ============================================================================
+-- BEGIN 0013_appointments_from_calls.sql
+-- ============================================================================
+
+-- =============================================================================
+-- 0013 — an appointment booked during a call, before the call record exists
+-- =============================================================================
+--
+-- The receptionist books while the caller is still on the phone. The `calls`
+-- row for that conversation does not exist yet — it is written from the
+-- end-of-call report, minutes later — so `appointments.call_id` cannot be set
+-- at booking time, and a foreign key to a row that has not been created is not
+-- something to work around with a placeholder.
+--
+-- So the provider's own call id is recorded instead, and the two are joined up
+-- when the report finally arrives. Without this the owner sees an appointment
+-- and a call and no way to know they were the same conversation.
+-- =============================================================================
+
+alter table public.appointments
+  add column if not exists vapi_call_id text;
+
+comment on column public.appointments.vapi_call_id is
+  'The Vapi call this was booked during. Set at booking time, when the calls row does not exist yet; calls.id is filled in later from the end-of-call report.';
+
+-- One appointment per call is the normal case, but a caller who books two
+-- visits in one conversation is legitimate, so this is not unique.
+create index if not exists appointments_vapi_call_idx
+  on public.appointments (vapi_call_id) where vapi_call_id is not null;
+
+-- -----------------------------------------------------------------------------
+-- Postcondition.
+-- -----------------------------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'appointments' and column_name = 'vapi_call_id'
+  ) then
+    raise exception 'appointments.vapi_call_id is missing; calls booked on the phone could not be linked to their conversation';
+  end if;
+end $$;
+
+-- END 0013_appointments_from_calls.sql
+
+
+-- ============================================================================
 -- Mark these migrations as applied, so `npm run db:migrate` against this
 -- same database later is a no-op rather than a second pass.
 --
@@ -3209,5 +3255,6 @@ insert into public.schema_migrations (filename, checksum) values
   ('0009_employees_and_availability.sql', 'bundled'),
   ('0010_no_overlapping_appointments.sql', 'bundled'),
   ('0011_upsert_targets.sql', 'bundled'),
-  ('0012_empty_strings_are_not_values.sql', 'bundled')
+  ('0012_empty_strings_are_not_values.sql', 'bundled'),
+  ('0013_appointments_from_calls.sql', 'bundled')
 on conflict (filename) do nothing;
