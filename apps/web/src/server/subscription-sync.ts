@@ -71,6 +71,39 @@ function periodBounds(subscription: Stripe.Subscription): { start: string | null
  * Applies a Stripe subscription object to our database.
  * Called for created / updated / deleted and after checkout completion.
  */
+/**
+ * Every write in this module goes through here.
+ *
+ * These run inside the Stripe webhook, which already returns 500 on a throw so
+ * that Stripe retries with backoff. That retry is free and was going unused:
+ * each write discarded its error, the webhook answered 200, Stripe marked the
+ * event delivered, and the failure was never seen again.
+ *
+ * The worst case is not theoretical. If the write recording a completed
+ * checkout fails, the customer has paid and the application still believes
+ * their subscription is incomplete — so their receptionist stops answering, and
+ * nothing anywhere says why.
+ */
+async function mustWrite(
+  what: string,
+  organizationId: string,
+  // PostgREST builders are thenable rather than real promises, so this takes
+  // whatever resolves to a result carrying `error`.
+  run: () => PromiseLike<{ error: { message: string } | null }>,
+): Promise<void> {
+  const { error } = await run();
+  if (error) {
+    log.error('a billing write failed', {
+      provider: 'stripe',
+      event: 'subscription.write_failed',
+      organization_id: organizationId,
+      what,
+      error: error.message,
+    });
+    throw new Error(`${what} failed for ${organizationId}: ${error.message}`);
+  }
+}
+
 export async function syncSubscription(
   subscription: Stripe.Subscription,
   organizationIdHint?: string | null,
@@ -94,7 +127,7 @@ export async function syncSubscription(
   const metaPlan = subscription.metadata?.plan;
   const { data: current } = await svc
     .from('subscriptions')
-    .select('plan, status, founder, founder_slot')
+    .select('plan, status, founder, founder_slot, billing_period_start')
     .eq('organization_id', organizationId)
     .maybeSingle();
 
@@ -106,18 +139,14 @@ export async function syncSubscription(
   const becameActive = status === 'active' || status === 'trialing';
   const wasActive = current?.status === 'active' || current?.status === 'trialing';
 
-  // A new billing period resets the metered allowance.
-  const periodChanged =
-    start != null &&
-    (
-      await svc
-        .from('subscriptions')
-        .select('billing_period_start')
-        .eq('organization_id', organizationId)
-        .maybeSingle()
-    ).data?.billing_period_start !== start;
+  // A new billing period resets the metered allowance. Read from the row we
+  // already fetched rather than asking again — a second read of the same row
+  // mid-handler can disagree with the first, and then the allowance resets on
+  // the wrong event.
+  const periodChanged = start != null && current?.billing_period_start !== start;
 
-  await svc
+  await mustWrite('recording the subscription', organizationId, () =>
+    svc
     .from('subscriptions')
     .update({
       stripe_customer_id: customerId,
@@ -130,7 +159,8 @@ export async function syncSubscription(
       cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
       ...(periodChanged ? { used_minutes: 0 } : {}),
     })
-    .eq('organization_id', organizationId);
+    .eq('organization_id', organizationId),
+  );
 
   // Founder activation happens exactly once, on the transition into a paid
   // state. It is intentionally irreversible: cancelling never reopens the slot.
@@ -149,11 +179,13 @@ export async function syncSubscription(
   }
 
   if (becameActive && !wasActive) {
-    await svc
-      .from('organizations')
-      .update({ status: 'active' })
-      .eq('id', organizationId)
-      .in('status', ['onboarding', 'paused', 'cancelled']);
+    await mustWrite('activating the organisation', organizationId, () =>
+      svc
+        .from('organizations')
+        .update({ status: 'active' })
+        .eq('id', organizationId)
+        .in('status', ['onboarding', 'paused', 'cancelled']),
+    );
     await recordAudit({
       organizationId,
       action: AUDIT_ACTIONS.SUBSCRIPTION_CREATED,
@@ -181,17 +213,32 @@ export async function handleSubscriptionDeleted(subscription: Stripe.Subscriptio
   const svc = getServiceSupabase();
   const customerId = typeof subscription.customer === 'string' ? subscription.customer : null;
   const organizationId = await resolveOrganizationId({ metadata: subscription.metadata, customerId });
-  if (!organizationId) return;
+  if (!organizationId) {
+    log.error('a cancelled subscription could not be matched to an organisation', {
+      provider: 'stripe',
+      event: 'subscription.unresolved',
+      subscription_id: subscription.id,
+      customer_id: customerId,
+    });
+    return;
+  }
 
-  await svc
-    .from('subscriptions')
-    .update({ status: 'canceled', cancel_at_period_end: false })
-    .eq('organization_id', organizationId);
+  await mustWrite('cancelling the subscription', organizationId, () =>
+    svc
+      .from('subscriptions')
+      .update({ status: 'canceled', cancel_at_period_end: false })
+      .eq('organization_id', organizationId),
+  );
 
-  await svc.from('organizations').update({ status: 'cancelled' }).eq('id', organizationId);
+  await mustWrite('closing the organisation', organizationId, () =>
+    svc.from('organizations').update({ status: 'cancelled' }).eq('id', organizationId),
+  );
 
-  // Stop consuming paid AI resources.
-  await svc.from('ai_agents').update({ active: false }).eq('organization_id', organizationId);
+  // Stop consuming paid AI resources. Checked like the rest: an agent left
+  // active after cancellation answers calls nobody is paying for.
+  await mustWrite('switching off the receptionist', organizationId, () =>
+    svc.from('ai_agents').update({ active: false }).eq('organization_id', organizationId),
+  );
 
   await svc.from('notifications').insert({
     organization_id: organizationId,
@@ -217,7 +264,17 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> 
     metadata: invoice.metadata ?? null,
     customerId,
   });
-  if (!organizationId) return;
+  if (!organizationId) {
+    // Money moved and we cannot say whose it was. Silence here means a paying
+    // customer stays locked out with no trace of why.
+    log.error('a paid invoice could not be matched to an organisation', {
+      provider: 'stripe',
+      event: 'invoice.unresolved',
+      invoice_id: invoice.id,
+      customer_id: customerId,
+    });
+    return;
+  }
 
   const line = invoice.lines?.data?.[0];
   const period = line?.period;
@@ -230,11 +287,13 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> 
     });
   }
 
-  await svc
-    .from('subscriptions')
-    .update({ status: 'active' })
-    .eq('organization_id', organizationId)
-    .in('status', ['past_due', 'unpaid', 'incomplete']);
+  await mustWrite('restoring the subscription after payment', organizationId, () =>
+    svc
+      .from('subscriptions')
+      .update({ status: 'active' })
+      .eq('organization_id', organizationId)
+      .in('status', ['past_due', 'unpaid', 'incomplete']),
+  );
 }
 
 export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
@@ -244,9 +303,19 @@ export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promi
     metadata: invoice.metadata ?? null,
     customerId,
   });
-  if (!organizationId) return;
+  if (!organizationId) {
+    log.error('a failed payment could not be matched to an organisation', {
+      provider: 'stripe',
+      event: 'invoice.unresolved',
+      invoice_id: invoice.id,
+      customer_id: customerId,
+    });
+    return;
+  }
 
-  await svc.from('subscriptions').update({ status: 'past_due' }).eq('organization_id', organizationId);
+  await mustWrite('marking the subscription past due', organizationId, () =>
+    svc.from('subscriptions').update({ status: 'past_due' }).eq('organization_id', organizationId),
+  );
 
   const { data: org } = await svc.from('organizations').select('name').eq('id', organizationId).maybeSingle();
   await notifyPaymentFailed({

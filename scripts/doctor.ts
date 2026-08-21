@@ -400,6 +400,23 @@ async function checkStripe() {
     report('fail', 'Secret key', `Stripe returned HTTP ${res.status}`, 'Copy it again from the Stripe dashboard.');
   }
 
+  // Without this every Stripe event fails signature verification, the webhook
+  // returns 500, Stripe retries and eventually gives up — and no payment is
+  // ever recorded, however well checkout itself went.
+  const webhookSecret = read('STRIPE_WEBHOOK_SECRET');
+  if (!webhookSecret) {
+    report(
+      'fail',
+      'Webhook secret',
+      'STRIPE_WEBHOOK_SECRET is not set. Checkout will complete and the subscription will never be recorded.',
+      'stripe listen --forward-to localhost:3000/api/webhooks/stripe prints one (whsec_…). A deployed site gets one per endpoint in the Stripe dashboard.',
+    );
+  } else if (!webhookSecret.startsWith('whsec_')) {
+    report('warn', 'Webhook secret', 'Does not look like a whsec_ value.');
+  } else {
+    report('ok', 'Webhook secret set');
+  }
+
   for (const [name, why] of [
     ['STRIPE_FOUNDER_PRICE_ID', 'Founding Member checkout'],
     ['STRIPE_STANDARD_PRICE_ID', 'standard checkout'],
