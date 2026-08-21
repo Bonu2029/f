@@ -4,6 +4,7 @@ export * from './billing';
 export * from './vapi';
 export * from './booking';
 export * from './booking-tools';
+export * from './confirmations';
 export * from './types';
 export * from './domain';
 export * from './defaults';

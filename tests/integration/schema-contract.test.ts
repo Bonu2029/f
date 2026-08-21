@@ -488,4 +488,33 @@ describeDb('schema contract', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]!.predicate).toMatch(/accepted_at IS NULL/i);
   });
+
+  /**
+   * Every delivery attempt is recorded, including the ones a development
+   * adapter only logged. Without `simulated`, "we texted the customer" and "we
+   * wrote the text to a log file" are the same row.
+   */
+  it('records message deliveries, and can tell a logged one from a sent one', async () => {
+    const cols = await columns('message_deliveries');
+    for (const c of ['organization_id', 'channel', 'recipient', 'body', 'status', 'simulated', 'purpose']) {
+      expect(cols.has(c), `message_deliveries.${c} is missing`).toBe(true);
+    }
+
+    const { rows } = await asService<{ relrowsecurity: boolean; relforcerowsecurity: boolean }>(
+      `select relrowsecurity, relforcerowsecurity from pg_class
+        where oid = 'public.message_deliveries'::regclass`,
+    );
+    expect(rows[0]).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+  });
+
+  it('refuses a delivery row that does not say which of the two it was', async () => {
+    // `simulated` is not nullable: an unanswered question here is the whole
+    // failure mode this table was added to prevent.
+    const { rows } = await asService<{ is_nullable: string }>(
+      `select is_nullable from information_schema.columns
+        where table_schema = 'public' and table_name = 'message_deliveries'
+          and column_name = 'simulated'`,
+    );
+    expect(rows[0]?.is_nullable).toBe('NO');
+  });
 });

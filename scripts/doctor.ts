@@ -329,6 +329,59 @@ async function checkVapi() {
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Text messages. Not required — a business with no SMS provider still books —
+ * but the receptionist's wording depends on this, so "off" has to be visible
+ * rather than inferred from a customer complaining they were never confirmed.
+ */
+async function checkSms() {
+  section('Text messages (Twilio)');
+
+  const sid = read('TWILIO_ACCOUNT_SID');
+  const token = read('TWILIO_AUTH_TOKEN');
+  const from = read('TWILIO_FROM_NUMBER');
+
+  if (!sid && !token && !from) {
+    report(
+      'skip',
+      'Not configured',
+      'No confirmation texts are sent. The receptionist will not promise one, and will read the time back to the caller instead.',
+    );
+    return;
+  }
+
+  const missing = [
+    !sid ? 'TWILIO_ACCOUNT_SID' : null,
+    !token ? 'TWILIO_AUTH_TOKEN' : null,
+    !from ? 'TWILIO_FROM_NUMBER' : null,
+  ].filter(Boolean);
+
+  if (missing.length) {
+    // Partly configured is worse than not configured: it looks deliberate.
+    report(
+      'fail',
+      'Half configured',
+      `Missing ${missing.join(', ')}. Texts cannot be sent, and the partial setup hides that.`,
+      'Set all three, or remove the ones that are set.',
+    );
+    return;
+  }
+
+  const res = await json(`https://api.twilio.com/2010-04-01/Accounts/${sid}.json`, {
+    headers: { Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString('base64')}` },
+  });
+
+  if (res.status === 200) {
+    report('ok', 'Credentials accepted', `sending from ${from}`);
+  } else if (res.status === 401) {
+    report('fail', 'Credentials', 'Twilio rejected them.', 'Check the auth token in the Twilio console.');
+  } else {
+    report('warn', 'Credentials', res.error ?? `Twilio returned HTTP ${res.status}`);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+
 async function checkStripe() {
   section('Stripe');
 
@@ -389,6 +442,7 @@ async function main() {
 
   await checkSupabase();
   await checkVapi();
+  await checkSms();
   await checkStripe();
 
   console.log('');

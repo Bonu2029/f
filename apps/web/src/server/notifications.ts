@@ -48,7 +48,7 @@ export async function notify(input: NotifyInput): Promise<void> {
 }
 
 /** Owners and admins who should receive operational email. */
-async function notifiableEmails(organizationId: string): Promise<string[]> {
+export async function notifiableEmails(organizationId: string): Promise<string[]> {
   const svc = getServiceSupabase();
   const { data } = await svc
     .from('organization_members')
@@ -61,7 +61,7 @@ async function notifiableEmails(organizationId: string): Promise<string[]> {
     .filter((e): e is string => Boolean(e));
 }
 
-async function prefs(organizationId: string) {
+export async function notificationPrefs(organizationId: string) {
   const svc = getServiceSupabase();
   const { data } = await svc
     .from('notification_preferences')
@@ -93,7 +93,7 @@ export async function notifyNewLead(input: {
     link,
   });
 
-  const p = await prefs(input.organizationId);
+  const p = await notificationPrefs(input.organizationId);
   if (!p.email_new_lead) return;
   const recipients = await notifiableEmails(input.organizationId);
   const message = emailTemplates.newLead({
@@ -101,36 +101,6 @@ export async function notifyNewLead(input: {
     leadName: input.leadName,
     service: input.service,
     phone: input.phone,
-    url: absoluteUrl(link),
-  });
-  await Promise.all(recipients.map((to) => sendEmail(to, message)));
-}
-
-export async function notifyAppointmentBooked(input: {
-  organizationId: string;
-  organizationName: string;
-  appointmentId: string;
-  customer: string;
-  service: string;
-  when: string;
-}): Promise<void> {
-  const link = `/dashboard/appointments`;
-  await notify({
-    organizationId: input.organizationId,
-    kind: 'appointment_booked',
-    title: `Appointment booked: ${input.customer}`,
-    body: `${input.service} · ${input.when}`,
-    link,
-  });
-
-  const p = await prefs(input.organizationId);
-  if (!p.email_appointment) return;
-  const recipients = await notifiableEmails(input.organizationId);
-  const message = emailTemplates.appointmentBooked({
-    organizationName: input.organizationName,
-    customer: input.customer,
-    when: input.when,
-    service: input.service,
     url: absoluteUrl(link),
   });
   await Promise.all(recipients.map((to) => sendEmail(to, message)));
@@ -157,7 +127,7 @@ export async function notifyUsageThreshold(input: {
     dedupeKey: input.billingPeriod,
   });
 
-  const p = await prefs(input.organizationId);
+  const p = await notificationPrefs(input.organizationId);
   if (!p.email_usage_alerts) return;
   const recipients = await notifiableEmails(input.organizationId);
   const message = emailTemplates.usageAlert({
@@ -181,7 +151,7 @@ export async function notifyPaymentFailed(input: {
     body: 'Update your payment method to keep your receptionist answering.',
     link: '/dashboard/billing',
   });
-  const p = await prefs(input.organizationId);
+  const p = await notificationPrefs(input.organizationId);
   if (!p.email_billing) return;
   const recipients = await notifiableEmails(input.organizationId);
   const message = emailTemplates.paymentFailed({

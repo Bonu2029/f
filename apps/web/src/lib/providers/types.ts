@@ -131,3 +131,21 @@ export interface EmailProvider {
   readonly isMock: boolean;
   send(message: EmailMessage): Promise<{ id: string }>;
 }
+
+/* -------------------------------------------------------------------------- */
+/* SMS                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface SmsMessage {
+  /** E.164 where possible. The adapter does not attempt to repair a number. */
+  to: string;
+  body: string;
+}
+
+export interface SmsProvider {
+  readonly name: string;
+  readonly isMock: boolean;
+  /** The number messages are sent from, or null when none is configured. */
+  readonly from: string | null;
+  send(message: SmsMessage): Promise<{ id: string }>;
+}

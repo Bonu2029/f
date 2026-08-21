@@ -2,6 +2,7 @@ import 'server-only';
 import {
   BOOKING_TOOL_NAMES,
   classifyUnbookable,
+  confirmationPromise,
   unbookableSentence,
   describeOffer,
   describeSlotForSpeech,
@@ -9,6 +10,7 @@ import {
   normalizePhone,
 } from '@afd/shared';
 import { findAvailableSlots, bookAppointment } from '@/server/booking';
+import { sendBookingConfirmations } from '@/server/confirmations';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { AppError } from '@/lib/errors';
 import { childLogger } from '@/lib/logger';
@@ -209,8 +211,24 @@ async function book(input: {
     new Date().toISOString(),
   );
 
+  // Send before replying, so what the receptionist is told to say matches what
+  // actually happened rather than what was intended. The earlier version told
+  // the model to "say they will get a confirmation" unconditionally, while
+  // nothing sent one — a promise made in a voice, to a person, about something
+  // that would never happen.
+  const outcome = await sendBookingConfirmations({
+    organizationId: input.organizationId,
+    appointmentId: booking.appointmentId,
+  });
+
+  const promise = confirmationPromise(
+    // A message a development adapter only logged did not reach anyone, so it
+    // must not be spoken of as though it did.
+    outcome.customerSent && !outcome.customerSimulated ? outcome.customerChannel : 'none',
+  );
+
   return {
-    result: `Booked. ${customerName} is confirmed for ${spoken}. Tell the caller it is booked, read the day and time back to them, and say they will get a confirmation. Reference ${booking.appointmentId.slice(0, 8)}.`,
+    result: `Booked. ${customerName} is confirmed for ${spoken}. Tell the caller it is booked and read the day and time back to them. ${promise} Reference ${booking.appointmentId.slice(0, 8)}.`,
   };
 }
 

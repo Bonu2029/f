@@ -194,6 +194,28 @@ export const emailEnv = {
   },
 };
 
+/**
+ * Twilio, for the text a customer gets after booking.
+ *
+ * All three parts are required together: a key with no sending number cannot
+ * send, and reporting that as "configured" would let the receptionist promise a
+ * text that never arrives.
+ */
+export const smsEnv = {
+  get accountSid() {
+    return read('TWILIO_ACCOUNT_SID');
+  },
+  get authToken() {
+    return read('TWILIO_AUTH_TOKEN');
+  },
+  get fromNumber() {
+    return read('TWILIO_FROM_NUMBER');
+  },
+  get configured() {
+    return Boolean(read('TWILIO_ACCOUNT_SID') && read('TWILIO_AUTH_TOKEN') && read('TWILIO_FROM_NUMBER'));
+  },
+};
+
 /** Snapshot of which integrations are wired up. Used by the admin health page. */
 export function integrationStatus() {
   return {
@@ -201,6 +223,7 @@ export function integrationStatus() {
     supabase: supabaseEnv.configured,
     vapi: vapiEnv.configured,
     stripe: stripeEnv.configured,
+    sms: smsEnv.configured,
     encryption: Boolean(read('APP_ENCRYPTION_KEY')),
   };
 }
