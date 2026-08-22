@@ -12,7 +12,7 @@
 -- indexes. The guard below stops a second pass before it can fail partway.
 -- For incremental changes afterwards, use `npm run db:migrate`.
 --
--- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql, 0010_no_overlapping_appointments.sql, 0011_upsert_targets.sql, 0012_empty_strings_are_not_values.sql, 0013_appointments_from_calls.sql, 0014_message_deliveries.sql, 0015_no_callback_mode.sql
+-- Contains, in order: 0001_schema.sql, 0002_rls.sql, 0003_functions.sql, 0004_storage.sql, 0005_vapi.sql, 0006_mvp_schema.sql, 0007_one_org_per_owner.sql, 0008_bootstrap_organization.sql, 0009_employees_and_availability.sql, 0010_no_overlapping_appointments.sql, 0011_upsert_targets.sql, 0012_empty_strings_are_not_values.sql, 0013_appointments_from_calls.sql, 0014_message_deliveries.sql, 0015_no_callback_mode.sql, 0016_scheduled_cancellation.sql
 -- =============================================================================
 
 -- Refuse to run twice. Without this, a second pass fails partway through
@@ -28,7 +28,7 @@ begin
     -- does not exist yet, which is exactly the case this guard allows.
     execute
       'select exists (select 1 from public.schema_migrations where filename = $1)'
-      into already using '0015_no_callback_mode.sql';
+      into already using '0016_scheduled_cancellation.sql';
   end if;
 
   if already then
@@ -3388,6 +3388,53 @@ end $$;
 
 
 -- ============================================================================
+-- BEGIN 0016_scheduled_cancellation.sql
+-- ============================================================================
+
+-- =============================================================================
+-- 0016 — when a subscription is scheduled to end
+-- =============================================================================
+--
+-- A customer cancelled through the Stripe portal. Stripe recorded it by setting
+-- `cancel_at` to the end of the period and `canceled_at` to the moment they
+-- clicked, and left `cancel_at_period_end` false. This application read only
+-- `cancel_at_period_end`, so it went on showing "Renews September 22" to
+-- somebody who had already cancelled — and would have gone on serving them and
+-- then stopped without warning.
+--
+-- Two signals mean the same thing and only one was being read. Worse, the one
+-- being read is a boolean: it can say THAT a subscription ends but never WHEN,
+-- so the interface inferred the date from the billing period. Those are not the
+-- same date — a cancellation can be scheduled for any future moment through the
+-- API — and inferring it produces a confident, wrong day on the one screen a
+-- customer checks to find out how long they have left.
+--
+-- So the date itself is stored, and the interface stops guessing.
+-- =============================================================================
+
+alter table public.subscriptions
+  add column if not exists cancel_at timestamptz;
+
+comment on column public.subscriptions.cancel_at is
+  'When Stripe will end this subscription, if an end has been scheduled. Independent of cancel_at_period_end: the Stripe portal sets this and leaves that boolean false, so both must be read.';
+
+-- -----------------------------------------------------------------------------
+-- Postcondition.
+-- -----------------------------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'subscriptions' and column_name = 'cancel_at'
+  ) then
+    raise exception 'subscriptions.cancel_at is missing; a scheduled cancellation would be invisible';
+  end if;
+end $$;
+
+-- END 0016_scheduled_cancellation.sql
+
+
+-- ============================================================================
 -- Mark these migrations as applied, so `npm run db:migrate` against this
 -- same database later is a no-op rather than a second pass.
 --
@@ -3416,5 +3463,6 @@ insert into public.schema_migrations (filename, checksum) values
   ('0012_empty_strings_are_not_values.sql', 'bundled'),
   ('0013_appointments_from_calls.sql', 'bundled'),
   ('0014_message_deliveries.sql', 'bundled'),
-  ('0015_no_callback_mode.sql', 'bundled')
+  ('0015_no_callback_mode.sql', 'bundled'),
+  ('0016_scheduled_cancellation.sql', 'bundled')
 on conflict (filename) do nothing;

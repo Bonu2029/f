@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { formatPhone } from '@afd/shared';
+import { formatPhone, scheduledEnd } from '@afd/shared';
 import { requirePlatformAdmin } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { listOrganizationMembers } from '@/server/members';
@@ -115,7 +115,23 @@ export default async function AdminBusinessPage({ params }: { params: Promise<{ 
                   }
                 />
                 <Detail label="Stripe customer" value={(subscription.data.stripe_customer_id as string) ?? '—'} />
-                <Detail label="Cancel at period end" value={subscription.data.cancel_at_period_end ? 'Yes' : 'No'} />
+                <Detail
+                  label="Scheduled to end"
+                  value={(() => {
+                    // Both of Stripe's signals. Reading only the boolean shows
+                    // "No" for a portal cancellation, which is what support
+                    // would tell a customer who had already cancelled.
+                    const ending = scheduledEnd({
+                      cancelAtPeriodEnd: subscription.data.cancel_at_period_end as boolean | null,
+                      cancelAt: subscription.data.cancel_at as string | null,
+                      billingPeriodEnd: subscription.data.billing_period_end as string | null,
+                    });
+                    if (!ending.ending) return 'No';
+                    return ending.endsAt
+                      ? `Yes — ${new Date(ending.endsAt).toLocaleDateString()}`
+                      : 'Yes';
+                  })()}
+                />
               </dl>
             ) : (
               <p className="text-sm text-ink-subtle">No subscription record.</p>

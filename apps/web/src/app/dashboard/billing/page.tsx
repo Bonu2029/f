@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { AlertCircle, Receipt } from 'lucide-react';
-import { PLANS, formatMoney, getPlan, summarizeUsage } from '@afd/shared';
+import { PLANS, formatMoney, getPlan, scheduledEnd, summarizeUsage } from '@afd/shared';
 import { requireSession } from '@/lib/auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { getBillingProvider } from '@/lib/providers/billing';
@@ -44,12 +44,27 @@ export default async function BillingPage() {
     }
   }
 
-  const renewal = subscription?.billing_period_end
-    ? new Date(subscription.billing_period_end as string).toLocaleDateString(undefined, {
-        timeZone: ctx.active.timezone,
-        dateStyle: 'long',
-      })
-    : null;
+  // Read from both of Stripe's signals. A portal cancellation sets `cancel_at`
+  // and leaves `cancel_at_period_end` false, so checking only the boolean told
+  // a cancelled customer they were renewing.
+  const ending = scheduledEnd({
+    cancelAtPeriodEnd: subscription?.cancel_at_period_end as boolean | null,
+    cancelAt: subscription?.cancel_at as string | null,
+    billingPeriodEnd: subscription?.billing_period_end as string | null,
+  });
+
+  const asDate = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleDateString(undefined, {
+          timeZone: ctx.active.timezone,
+          dateStyle: 'long',
+        })
+      : null;
+
+  // The date it actually stops, when it is stopping — not the renewal date
+  // standing in for it.
+  const endsOn = asDate(ending.endsAt);
+  const renewal = asDate((subscription?.billing_period_end as string) ?? null);
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -73,10 +88,11 @@ export default async function BillingPage() {
         </Alert>
       )}
 
-      {subscription?.cancel_at_period_end && (
-        <Alert tone="caution" title="Subscription ends at the end of this period">
-          Your receptionist will stop answering on {renewal ?? 'the renewal date'}. You can reactivate
-          from the billing portal.
+      {ending.ending && (
+        <Alert tone="caution" title="Your subscription is set to end">
+          Your receptionist will stop answering
+          {endsOn ? ` on ${endsOn}` : ' when the current period ends'}. You can reactivate from the
+          billing portal.
           {subscription.founder ? ' Your Founding Member rate does not carry over to a new subscription.' : ''}
         </Alert>
       )}
@@ -100,10 +116,10 @@ export default async function BillingPage() {
                 <Badge tone="brand">Founding Member #{subscription.founder_slot as number}</Badge>
               )}
             </div>
-            {renewal && (
-              <p className="text-sm text-ink-subtle">
-                {subscription?.cancel_at_period_end ? 'Ends' : 'Renews'} {renewal}
-              </p>
+            {ending.ending ? (
+              endsOn && <p className="text-sm text-ink-subtle">Ends {endsOn}</p>
+            ) : (
+              renewal && <p className="text-sm text-ink-subtle">Renews {renewal}</p>
             )}
             {subscription?.founder && (
               <p className="text-xs text-ink-subtle">

@@ -157,6 +157,10 @@ export async function syncSubscription(
       billing_period_end: end,
       included_minutes: plan.includedMinutes,
       cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
+      // Stored as well as the boolean, not instead of it. A portal
+      // cancellation sets this and leaves the boolean false, so reading only
+      // one of them showed a cancelled customer that they were renewing.
+      cancel_at: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
       ...(periodChanged ? { used_minutes: 0 } : {}),
     })
     .eq('organization_id', organizationId),

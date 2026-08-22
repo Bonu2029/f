@@ -116,3 +116,52 @@ export function billingPeriodKey(periodStart: Date | string | null | undefined):
   const iso = Number.isNaN(d.getTime()) ? new Date() : d;
   return iso.toISOString().slice(0, 10);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Scheduled cancellation                                                     */
+/* -------------------------------------------------------------------------- */
+
+export interface ScheduledEnd {
+  /** Whether this subscription is set to stop rather than renew. */
+  ending: boolean;
+  /** The day it stops, when one is known. */
+  endsAt: string | null;
+}
+
+/**
+ * Whether a subscription is going to end, and when.
+ *
+ * Stripe expresses this two different ways. `cancel_at_period_end` is the older
+ * boolean; a cancellation made through the customer portal instead sets
+ * `cancel_at` to a timestamp and leaves that boolean false. Reading only one of
+ * them showed "Renews 22 September" to a customer who had cancelled — the
+ * screen they check precisely to find out how long they have left.
+ *
+ * The date is preferred over the period end because they are not always the
+ * same: a cancellation can be scheduled for any future moment through the API,
+ * and inferring the day from the billing period produces a confident wrong
+ * answer rather than an obvious blank.
+ */
+export function scheduledEnd(input: {
+  cancelAtPeriodEnd: boolean | null | undefined;
+  /** Stripe's `cancel_at`, as an ISO string or epoch seconds. */
+  cancelAt: string | number | null | undefined;
+  billingPeriodEnd: string | null | undefined;
+}): ScheduledEnd {
+  const cancelAt = toIso(input.cancelAt);
+  if (cancelAt) return { ending: true, endsAt: cancelAt };
+
+  if (input.cancelAtPeriodEnd) {
+    // No explicit date, so the period end is the correct answer rather than a
+    // guess: that is what the boolean means.
+    return { ending: true, endsAt: toIso(input.billingPeriodEnd) };
+  }
+
+  return { ending: false, endsAt: null };
+}
+
+function toIso(value: string | number | null | undefined): string | null {
+  if (value == null || value === '') return null;
+  const date = typeof value === 'number' ? new Date(value * 1000) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}

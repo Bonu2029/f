@@ -6,6 +6,7 @@ import {
   formatMoney,
   newlyCrossedThresholds,
   summarizeUsage,
+  scheduledEnd,
 } from '@afd/shared';
 
 /**
@@ -114,5 +115,65 @@ describe('billing period key', () => {
 
   it('falls back to today when no period is known', () => {
     expect(billingPeriodKey(null)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+/**
+ * A customer cancelled through the Stripe portal and the application went on
+ * telling them they were renewing. Stripe recorded the cancellation by setting
+ * `cancel_at` and left `cancel_at_period_end` false; only the boolean was read.
+ */
+describe('scheduledEnd', () => {
+  // The real instant behind Stripe's cancel_at from the observed subscription.
+  const periodEnd = '2026-09-22T15:36:11.000Z';
+
+  it('sees a portal cancellation, which sets a date and not the flag', () => {
+    // The exact shape observed from Stripe: cancel_at set, boolean false.
+    expect(
+      scheduledEnd({ cancelAtPeriodEnd: false, cancelAt: 1790091371, billingPeriodEnd: periodEnd }),
+    ).toEqual({ ending: true, endsAt: periodEnd });
+  });
+
+  it('still honours the older boolean on its own', () => {
+    expect(
+      scheduledEnd({ cancelAtPeriodEnd: true, cancelAt: null, billingPeriodEnd: periodEnd }),
+    ).toEqual({ ending: true, endsAt: periodEnd });
+  });
+
+  it('says a subscription is renewing only when neither signal is set', () => {
+    expect(
+      scheduledEnd({ cancelAtPeriodEnd: false, cancelAt: null, billingPeriodEnd: periodEnd }),
+    ).toEqual({ ending: false, endsAt: null });
+  });
+
+  /**
+   * The two dates are not interchangeable. A cancellation scheduled through the
+   * API for an arbitrary day must not be reported as the billing period end —
+   * that is the one number a customer reads to know how long they have left.
+   */
+  it('reports the scheduled date, not the period end, when they differ', () => {
+    expect(
+      scheduledEnd({
+        cancelAtPeriodEnd: false,
+        cancelAt: '2026-08-30T00:00:00.000Z',
+        billingPeriodEnd: periodEnd,
+      }).endsAt,
+    ).toBe('2026-08-30T00:00:00.000Z');
+  });
+
+  it('accepts epoch seconds and ISO alike, since both reach it', () => {
+    const fromEpoch = scheduledEnd({ cancelAtPeriodEnd: false, cancelAt: 1790091371, billingPeriodEnd: null });
+    const fromIso = scheduledEnd({ cancelAtPeriodEnd: false, cancelAt: periodEnd, billingPeriodEnd: null });
+    expect(fromEpoch.endsAt).toBe(fromIso.endsAt);
+  });
+
+  it('says ending without a date rather than inventing one', () => {
+    expect(
+      scheduledEnd({ cancelAtPeriodEnd: true, cancelAt: null, billingPeriodEnd: null }),
+    ).toEqual({ ending: true, endsAt: null });
+    // Garbage in a date field is not a date.
+    expect(
+      scheduledEnd({ cancelAtPeriodEnd: false, cancelAt: 'soon', billingPeriodEnd: null }).ending,
+    ).toBe(false);
   });
 });
