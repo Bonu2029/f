@@ -5,7 +5,7 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { log } from '@/lib/logger';
 import { activateFounderSlot, releaseFounderReservation } from '@/server/founder';
-import { notifyPaymentFailed } from '@/server/notifications';
+import { notify, notifyPaymentFailed } from '@/server/notifications';
 
 /**
  * Keeps our `subscriptions` table in step with Stripe.
@@ -183,6 +183,27 @@ export async function syncSubscription(
   }
 
   if (becameActive && !wasActive) {
+    // Coming back from a cancellation leaves the receptionist switched off,
+    // because cancelling switched it off. That is deliberate — restoring a
+    // capability is not the same as making a decision on the owner's behalf —
+    // but it is invisible: the dashboard says "not live yet", which is what it
+    // says to somebody who never turned it on. So say which of the two it is.
+    const { data: agent } = await svc
+      .from('ai_agents')
+      .select('active')
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+
+    if (agent && agent.active === false) {
+      await notify({
+        organizationId,
+        kind: 'ai_unavailable',
+        title: 'Your receptionist is still switched off',
+        body: 'Your subscription is active again. We switched the receptionist off when it lapsed, and it will not answer until you turn it back on.',
+        link: '/dashboard/receptionist',
+      });
+    }
+
     await mustWrite('activating the organisation', organizationId, () =>
       svc
         .from('organizations')

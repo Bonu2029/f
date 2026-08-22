@@ -20,8 +20,25 @@ const securityHeaders = [
   },
 ];
 
+/**
+ * Hosts allowed to load dev assets, for tunnelled development.
+ *
+ * Testing a real inbound webhook means running behind a public tunnel, and Next
+ * refuses to serve `/_next` to an origin it does not recognise — the page loads
+ * but nothing hydrates, which reads as a broken app rather than a blocked
+ * request. Read from the environment so a machine-specific hostname does not
+ * live in shared configuration and go stale the day the tunnel restarts.
+ *
+ * Development only: Next ignores it in a production build.
+ */
+const devOrigins = (process.env.DEV_ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((o) => o.trim().replace(/^https?:\/\//, ''))
+  .filter(Boolean);
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  ...(devOrigins.length ? { allowedDevOrigins: devOrigins } : {}),
   poweredByHeader: false,
   transpilePackages: ['@afd/shared'],
   experimental: {
