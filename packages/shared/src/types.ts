@@ -19,17 +19,35 @@ export function roleAtLeast(role: MemberRole | null | undefined, minimum: Member
   return ROLE_RANK[role] >= ROLE_RANK[minimum];
 }
 
-export type OrganizationStatus = 'onboarding' | 'active' | 'paused' | 'cancelled' | 'suspended';
+/**
+ * Note the spelling, and that it differs from `SUBSCRIPTION_STATUSES` below.
+ * An organisation is 'cancelled'; a subscription is 'canceled'. Both match
+ * their own Postgres enum, and using the wrong one fails only at runtime, in a
+ * write that happens on the rarest path there is.
+ */
+export const ORGANIZATION_STATUSES = [
+  'onboarding',
+  'active',
+  'paused',
+  'cancelled',
+  'suspended',
+] as const;
 
-export type SubscriptionStatus =
-  | 'incomplete'
-  | 'incomplete_expired'
-  | 'trialing'
-  | 'active'
-  | 'past_due'
-  | 'canceled'
-  | 'unpaid'
-  | 'paused';
+export type OrganizationStatus = (typeof ORGANIZATION_STATUSES)[number];
+
+/** Stripe's own vocabulary, which is why this one is spelled the American way. */
+export const SUBSCRIPTION_STATUSES = [
+  'incomplete',
+  'incomplete_expired',
+  'trialing',
+  'active',
+  'past_due',
+  'canceled',
+  'unpaid',
+  'paused',
+] as const;
+
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 /** Subscription states in which the AI receptionist is allowed to answer calls. */
 export const SERVICEABLE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [

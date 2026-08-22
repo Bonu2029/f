@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CALL_DISPOSITIONS, WANTED_WORK_DISPOSITIONS } from '@afd/shared';
+import {
+  CALL_DISPOSITIONS,
+  ORGANIZATION_STATUSES,
+  SUBSCRIPTION_STATUSES,
+  WANTED_WORK_DISPOSITIONS,
+} from '@afd/shared';
 import {
   asService,
   closePool,
@@ -547,5 +552,25 @@ describeDb('schema contract', () => {
     for (const disposition of WANTED_WORK_DISPOSITIONS) {
       expect(valid.has(disposition), `call_disposition has no value "${disposition}"`).toBe(true);
     }
+  });
+
+  /**
+   * The two status enums are spelled differently — an organisation is
+   * 'cancelled', a subscription is 'canceled' — and both are written only when
+   * a customer cancels, which is the rarest path in the system and the last one
+   * anybody exercises. A mismatch there would surface as a failed write during
+   * somebody's cancellation.
+   */
+  it.each([
+    ['organization_status', ORGANIZATION_STATUSES],
+    ['subscription_status', SUBSCRIPTION_STATUSES],
+  ])('has exactly the %s values the code writes', async (typeName, expected) => {
+    const { rows } = await asService<{ value: string }>(
+      `select e.enumlabel as value
+         from pg_enum e join pg_type t on t.oid = e.enumtypid
+        where t.typname = $1`,
+      [typeName],
+    );
+    expect(rows.map((r) => r.value).sort()).toEqual([...expected].sort());
   });
 });
