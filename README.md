@@ -102,8 +102,14 @@ npm run dev         # local development
 npm run build       # production build
 npm run typecheck   # tsc --noEmit
 npm run lint        # eslint
+npm run preview     # build a shareable static snapshot of every screen
 npx tsx scripts/qr-check.ts   # verify the QR generator
 ```
+
+`npm run preview` needs the app running (`npm run start`). It captures every
+page, inlines the CSS and fonts, and writes `servicetag-preview.html` — one
+self-contained file that opens with no server, useful for sharing the design
+before anything is deployed. Forms and menus are inert in the snapshot.
 
 ## Images
 
