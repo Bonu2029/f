@@ -31,10 +31,10 @@ export const IMAGES = {
 
   measureWindow:    { src: "images/measure-window.webp", alt: "Window used for the measurement demonstration", art: "window", ratio: "4/3", demo: true },
 
-  gallery1: { src: null, alt: "Project — replacement windows, Philadelphia rowhome", art: "window", ratio: "4/5", demo: true, category: "Windows" },
-  gallery2: { src: "images/gallery-charcoal-door.webp", alt: "Project — charcoal entry door with transom", art: "door", ratio: "4/5", demo: true, category: "Doors" },
-  gallery3: { src: null, alt: "Project — restored historic sash", art: "wood", ratio: "4/5", demo: true, category: "Restoration" },
-  gallery4: { src: null, alt: "Project — patio doors to garden", art: "door", ratio: "4/5", demo: true, category: "Doors" },
-  gallery5: { src: null, alt: "Project — bay window", art: "window", ratio: "4/5", demo: true, category: "Windows" },
-  gallery6: { src: null, alt: "Project — historic front door restoration", art: "door", ratio: "4/5", demo: true, category: "Restoration" },
+  gallery1: { src: "images/gallery-rowhome-windows.webp", alt: "Project — replacement windows, Philadelphia rowhome", art: "window", ratio: "4/3", demo: true, category: "Windows" },
+  gallery2: { src: "images/gallery-charcoal-door.webp", alt: "Project — charcoal entry door with transom", art: "door", ratio: "4/3", demo: true, category: "Doors" },
+  gallery3: { src: "images/gallery-workshop-sash.webp", alt: "Project — restored historic sash", art: "wood", ratio: "4/3", demo: true, category: "Restoration" },
+  gallery4: { src: "images/gallery-patio-doors.webp", alt: "Project — sliding patio doors to a terrace", art: "door", ratio: "4/3", demo: true, category: "Doors" },
+  gallery5: { src: "images/gallery-bay-window.webp", alt: "Project — bay window with window seat", art: "window", ratio: "4/3", demo: true, category: "Windows" },
+  gallery6: { src: "images/gallery-double-door.webp", alt: "Project — restored historic double front door", art: "door", ratio: "4/3", demo: true, category: "Restoration" },
 };

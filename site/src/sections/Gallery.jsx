@@ -6,6 +6,7 @@ import { EASE, Reveal } from "../components/motion.jsx";
 
 const ITEMS = Object.entries(IMAGES).filter(([k]) => k.startsWith("gallery")).map(([id, v]) => ({ id, ...v }));
 const CATS = ["All", "Windows", "Doors", "Restoration"];
+const title = (alt) => { const t = alt.replace("Project — ", ""); return t[0].toUpperCase() + t.slice(1); };
 
 export default function Gallery() {
   const [cat, setCat] = useState("All");
@@ -56,7 +57,7 @@ export default function Gallery() {
                 aria-label={`Open ${it.alt}`}
               >
                 <ImageSlot id={it.id} />
-                <div className="cap"><span>{it.alt.replace("Project — ", "")}</span><span className="muted">{it.category}</span></div>
+                <div className="cap"><span>{title(it.alt)}</span><span className="muted">{it.category}</span></div>
               </motion.button>
             ))}
           </AnimatePresence>
@@ -67,7 +68,7 @@ export default function Gallery() {
         {idx != null && list[idx] && (
           <motion.div className="lightbox" role="dialog" aria-modal="true" aria-label="Project viewer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="lb-top">
-              <span className="small">{idx + 1} / {list.length} · {list[idx].alt.replace("Project — ", "")}</span>
+              <span className="small">{idx + 1} / {list.length} · {title(list[idx].alt)}</span>
               <button ref={closeRef} className="icon-btn" onClick={close} aria-label="Close viewer">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 5l14 14M19 5L5 19" /></svg>
               </button>
