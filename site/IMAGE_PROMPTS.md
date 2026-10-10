@@ -1,5 +1,7 @@
 # Image slots & prompts
 
+**Status:** 16 of 21 slots are filled (WebP files in `public/images/`). Still open: `gallery1`, `gallery3`, `gallery4`, `gallery5` and `gallery6`.
+
 Every image on the site is a named **slot** in `src/config/images.js`. Until a slot has a `src`, the page shows a line-drawing placeholder tagged with the slot's name (for example `Image slot · heroInterior`), so you can see exactly where each photo goes.
 
 ## How to add an image

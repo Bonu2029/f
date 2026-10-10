@@ -639,3 +639,17 @@ textarea.input { min-height: 110px; resize: vertical; }
   .progress li:not(.cur) span { visibility: hidden; }
   .progress li.cur span { overflow: visible; }
 }
+
+/* Keep all four demo corner markers visible beside the estimate card */
+.mprev-card { right: -14%; bottom: auto; top: 40%; width: min(280px, 44%); }
+@media (max-width: 860px) {
+  .mprev-stage { margin-bottom: 0; }
+  .mprev-card { position: relative; right: auto; top: auto; width: 100%; margin-top: 12px; }
+  .mprev-stage { aspect-ratio: auto; }
+  .mprev-stage > .slot { position: relative; aspect-ratio: 4/3; height: auto; }
+  .mprev-stage svg.overlay { height: auto; aspect-ratio: 4/3; bottom: auto; }
+}
+@media (min-width: 861px) {
+  .mprev-card { top: 88%; right: -4%; width: min(290px, 46%); }
+  .mprev-stage { margin-bottom: 150px; }
+}

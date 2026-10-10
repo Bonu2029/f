@@ -5,8 +5,8 @@ import { estimateItem, roundTo } from "../lib/estimate.js";
 import { money } from "../lib/units.js";
 import { PRICING } from "../config/pricing.js";
 
-// Illustrative corners (viewBox 400x300) roughly matching the placeholder window art.
-const P = [[124, 55], [276, 55], [276, 248], [124, 248]];
+// Illustrative corners (viewBox 400x300) placed on the window frame in measure-window.webp.
+const P = [[134, 36], [266, 36], [266, 248], [134, 248]];
 const EX = { service: "install", kind: "window", type: "double-hung", material: "vinyl", glass: "low-e", widthIn: 36, heightIn: 60, qty: 1, finishing: "trim & caulk" };
 
 export default function MeasurePreview() {
@@ -35,15 +35,15 @@ export default function MeasurePreview() {
               </motion.g>
             ))}
             <motion.g initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={view} transition={t(2.1)} fontFamily="Manrope, sans-serif" fontSize="10" fill="#1b1a19">
-              <line x1="124" y1="40" x2="276" y2="40" stroke="#1b1a19" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-              <rect x="176" y="31" width="48" height="16" fill="#fbf9f5" />
-              <text x="200" y="43" textAnchor="middle">36 in</text>
-              <line x1="292" y1="55" x2="292" y2="248" stroke="#1b1a19" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-              <rect x="276" y="143" width="44" height="16" fill="#fbf9f5" />
-              <text x="298" y="155" textAnchor="middle">60 in</text>
+              <line x1="134" y1="22" x2="266" y2="22" stroke="#1b1a19" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+              <rect x="176" y="14" width="48" height="16" fill="#fbf9f5" />
+              <text x="200" y="26" textAnchor="middle">36 in</text>
+              <line x1="284" y1="36" x2="284" y2="248" stroke="#1b1a19" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+              <rect x="270" y="134" width="44" height="16" fill="#fbf9f5" />
+              <text x="292" y="146" textAnchor="middle">60 in</text>
             </motion.g>
           </svg>
-          <span className="demo-flag" style={{ position: "absolute", left: 12, top: 12, zIndex: 5 }}>Demonstration</span>
+          <span className="demo-flag" style={{ position: "absolute", left: 12, bottom: 12, zIndex: 5 }}>Demonstration</span>
           <motion.div className="mprev-card" initial={{ opacity: 0, y: reduce ? 0 : 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={view} transition={t(2.6)}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
               <span className="eyebrow" style={{ fontSize: 10 }}>Example estimate</span>
