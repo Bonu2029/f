@@ -43,13 +43,13 @@ export function Footer() {
             <li><a href="#estimate">Measure & estimate</a></li><li><a href="#book">Book showroom</a></li><li><a href="#gallery">Projects</a></li><li><a href="#faq">FAQ</a></li>
           </ul></div>
           <div><h5>Contact</h5><ul>
-            <li className="ph-txt" style={{ width: "fit-content" }}>{COMPANY.phone}</li>
-            <li className="ph-txt" style={{ width: "fit-content" }}>{COMPANY.email}</li>
-            <li className="ph-txt" style={{ width: "fit-content" }}>{COMPANY.address}</li>
+            <li><a href={COMPANY.phoneHref}>{COMPANY.phone}</a></li>
+            <li><a href={COMPANY.emailHref}>{COMPANY.email}</a></li>
+            <li>{COMPANY.address}</li>
           </ul></div>
         </div>
         <div className="bottom">
-          <span>© {new Date().getFullYear()} {COMPANY.name}. <span className="ph-txt">{COMPANY.license}</span></span>
+          <span>© {new Date().getFullYear()} {COMPANY.name}. {COMPANY.license}.</span>
           <span>Estimates on this site are preliminary. Final pricing requires inspection and confirmed measurements.</span>
         </div>
       </div>

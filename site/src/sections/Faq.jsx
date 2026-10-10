@@ -8,7 +8,7 @@ const FAQ = [
   ["What happens during a mobile showroom visit?", "You request a visit, we bring physical samples to your home, we discuss your openings and priorities together, and then we send you a proposal. Submitting the form is a request — your appointment is confirmed when we contact you."],
   ["Do you remove and dispose of old windows and doors?", "Removal and disposal can be included in your project. You can add them as options in the estimator to see how they affect your range."],
   ["Which areas do you serve?", `We serve Philadelphia and New Jersey. See the service-area list on this page, or contact ${COMPANY.name} to confirm your town.`],
-  ["Are you licensed and insured? What warranties do you offer?", `Please ask us directly — ${COMPANY.license} and warranty details will be listed here once provided.`],
+  ["Are you licensed? What warranties do you offer?", `Yes — ${COMPANY.name} is fully licensed. Ask us about warranty details for your specific project.`],
 ];
 
 export default function Faq() {

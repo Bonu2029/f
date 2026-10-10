@@ -3,16 +3,16 @@
  * Nothing here is invented: unknown facts stay as visible placeholders.
  */
 export const COMPANY = {
-  name: "[Company Name]",
-  shortName: "[Company]",
+  name: "Time & Power",
+  shortName: "Time & Power",
   tagline: "Windows & Doors",
-  phone: "[Phone Number]",
-  phoneHref: null, // e.g. "tel:+12155550000" — leave null until supplied
-  email: "[Email Address]",
-  emailHref: null, // e.g. "mailto:hello@example.com"
-  address: "[Business Address]",
+  phone: "(267) 939-0320",
+  phoneHref: "tel:+12679390320",
+  email: "hellousa84@gmail.com",
+  emailHref: "mailto:hellousa84@gmail.com",
+  address: "60 Platt Pl, Feasterville-Trevose, PA 19053",
   hours: "[Business Hours]",
-  license: "[License / Registration Numbers]",
+  license: "Fully licensed", // add PA HIC # / NJ HIC # here when ready,
   serviceAreas: {
     "Pennsylvania": ["Philadelphia", "[Add neighborhoods / suburbs]"],
     "New Jersey": ["[Add counties / towns]"],

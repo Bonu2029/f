@@ -46,6 +46,7 @@ export default function Measure({ draft, setDraft, unit, setUnit, onPhoto }) {
   const [refPts, setRefPts] = useState([]);
   const [calc, setCalc] = useState(null);
   const [demoRunning, setDemoRunning] = useState(false);
+  const [fileError, setFileError] = useState(null);
   const ar = useArStatus();
   const fileRef = useRef(null);
 
@@ -75,10 +76,11 @@ export default function Measure({ draft, setDraft, unit, setUnit, onPhoto }) {
     const f = e.target.files?.[0];
     if (!f) return;
     const url = URL.createObjectURL(f);
+    setFileError(null);
     try {
       const im = await loadImage(url);
       setImg(im); onPhoto({ file: f, url }); setOpening([]); setRefPts([]); setPhase("mark");
-    } catch { alert("That file couldn't be opened as an image. Please try another photo."); }
+    } catch { setFileError("That file couldn't be opened as an image. Please try another photo."); }
     e.target.value = "";
   };
 
@@ -114,6 +116,7 @@ export default function Measure({ draft, setDraft, unit, setUnit, onPhoto }) {
         ))}
       </div>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
+      {fileError && <p className="err" role="alert" style={{ marginTop: 12 }}>{fileError}</p>}
       <p className="small muted" style={{ marginTop: 12 }}>
         {ar === "supported"
           ? "Your device reports AR support. Live AR measuring isn't enabled in this preview yet — please use a photo with a reference, or your tape measurements."
