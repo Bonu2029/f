@@ -123,22 +123,28 @@ const ship = new THREE.Group();
 scene.add(ship);
 const DECK_TOP = 44;
 
-function windowTextures(seed, cols, lit) {
-  const r = rng(seed), w = 2048, h = 64;
+const SUP_STERN = -128, TOP_FRONT = 30, SUP_FRONT = 84, SUP_BEAM = 24.8;
+
+function superTextures() {
+  // one texture for the whole superstructure side: 10 decks of balconies, 3 m each
+  const r = rng(21), w = 4096, h = 640, len = SUP_FRONT - SUP_STERN, pxm = w / len;
   const base = document.createElement('canvas'), emis = document.createElement('canvas');
   base.width = emis.width = w; base.height = emis.height = h;
   const b = base.getContext('2d'), e = emis.getContext('2d');
   b.fillStyle = '#eef1f5'; b.fillRect(0, 0, w, h);
   e.fillStyle = '#000'; e.fillRect(0, 0, w, h);
-  const cw = w / cols;
-  for (let i = 0; i < cols; i++) {
-    const x = i * cw;
-    b.fillStyle = '#9aa6b6'; b.fillRect(x, 0, 2, h);             // balcony dividers
-    b.fillStyle = '#c9d2de'; b.fillRect(x, h * 0.62, cw, 3);       // balcony rail
-    const on = r() < lit;
-    const col = on ? ['#ffd48a', '#ffdca0', '#ffd090'][Math.floor(r() * 3)] : '#28344a';
-    b.fillStyle = col; b.fillRect(x + cw * 0.18, h * 0.14, cw * 0.64, h * 0.62);
-    if (on) { e.fillStyle = col; e.fillRect(x + cw * 0.18, h * 0.14, cw * 0.64, h * 0.62); }
+  const rowH = h / 10, colW = 3.4 * pxm;
+  for (let k = 0; k < 10; k++) {
+    const y = h - (k + 1) * rowH;
+    b.fillStyle = '#d5dbe4'; b.fillRect(0, y + rowH - 7, w, 7);                    // deck edge band
+    for (let x = 6; x < w - colW; x += colW) {
+      const on = r() < 0.96;
+      const col = k === 0 ? '#ffe1a8' : on ? ['#ffd48a', '#ffdca0', '#ffd090'][Math.floor(r() * 3)] : '#2a3650';
+      b.fillStyle = '#a6b1c0'; b.fillRect(x, y + 4, 3, rowH - 11);                 // balcony divider
+      b.fillStyle = col; b.fillRect(x + colW * 0.16, y + rowH * 0.14, colW * 0.68, rowH * 0.6);
+      if (on || k === 0) { e.fillStyle = col; e.fillRect(x + colW * 0.16, y + rowH * 0.14, colW * 0.68, rowH * 0.6); }
+      b.fillStyle = 'rgba(210,220,232,0.9)'; b.fillRect(x, y + rowH * 0.6, colW, 3); // balcony rail
+    }
   }
   const tb = new THREE.CanvasTexture(base), te = new THREE.CanvasTexture(emis);
   tb.colorSpace = te.colorSpace = THREE.SRGBColorSpace;
@@ -170,19 +176,30 @@ const windowMats = [];
     port.setMatrixAt(n++, m4);
   }
   port.count = n; ship.add(port);
-  // stacked decks with balconies and windows
-  for (let k = 0; k < 10; k++) {
-    const len = 214 - k * 5, wid = 32 - k * 0.6, cx = -14 - k * 2.5;
-    const [tb, te] = windowTextures(20 + k, Math.floor(len / 3.4), 0.9);
+  // superstructure: one smooth side profile with a curved front, extruded across the beam
+  {
+    const prof = new THREE.Shape();
+    const top = DECK_TOP - 0.6;   // the bevel adds 0.6 m, so the finished deck lands on DECK_TOP
+    prof.moveTo(SUP_STERN, 14); prof.lineTo(SUP_STERN, top);
+    prof.lineTo(TOP_FRONT, top);
+    prof.bezierCurveTo(TOP_FRONT + 32, top, SUP_FRONT - 6, 24, SUP_FRONT, 14);
+    prof.lineTo(SUP_STERN, 14);
+    const geo = new THREE.ExtrudeGeometry(prof, { depth: SUP_BEAM - 1.2, bevelEnabled: true, bevelThickness: 0.6, bevelSize: 0.6,
+                                                  bevelSegments: 4, curveSegments: 64 });
+    geo.translate(0, 0, -(SUP_BEAM - 1.2) / 2);
+    const [tb, te] = superTextures();
+    // cap UVs are the profile's x/y in meters; map them onto the window texture
+    for (const tx of [tb, te]) {
+      tx.repeat.set(1 / (SUP_FRONT - SUP_STERN), 1 / (top - 14));
+      tx.offset.set(-SUP_STERN / (SUP_FRONT - SUP_STERN), -14 / (top - 14));
+    }
     const wm = new THREE.MeshStandardMaterial({ map: tb, emissiveMap: te, emissive: '#ffffff', emissiveIntensity: 0.85, roughness: 0.5 });
     windowMats.push(wm);
-    const box = new THREE.Mesh(new THREE.BoxGeometry(len, 3, wid), [white, white, white, white, wm, wm]);
-    box.position.set(cx, 14 + k * 3 + 1.5, 0);
-    ship.add(box);
+    ship.add(new THREE.Mesh(geo, [wm, white]));
   }
-  // bridge windows
-  const bridge = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 26), new THREE.MeshStandardMaterial({ color: '#0d1a2c', emissive: '#203a5a', emissiveIntensity: 0.6, roughness: 0.2 }));
-  bridge.position.set((214 - 8 * 5) / 2 - 14 - 8 * 2.5 + 0.2, 14 + 8 * 3 + 1.5, 0);
+  // bridge with wings, where the top deck meets the curved front
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.2, SUP_BEAM + 5), new THREE.MeshStandardMaterial({ color: '#0e1c30', emissive: '#2a4a70', emissiveIntensity: 0.5, roughness: 0.15 }));
+  bridge.position.set(TOP_FRONT + 3, DECK_TOP - 1.6, 0);
   ship.add(bridge);
   // funnel
   const funnel = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 7, 16, 32), new THREE.MeshStandardMaterial({ color: '#c62f36', roughness: 0.5 }));
@@ -192,38 +209,46 @@ const windowMats = [];
   // lifeboats
   const boats = new THREE.InstancedMesh(new THREE.CapsuleGeometry(1.4, 7, 6, 12), new THREE.MeshStandardMaterial({ color: '#ff7a1a', roughness: 0.45 }), 40);
   n = 0;
-  for (const side of [-1, 1]) for (let x = -95; x < 70; x += 12) {
-    m4.makeRotationZ(Math.PI / 2); m4.setPosition(x, 19.5, side * 16.6); boats.setMatrixAt(n++, m4);
+  for (const side of [-1, 1]) for (let x = -110; x < 50; x += 12) {
+    m4.makeRotationZ(Math.PI / 2); m4.setPosition(x, 17.6, side * (SUP_BEAM / 2 + 1.6)); boats.setMatrixAt(n++, m4);
   }
   boats.count = n; ship.add(boats);
-  // string lights along the top deck
+  // string lights along the top deck (kept inside the deck's edges)
   const bulbGeo = new THREE.SphereGeometry(0.07, 8, 6);
   const cols = ['#ff5a5a', '#ffd45a', '#5aff9a', '#6aa8ff'].map((c) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false }));
-  for (const z of [-11.5, 11.5]) {
-    for (let i = 0; i < 240; i++) {
-      const x = -95 + i * 0.75, seg = (x + 95) % 9 / 9;
-      const b = new THREE.Mesh(bulbGeo, cols[i % 4]);
+  const RAIL_Z = SUP_BEAM / 2 - 0.2, X0 = SUP_STERN + 8, X1 = TOP_FRONT - 4;
+  for (const z of [-(RAIL_Z - 0.7), RAIL_Z - 0.7]) {
+    for (let x = X0; x <= X1; x += 0.75) {
+      const seg = ((x - X0) % 9) / 9;
+      const b = new THREE.Mesh(bulbGeo, cols[Math.round((x - X0) / 0.75) % 4]);
       b.position.set(x, DECK_TOP + 4.6 - Math.sin(seg * Math.PI) * 0.7, z);
       ship.add(b);
     }
-    for (let x = -95; x <= 85; x += 9) {
+    for (let x = X0; x <= X1 + 0.01; x += 9) {
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4.6, 6), navy);
       pole.position.set(x, DECK_TOP + 2.3, z); ship.add(pole);
     }
   }
-  // deck floor (wood) and glass railing near our characters
+  // deck floor (wood) and glass railing around the top deck
   const wood = document.createElement('canvas'); wood.width = 512; wood.height = 512;
   const wg = wood.getContext('2d');
   for (let i = 0; i < 32; i++) { wg.fillStyle = i % 2 ? '#8a6a4a' : '#7c5e40'; wg.fillRect(0, i * 16, 512, 15); wg.fillStyle = '#4a3624'; wg.fillRect(0, i * 16 + 15, 512, 1); }
-  const wt = new THREE.CanvasTexture(wood); wt.colorSpace = THREE.SRGBColorSpace; wt.wrapS = wt.wrapT = THREE.RepeatWrapping; wt.repeat.set(20, 2);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(90, 24.6), new THREE.MeshStandardMaterial({ map: wt, roughness: 0.7 }));
-  floor.rotation.x = -Math.PI / 2; floor.position.set(-20, DECK_TOP + 0.01, 0); ship.add(floor);
-  for (const z of [-12.2, 12.2]) {
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(180, 1.05), new THREE.MeshStandardMaterial({ color: '#9fc4e0', transparent: true, opacity: 0.18, roughness: 0.05, side: THREE.DoubleSide }));
-    glass.position.set(-10, DECK_TOP + 0.55, z); ship.add(glass);
-    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 180, 8), new THREE.MeshStandardMaterial({ color: '#d7dde5', metalness: 0.8, roughness: 0.25 }));
-    rail.rotation.z = Math.PI / 2; rail.position.set(-10, DECK_TOP + 1.1, z); ship.add(rail);
-  }
+  const wt = new THREE.CanvasTexture(wood); wt.colorSpace = THREE.SRGBColorSpace; wt.wrapS = wt.wrapT = THREE.RepeatWrapping; wt.repeat.set(30, 2);
+  const deckLen = TOP_FRONT - SUP_STERN - 2, deckMid = (TOP_FRONT + SUP_STERN) / 2;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(deckLen, SUP_BEAM - 0.4), new THREE.MeshStandardMaterial({ map: wt, roughness: 0.7 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(deckMid, DECK_TOP + 0.02, 0); ship.add(floor);
+  const glassM = new THREE.MeshStandardMaterial({ color: '#9fc4e0', transparent: true, opacity: 0.18, roughness: 0.05, side: THREE.DoubleSide });
+  const railM = new THREE.MeshStandardMaterial({ color: '#d7dde5', metalness: 0.8, roughness: 0.25 });
+  const railSide = (len, x, z, rotY) => {
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(len, 1.05), glassM);
+    glass.position.set(x, DECK_TOP + 0.55, z); glass.rotation.y = rotY; ship.add(glass);
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, len, 8), railM);
+    rail.rotation.set(0, rotY, Math.PI / 2); rail.position.set(x, DECK_TOP + 1.1, z); ship.add(rail);
+  };
+  railSide(deckLen, deckMid, -RAIL_Z, 0);
+  railSide(deckLen, deckMid, RAIL_Z, 0);
+  railSide(RAIL_Z * 2, TOP_FRONT - 1, 0, Math.PI / 2);
+  railSide(RAIL_Z * 2, SUP_STERN + 1, 0, Math.PI / 2);
   const deckLamp = new THREE.PointLight('#ffcf9a', 30, 14, 1.6);
   deckLamp.position.set(-1, DECK_TOP + 3.4, 10); ship.add(deckLamp);
   const deckLamp2 = new THREE.PointLight('#ffb3c8', 18, 12, 1.6);
