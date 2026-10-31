@@ -11,3 +11,7 @@ Instagram post file next to the MP4, named `instagram_<episode>.md` (e.g. `after
 3. **Hashtags**: 15–25 relevant hashtags (series, genre, animation, AI-made, survival/thriller, storytelling), placed at the end.
 
 Also paste the caption in the chat reply so it can be copied directly.
+
+## AFTER THE FLASH — story canon (audience choices)
+- Ep1 poll result: **B · KEEP IT SHUT** (the gate stays locked). Ep2 script: `after-the-flash/ep2/script.md`.
+- Code pieces so far: Ep1 = S, Ep2 = H (7-letter word across the season).
