@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>After the Flash · Episode 1</title>
+<style>
+/*FONTS*/
+html,body{margin:0;height:100%;background:#05060a;color:#fff;font-family:Poppins,"Segoe UI",Arial,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#c{height:100vh;width:calc(100vh * 9 / 16);max-width:100vw;max-height:calc(100vw * 16 / 9);display:block;background:#000}
+#overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(ellipse at center,rgba(5,6,10,.35),rgba(5,6,10,.85))}
+#overlay h1{margin:0;font-weight:800;letter-spacing:.06em;font-size:clamp(26px,5vh,54px);text-shadow:0 4px 24px rgba(0,0,0,.6)}
+#overlay p{margin:0;opacity:.8;font-weight:700;font-size:clamp(13px,2vh,18px)}
+#play{font:800 clamp(18px,3vh,28px) Poppins,Arial,sans-serif;color:#fff;background:linear-gradient(90deg,#e0182d,#ff4d5a);border:0;border-radius:999px;padding:.7em 2.2em;cursor:pointer;box-shadow:0 10px 40px rgba(224,24,45,.5)}
+#play:disabled{opacity:.6;cursor:wait}
+#status,#perf{font-size:13px;opacity:.7;min-height:1em}
+#perf{position:fixed;right:8px;bottom:6px}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<div id="overlay"><h1>AFTER THE FLASH</h1><p>EPISODE 1 · HARBOR STREET</p><button id="play">▶ Play</button><div id="status"></div></div>
+<div id="perf"></div>
+<script>
+/*NARRATION*/
+/*CODE*/
+</script>
+</body>
+</html>
