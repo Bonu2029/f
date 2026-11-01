@@ -10,7 +10,7 @@ async function renderMix(narrArrayBuffer, sampleRate = 48000) {
   const mkNoise = (secs, brown) => { const b = ctx.createBuffer(1, secs * sampleRate, sampleRate), d = b.getChannelData(0); let last = 0; for (let i = 0; i < d.length; i++) { const w = ar() * 2 - 1; if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; } return b; };
   const WHITE = mkNoise(4, false), BROWN = mkNoise(4, true);
   const master = ctx.createDynamicsCompressor(); master.threshold.value = -10; master.ratio.value = 3; master.attack.value = 0.01; master.release.value = 0.2;
-  const mGain = ctx.createGain(); mGain.gain.value = 1.1; master.connect(mGain); mGain.connect(ctx.destination);
+  const mGain = ctx.createGain(); mGain.gain.value = 0.95; master.connect(mGain); mGain.connect(ctx.destination);
   const duck = ctx.createGain(); duck.connect(master);
   const music = ctx.createGain(); music.gain.value = 0.55; music.connect(duck);
   const sfx = ctx.createGain(); sfx.gain.value = 0.9; sfx.connect(duck);
@@ -114,6 +114,6 @@ async function renderMix(narrArrayBuffer, sampleRate = 48000) {
   for (let k = 0; k < 5; k++) tone(EV.ring + k, 0.06, { f: 1800, g: 0.08, r: 0.05 });
   tone(EV.ep2, 2.5, { f: 55, fEnd: 41, g: 0.5, a: 0.01, r: 2.2 }); noise(EV.ep2, 1.5, { brown: true, filters: [['lowpass', 200]], g: 0.5, r: 1.3 });
   [SC(22).start, EV.ep2, EV.course].forEach(t => noise(t - 0.05, 0.4, { filters: [['bandpass', 800, 1, 3000]], g: 0.08, a: 0.25, r: 0.15 }));
-  mGain.gain.setValueAtTime(1.1, TOTAL - 1.2); mGain.gain.linearRampToValueAtTime(0, TOTAL);
+  mGain.gain.setValueAtTime(0.95, TOTAL - 1.2); mGain.gain.linearRampToValueAtTime(0, TOTAL);
   return await ctx.startRendering();
 }
