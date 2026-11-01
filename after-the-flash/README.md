@@ -1,6 +1,6 @@
 # AFTER THE FLASH
 
-Episodes: **Episode 1** (this folder: `episode1.html`, `AfterTheFlash_Ep1.mp4`, `shots/`) · **Episode 2 "Keep It Shut"** (`ep2/`: `episode2.html`, `AfterTheFlash_Ep2.mp4`, `shots/`, `instagram_ep2.md`).
+Episodes: **Episode 1** (this folder: `episode1.html`, `AfterTheFlash_Ep1.mp4`, `shots/`) · **Episode 2 "Keep It Shut"** (`ep2/`) · **Episode 3 "Wake the Man"** (`ep3/`). Each episode folder holds `episodeN.html`, `AfterTheFlash_EpN.mp4`, `shots/`, `instagram_epN.md`, `script.md`.
 Every episode shares one engine (`src/`); an episode adds its own timing, UI overrides, sound mix and scene file.
 
 ## Episode 1
@@ -29,7 +29,7 @@ python3 tools/timing.py ep1          # silencedetect on narration.mp3 -> src/tim
 python3 tools/build.py ep1           # bundle src/ + narration + fonts -> episode1.html
 node tools/stills.js                 # shots/sceneNN_*.png (middle of each scene); --times 1.5,20 for any times
 node tools/render.js --workers 4     # frames (chunked, parallel) + offline audio -> AfterTheFlash_Ep1.mp4
-# Episode 2: same steps with  ep2  /  --ep ep2   (outputs in ep2/)
+# Episodes 2+: same steps with  epN  /  --ep epN   (outputs in epN/)
 ```
 `render.js` flags: `--from/--to` frame range, `--keep` keep `.frames/` (re-runs skip existing frames),
 `--force` redraw frames, `--audio` re-render the mix only.
@@ -69,3 +69,12 @@ Captions show only while their line is spoken.
 | `ep2/src/ui2.js` | Tracker HOUR 3→4→5, Survival Rule #2, supplies (water highlight, phone 41%→38%), vote-result chip, code piece 2/7 (H), Ep3 choice card |
 | `ep2/src/audio2.js` | Ep2 mix: underground bed, keys, gate, coughs, whine, phone blips, heartbeat, child's laugh with tunnel reverb, lights-out clunks, pad |
 | `ep2/src/scenes2.js` | `e2scene1` … `e2scene20`: recap, key hand, man sits, "please", station, Biscuit, the girl, hour four, Rosa, rule, phone, hour five, asleep, gone, rabbit, key, sniff, tunnel laugh, lights out, choice |
+
+## Episode 3 + shared series files
+| Module | Contents |
+|---|---|
+| `src/ui_series.js` | On-screen system for Ep2+, driven by each episode's `EPCFG` (tracker steps, rule card, supplies, code chip, vote result, choice card) |
+| `src/scene_kit2.js` | Ep2+ helpers: `girlFace`, `keyHand`, `manSitting`, `girlStanding`, `rewindFX`, `floorSet`, `rabbitOnFloor`, `rabbitTag`, `tunnelView`, `redP` |
+| `ep3/src/cfg3.js` | Ep3 EPCFG (HOUR 5→6, Rule #3, phone 38%→35%, code piece 3/7 = E, Ep2 vote result, Ep4 choice) |
+| `ep3/src/scenes3.js` | `flashlit` (phone-flashlight cone that reveals the dark scene), `e3scene1` … `e3scene22` incl. the Ep1-street flashback (uses `src/scenes_street.js`) and the crayon drawing |
+| `ep3/src/audio3.js` | Ep3 mix |

@@ -89,7 +89,47 @@ def ep2_events(L, word, words):
           'gone': L(31), 'laugh': word('laughs', L(39), L(39)+0.4), 'lightsOut': L(40), 'exceptOne': L(41),
           'choiceA': L(43), 'choiceB': L(44)}
 EP2['events'] = ep2_events
-EPISODES = {'ep1': EP1, 'ep2': EP2}
+
+EP3 = dict(
+  mp3='ep3/narration.mp3', words='ep3/words.json', out='ep3/src/timing.js',
+  LINES=[
+ "Most of you said [r]wake the man.[/r]",
+ "You turn on your phone light.", "[r]Thirty-five percent.[/r]",
+ "You walk up the stairs to the gate.",
+ "[b]\"Hey! Hey! Wake up!\"[/b]",
+ "You shake the bars.", "He doesn't move.",
+ "Then… his eyes [g]open.[/g]",
+ "He looks at the [r]empty step[/r] beside him.",
+ "[b]\"Where is she?\"[/b]",
+ "Rosa holds up the stuffed rabbit.", "[b]\"It was inside the gate,\"[/b] she says.",
+ "The man goes [r]pale.[/r]",
+ "[b]\"She's not my daughter.\"[/b]",
+ "[b]\"I found her on the street.\"[/b]", "[b]\"She grabbed my hand.\"[/b]",
+ "[b]\"She said the gate would open for her.\"[/b]",
+ "Nobody says a word.",
+ "[g]Rule three:[/g]", "[g]If you are outside, take off your outer clothes.[/g]", "[g]Brush off the ash.[/g]", "It removes [g]most of the danger.[/g]",
+ "Rosa pushes a trash bag through the bars.", "The man drops his jacket into it.",
+ "Something falls out of the pocket.",
+ "A child's [g]drawing.[/g]", "The station.", "The tunnel.", "And one letter, circled in [r]red.[/r]",
+ "Biscuit turns toward the tunnel…", "and [r]growls.[/r]",
+ "The last red light [r]flickers.[/r]",
+ "Then… a small voice, from the dark:",
+ "[b]\"Biscuit… come here, boy.\"[/b]",
+ "She knows his [r]name.[/r]",
+ "So… what would [g]you[/g] do?",
+ "[b]Open the gate and let the man in…[/b]",
+ "[r]or go after the voice?[/r]",
+  ],
+  MERGE=[(4,6),(13,14),(31,32),(36,38),(39,40),(42,43),(45,46)],
+  SCENE_FIRST=[0,1,3,4,5,7,8,9,10,12,13,14,16,17,18,22,24,29,31,32,34,35],
+  TITLES=["Recap","Phone light","Up the stairs","Wake up","Shake the bars","Eyes open","Empty step","Where is she","Rosa and the rabbit","Goes pale","Not my daughter","Flashback","The gate would open","Silence","Rule card","Trash bag","The drawing","Biscuit turns","The last light","The voice","Knows his name","Choice"],
+)
+def ep3_events(L, word, words):
+  return {'battery': L(2), 'eyesOpen': word('open', L(7), L(7)+0.9), 'rule': L(18), 'ruleLine2': L(19), 'ruleLine3': L(20), 'ruleLine4': L(21),
+          'jacket': L(23), 'falls': L(24), 'drawing': L(25), 'station': L(26), 'tunnel': L(27), 'circled': L(28) + 0.9,
+          'growl': L(30), 'flicker': L(31), 'voice': L(33), 'choiceA': L(36), 'choiceB': L(37)}
+EP3['events'] = ep3_events
+EPISODES = {'ep1': EP1, 'ep2': EP2, 'ep3': EP3}
 
 def detect(mp3):
     dur = float(subprocess.run(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',mp3],capture_output=True,text=True).stdout)

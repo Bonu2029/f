@@ -2733,17 +2733,26 @@ function gateRed(g, t, o = {}) {
   layer(g, 1, g => { glow(g, 100, 1000, 420, '#ff3b30', 0.3 + 0.2 * p); glow(g, 980, 1000, 420, '#ff3b30', 0.3 + 0.2 * p); drawAsh(g, t, [UPV.top.x - 60, UPV.top.y - 60, UPV.top.w + 120, 1100], 70, 0.8); if (o.over) o.over(g); });
 }
 
-// ---- ep2/src/ui2.js
+// ---- src/ui_series.js
 // ============================================================================
-// ep2/src/ui2.js — Episode 2 overrides of the on-screen system (later function
-// declarations replace the shared ones from src/ui.js).
+// ui_series.js — on-screen system for Episode 2 onward, driven by a per-episode
+// config object EPCFG (defined in epN/src/cfgN.js). Later declarations replace
+// the Episode 1 versions from src/ui.js.
+//
+// EPCFG = {
+//   clock:   [[t, 'HOUR 3', '11:30 AM'], ...]            tracker steps (first t ignored)
+//   rule:    {num, t0, t1, h, lines: [[text, t, colour, size, y], ...]}
+//   supplies:{t0, water, food, light, phone: [[t, '41%'], ...], phoneRedAt, waterHL: [a, b]}
+//   code:    {letter, n, word}                            code-piece chip
+//   vote:    {ep, a, b, won: 'a'|'b'}                     previous episode's vote result
+//   choice:  {t0, a, b, next}                             this episode's choice card
+// }
 // ============================================================================
-const SC = n => SCENES_T[n - 1];
-function clockText(t) { return t >= EV.hour5 ? ['HOUR 5', '1:30 PM'] : t >= EV.hour4 ? ['HOUR 4', '12:30 PM'] : ['HOUR 3', '11:30 AM']; }
+function clockText(t) { let c = EPCFG.clock[0]; EPCFG.clock.forEach(s => { if (t >= s[0]) c = s; }); return [c[1], c[2]]; }
 function drawTracker(g, t, alpha) {
   if (alpha <= 0) return;
   const [d, c] = clockText(t);
-  const swaps = [EV.hour4, EV.hour5].map(s => seg(t, s, s + 0.45)).find(v => v > 0 && v < 1);
+  const swaps = EPCFG.clock.slice(1).map(s => seg(t, s[0], s[0] + 0.45)).find(v => v > 0 && v < 1);
   g.save(); g.globalAlpha = alpha;
   const w = 520, h = 120, x = (W - w) / 2, y = 56;
   glassPanel(g, x, y, w, h, 28);
@@ -2759,35 +2768,31 @@ function drawTracker(g, t, alpha) {
   g.restore(); g.textBaseline = 'alphabetic';
 }
 function drawCountdown() {}
-// ---------------------------------------------------------------- SURVIVAL RULE #2
 function drawRuleCard(g, t) {
-  const t0 = EV.rule + 0.05, t1 = SC(11).start - 0.2;
+  const R = EPCFG.rule, t0 = R.t0, t1 = R.t1;
   if (t < t0 || t > t1 + 0.4) return;
   const u = easeOutBack(seg(t, t0, t0 + 0.55)), out = seg(t, t1, t1 + 0.35);
-  const w = 900, h = 560, x = (W - w) / 2, y = 520 + (1 - u) * 500 + out * 60;
+  const w = 900, h = R.h, x = (W - w) / 2, y = 520 + (1 - u) * 500 + out * 60;
   g.save(); g.globalAlpha = clamp(u * 1.4) * (1 - out);
   g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 50; g.shadowOffsetY = 18;
   g.fillStyle = '#0f1e3d'; rrect(g, x, y, w, h, 34); g.fill(); g.shadowColor = 'transparent';
   g.save(); rrect(g, x, y, w, h, 34); g.clip(); g.fillStyle = lingrad(g, x, 0, x + w, 0, [[0, '#d4a72c'], [0.5, '#ffe08a'], [1, '#d4a72c']]); g.fillRect(x, y, w, 22); g.restore();
   g.strokeStyle = 'rgba(255,224,138,0.35)'; g.lineWidth = 3; rrect(g, x + 2, y + 2, w - 4, h - 4, 32); g.stroke();
-  g.fillStyle = '#ffd36b'; g.font = `800 40px ${F_UI}`; g.textAlign = 'center'; g.fillText('SURVIVAL RULE #2', W / 2, y + 100);
+  g.fillStyle = '#ffd36b'; g.font = `800 40px ${F_UI}`; g.textAlign = 'center'; g.fillText(`SURVIVAL RULE #${R.num}`, W / 2, y + 100);
   g.fillStyle = 'rgba(255,211,107,0.4)'; g.fillRect(W / 2 - 160, y + 124, 320, 4);
-  const L = [['STAY INSIDE', EV.ruleLine2, '#ffffff', 78], ['AT LEAST 24 HOURS.', EV.ruleLine2 + 1.0, '#ffffff', 64], ['THE FIRST DAY IS', EV.ruleLine3, '#ff8a80', 46], ['THE MOST DANGEROUS.', EV.ruleLine3 + 0.9, '#ff8a80', 46]];
-  const ys = [222, 312, 408, 466];
-  L.forEach(([txt, tt, col, size], k) => {
+  R.lines.forEach(([txt, tt, col, size, ly]) => {
     const a = seg(t, tt - 0.1, tt + 0.25);
     g.globalAlpha = clamp(u * 1.4) * (1 - out) * (0.18 + 0.82 * a);
-    g.fillStyle = col; g.font = `800 ${size}px ${F_UI}`; g.fillText(txt, W / 2, y + ys[k]);
+    g.fillStyle = col; g.font = `800 ${size}px ${F_UI}`; g.fillText(txt, W / 2, y + ly);
   });
   g.restore();
 }
-// ---------------------------------------------------------------- SUPPLIES (water highlight, phone 41% -> 38%)
 function drawSupplies(g, t) {
-  const t0 = 0.4; if (t < t0) return;
-  const u = easeOutBack(seg(t, t0, t0 + 0.6));
-  const phone = t >= EV.battery ? '38%' : '41%', drop = Math.max(0, 1 - Math.abs(t - EV.battery - 0.15) * 3);
-  const water = t >= SC(5).start + 1.7 && t < SC(6).start ? pulse(t, 0.6) : 0;
-  const items = [['water', 'WATER', '1', water], ['food', 'FOOD', '0', 0], ['light', 'LIGHT', '100%', 0], ['phone', 'PHONE', phone, drop]];
+  const S = EPCFG.supplies; if (t < S.t0) return;
+  const u = easeOutBack(seg(t, S.t0, S.t0 + 0.6));
+  let phone = S.phone[0][1], drop = 0; S.phone.forEach(([pt, v], k) => { if (t >= pt) phone = v; if (k > 0) drop = Math.max(drop, Math.max(0, 1 - Math.abs(t - pt - 0.15) * 3)); });
+  const water = S.waterHL && t >= S.waterHL[0] && t < S.waterHL[1] ? pulse(t, 0.6) : 0;
+  const items = [['water', 'WATER', S.water, water], ['food', 'FOOD', S.food, 0], ['light', 'LIGHT', S.light, 0], ['phone', 'PHONE', phone, drop]];
   const w = 960, h = 92, x = (W - w) / 2, y = 196 + (1 - u) * -40;
   g.save(); g.globalAlpha = clamp(u);
   glassPanel(g, x, y, w, h, 24, 0.58);
@@ -2796,14 +2801,13 @@ function drawSupplies(g, t) {
     if (hl > 0) { g.save(); g.globalAlpha *= hl; g.fillStyle = 'rgba(255,80,70,0.35)'; rrect(g, cx - 14, y + 8, 216, h - 16, 18); g.fill(); g.restore(); }
     drawSupplyIcon(g, ic, cx + 22, y + h / 2);
     g.fillStyle = 'rgba(255,255,255,0.7)'; g.font = `700 20px ${F_UI}`; g.textAlign = 'left'; g.fillText(lab, cx + 56, y + 38);
-    g.fillStyle = val === '0' || (ic === 'phone' && t >= EV.battery) ? '#ff6b5e' : '#ffffff'; g.font = `800 32px ${F_UI}`; g.fillText(val, cx + 56, y + 72);
+    g.fillStyle = val === '0' || (ic === 'phone' && t >= S.phoneRedAt) ? '#ff6b5e' : '#ffffff'; g.font = `800 32px ${F_UI}`; g.fillText(val, cx + 56, y + 72);
   });
   g.restore();
 }
-// ---------------------------------------------------------------- CODE CHIP (piece 2/7 = H)
 function drawCodeChip(g, t, px, py, t0) {
   if (t < t0) return;
-  const u = easeOutBack(seg(t, t0, t0 + 0.5)), cx = 320, cy = 1000;
+  const C = EPCFG.code, u = easeOutBack(seg(t, t0, t0 + 0.5)), cx = 320, cy = 1000;
   g.save(); g.globalAlpha = clamp(u);
   g.strokeStyle = '#ffd36b'; g.lineWidth = 4; g.setLineDash([3, 12]); g.lineCap = 'round'; g.lineDashOffset = -t * 40;
   line(g, cx + 160, cy, lerp(cx + 160, px, clamp(u)), lerp(cy, py, clamp(u))); g.setLineDash([]);
@@ -2812,32 +2816,31 @@ function drawCodeChip(g, t, px, py, t0) {
   g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 20; g.fillStyle = 'rgba(14,18,30,0.85)'; rrect(g, -180, -40, 360, 80, 40); g.fill(); g.shadowColor = 'transparent';
   g.strokeStyle = '#ffd36b'; g.lineWidth = 3; rrect(g, -178, -38, 356, 76, 38); g.stroke();
   g.fillStyle = lingrad(g, -160, -20, -120, 20, [[0, '#ffe08a'], [1, '#b8861a']]); circle(g, -138, 0, 24); g.fill();
-  g.fillStyle = '#1a1a1a'; g.font = `800 28px ${F_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H', -138, 2);
-  g.fillStyle = '#ffd36b'; g.font = `800 30px ${F_UI}`; g.fillText('CODE PIECE 2/7', 22, 2);
-  g.font = `700 20px ${F_UI}`; g.fillStyle = 'rgba(255,255,255,0.75)'; g.fillText('S · H · _ · _ · _ · _ · _', 22, 64);
+  g.fillStyle = '#1a1a1a'; g.font = `800 28px ${F_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(C.letter, -138, 2);
+  g.fillStyle = '#ffd36b'; g.font = `800 30px ${F_UI}`; g.fillText(`CODE PIECE ${C.n}/7`, 22, 2);
+  g.font = `700 20px ${F_UI}`; g.fillStyle = 'rgba(255,255,255,0.75)'; g.fillText(C.word, 22, 64);
   g.restore(); g.textBaseline = 'alphabetic';
 }
-// ---------------------------------------------------------------- VOTE RESULT CHIP (recap)
 function drawVoteResult(g, t, t0) {
   if (t < t0) return;
-  const u = easeOutBack(seg(t, t0, t0 + 0.5));
+  const V = EPCFG.vote, u = easeOutBack(seg(t, t0, t0 + 0.5));
   const w = 860, h = 300, x = (W - w) / 2, y = 1440;
   g.save(); g.globalAlpha = clamp(u); g.translate(W / 2, y + h / 2); g.scale(u, u); g.translate(-W / 2, -(y + h / 2));
   glassPanel(g, x, y, w, h, 36, 0.72);
-  g.fillStyle = '#ffd36b'; g.font = `800 30px ${F_UI}`; g.textAlign = 'center'; g.fillText('EPISODE 1 · YOUR VOTE', W / 2, y + 58);
-  // A (lost)
-  g.globalAlpha *= 0.45; g.fillStyle = '#1e6bff'; rrect(g, x + 40, y + 88, w - 80, 70, 35); g.fill();
-  g.fillStyle = '#fff'; g.font = `800 34px ${F_UI}`; g.textBaseline = 'middle'; g.fillText('A · OPEN THE GATE', W / 2, y + 124);
-  g.globalAlpha /= 0.45;
-  // B (won)
-  const glowA = 0.6 + 0.4 * Math.sin(t * 6);
-  g.shadowColor = '#ff3b30'; g.shadowBlur = 30 * glowA; g.fillStyle = lingrad(g, x, 0, x + w, 0, [[0, '#e0182d'], [1, '#ff4d5a']]); rrect(g, x + 40, y + 176, w - 80, 84, 42); g.fill(); g.shadowColor = 'transparent';
-  g.fillStyle = '#fff'; g.font = `800 40px ${F_UI}`; g.fillText('B · KEEP IT SHUT  ✓', W / 2, y + 220);
+  g.fillStyle = '#ffd36b'; g.font = `800 30px ${F_UI}`; g.textAlign = 'center'; g.fillText(`EPISODE ${V.ep} · YOUR VOTE`, W / 2, y + 58);
+  const opt = (label, yy, hh, won, cols) => {
+    if (!won) { g.save(); g.globalAlpha *= 0.45; g.fillStyle = cols[0]; rrect(g, x + 40, yy, w - 80, hh, hh / 2); g.fill(); g.fillStyle = '#fff'; g.font = `800 34px ${F_UI}`; g.textBaseline = 'middle'; g.fillText(label, W / 2, yy + hh / 2 + 1); g.restore(); return; }
+    const glowA = 0.6 + 0.4 * Math.sin(t * 6);
+    g.shadowColor = cols === A ? '#38a1ff' : '#ff3b30'; g.shadowBlur = 30 * glowA; g.fillStyle = lingrad(g, x, 0, x + w, 0, [[0, cols[0]], [1, cols[1]]]); rrect(g, x + 40, yy, w - 80, hh, hh / 2); g.fill(); g.shadowColor = 'transparent';
+    g.fillStyle = '#fff'; g.font = `800 40px ${F_UI}`; g.textBaseline = 'middle'; g.fillText(label + '  ✓', W / 2, yy + hh / 2 + 2);
+  };
+  const A = ['#1e6bff', '#38a1ff'], B = ['#e0182d', '#ff4d5a'];
+  opt(V.a, y + 88, V.won === 'a' ? 84 : 70, V.won === 'a', A);
+  opt(V.b, y + 176, V.won === 'b' ? 84 : 70, V.won === 'b', B);
   g.restore(); g.textBaseline = 'alphabetic';
 }
-// ---------------------------------------------------------------- CHOICE CARD (Ep2 → Ep3)
 function drawChoiceCard(g, t) {
-  const t0 = SC(20).start; if (t < t0) return;
+  const C = EPCFG.choice, t0 = C.t0; if (t < t0) return;
   const u = easeOutBack(seg(t, t0, t0 + 0.6)), out = seg(t, EV.ep2 - 0.3, EV.ep2);
   const w = 900, h = 820, x = (W - w) / 2, y = 420 + (1 - u) * 300;
   g.save(); g.globalAlpha = clamp(u) * (1 - out);
@@ -2855,8 +2858,8 @@ function drawChoiceCard(g, t) {
     g.font = `800 48px ${F_UI}`; g.fillText(label, 30, 3);
     g.restore();
   };
-  btn(EV.choiceA, y + 330, '#1e6bff', '#38a1ff', 'FOLLOW THE LAUGH', 'A');
-  btn(EV.choiceB, y + 490, '#e0182d', '#ff4d5a', 'WAKE THE MAN', 'B');
+  btn(EV.choiceA, y + 330, '#1e6bff', '#38a1ff', C.a, 'A');
+  btn(EV.choiceB, y + 490, '#e0182d', '#ff4d5a', C.b, 'B');
   if (t >= EV.ring) {
     const r = seg(t, EV.ring, EV.ring + 5), ru = easeOut(seg(t, EV.ring, EV.ring + 0.4));
     g.globalAlpha = clamp(u) * (1 - out) * ru;
@@ -2871,12 +2874,151 @@ function drawChoiceCard(g, t) {
     const e = easeOutBack(seg(t, EV.ep2, EV.ep2 + 0.6));
     g.save(); g.globalAlpha = clamp(e); g.translate(W / 2, 760); g.scale(e, e);
     g.fillStyle = '#ffd36b'; g.font = `800 44px ${F_UI}`; g.textAlign = 'center'; g.fillText('AFTER THE FLASH', 0, -90);
-    g.fillStyle = '#fff'; g.font = `800 96px ${F_UI}`; g.fillText('EPISODE 3', 0, 20);
+    g.fillStyle = '#fff'; g.font = `800 96px ${F_UI}`; g.fillText(`EPISODE ${C.next}`, 0, 20);
     g.fillStyle = 'rgba(255,255,255,0.85)'; g.font = `800 56px ${F_UI}`; g.fillText('COMING SOON', 0, 100);
     g.fillStyle = '#ff3b30'; g.fillRect(-140, 140, 280, 6);
     g.restore();
   }
 }
+
+// ---- src/scene_kit2.js
+// ============================================================================
+// scene_kit2.js — underground helpers shared from Episode 2 onward (girl close-up,
+// Rosa's key hand, man sitting, rewind recap FX, floor-level set, rabbit, tunnel view).
+// ============================================================================
+const redP = t => 0.6 + 0.4 * Math.pow(pulse(t - RED_T0, 1.2), 2);
+function girlFace(g, t, o = {}) {
+  layer(g, 1, g => {
+    g.fillStyle = '#5a5250'; g.fillRect(-200, -200, W + 400, H + 400);
+    drawAsh(g, t, [-200, -200, W + 400, H + 400], 120, 0.9);
+    g.fillStyle = GIRL.top; ellipse(g, 540, 1650, 460, 420); g.fill();
+    g.fillStyle = GIRL.topDark; ellipse(g, 540, 1260, 300, 90); g.fill();
+    // ash settling on her raincoat — it does not melt
+    g.fillStyle = 'rgba(215,210,204,0.9)'; for (let k = 0; k < (o.ash || 0); k++) { circle(g, 200 + hash(k) * 680, 1290 + hash(k + 3) * 260, 4 + hash(k + 5) * 5); g.fill(); }
+    g.save(); g.translate(540, 820); g.rotate(o.tilt || 0);
+    drawHeadFront(g, GIRL, 0, 0, 270, { t, expr: 'neutral', look: [0, 0], noBlink: true, noRim: true });
+    g.restore();
+    drawRabbit(g, 760, 1260, 9, t, Math.sin(t * 1.4) * 0.25);
+    for (let k = 0; k < 6; k++) { const x = 40 + k * 200; limb(g, x, -200, x, H + 200, 34, '#6b6f78'); limb(g, x + 8, -200, x + 8, H + 200, 8, '#b9bec6'); }
+    for (let y = -400; y < H; y += 260) for (let k = 0; k < 6; k++) { g.strokeStyle = '#5e626b'; g.lineWidth = 18; line(g, 40 + k * 200, y, 240 + k * 200, y + 260); }
+  });
+  redLight(g, t, 0.75);
+}
+// Rosa's hand with the key ring; close = 0 open palm … 1 fist
+function keyHand(g, t, close) {
+  g.fillStyle = '#2a1418'; g.fillRect(0, 0, W, H);
+  blurDraw(g, 6, bg => bg.drawImage(ST.c, 0, 0));
+  layer(g, 1, g => {
+    // palm under the ring + sleeve with the orange vest cuff
+    g.fillStyle = ROSA.top; g.save(); g.translate(250, 520); g.rotate(0.55); rrect(g, -470, -120, 520, 240, 110); g.fill(); g.fillStyle = '#ff7a00'; g.fillRect(-110, -120, 70, 240); g.fillStyle = '#e6eef5'; g.fillRect(-80, -120, 18, 240); g.restore();
+    // palm/fist gripping the top of the ring (keys hang out underneath)
+    const hy = 690 - close * 20;
+    g.fillStyle = ROSA.skin; ellipse(g, 520, hy, 210, 140, -0.15); g.fill();
+    g.fillStyle = shade(ROSA.skin, 0.08); ellipse(g, 360, hy + 40, 70, 120, -0.9); g.fill();               // thumb
+    const sw = Math.sin(t * 3) * 0.08 * (1 - close);
+    g.save(); g.translate(560, 800); g.rotate(sw);
+    for (let k = 0; k < 9; k++) {
+      const a = Math.PI / 2 + (k - 4) * 0.16, kx = Math.cos(a) * 110, ky = Math.sin(a) * 110;
+      g.save(); g.translate(kx, ky); g.rotate((k - 4) * 0.12 + Math.sin(t * 4 + k) * 0.05 * (1 - close));
+      const col = k % 3 === 0 ? '#d4af37' : k % 3 === 1 ? '#b8bec7' : '#9aa3ad';
+      g.fillStyle = col; circle(g, 0, 36, 34); g.fill(); g.fillStyle = '#2a1418'; circle(g, 0, 20, 9); g.fill();
+      g.fillStyle = col; g.fillRect(-11, 64, 22, 190 + (k % 3) * 30);
+      for (let j = 0; j < 5; j++) g.fillRect(11, 150 + (k % 3) * 30 + j * 20, 10 + (j % 2) * 9, 12);
+      g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(-7, 70, 5, 170); g.restore();
+    }
+    g.strokeStyle = '#d8d8d8'; g.lineWidth = 14; circle(g, 0, 0, 110); g.stroke();
+    g.restore();
+    for (let k = 0; k < 4; k++) {                                                                      // fingers curl over the ring
+      g.save(); g.translate(600 + k * 22, hy - 70 + k * 48); g.rotate(-0.1 - close * 1.9);
+      g.fillStyle = shade(ROSA.skin, -0.05 - k * 0.025); rrect(g, -28, -34, 200 - close * 90, 62, 31); g.fill();
+      g.fillStyle = 'rgba(255,225,205,0.4)'; ellipse(g, 150 - close * 90, -3, 16, 20); g.fill();
+      g.restore();
+    }
+  });
+  redLight(g, t, 0.8);
+  layer(g, 1, g => glow(g, 900, 300, 600, '#ff3b30', 0.3 * redP(t)));
+}
+// man sitting on the stairs behind the bars (side view), asleep or awake
+function manSitting(g, t, x, y, s, o = {}) {
+  const P = poseSit(t, 9); P.lean = o.asleep ? 0.55 : 0.35; P.head = o.asleep ? 0.6 + Math.sin(t * 1.1) * 0.03 : 0.25;
+  P.bob += o.asleep ? Math.sin(t * 1.4) * 0.8 : 0;                                         // chest rising: he is asleep
+  drawPersonSide(g, MAN, x, y, s, -1, P, { t, expr: o.asleep ? 'neutral' : 'worried', blink: o.asleep ? 1 : undefined });
+  g.fillStyle = 'rgba(205,200,194,0.85)'; for (let k = 0; k < 12; k++) { circle(g, x + (hash(k) - 0.6) * 18 * s, y - 52 * s + hash(k + 1) * 4 * s, 1.1 * s); g.fill(); }
+}
+function girlStanding(g, t, x, y, s) {
+  const GP = poseFrontIdle(t, 3); GP.bob = 0; GP.head = 0; GP.look = [0, 0]; GP.armL = 0.2; GP.elL = 0.3;
+  drawPersonFront(g, GIRL, x, y, s, GP, { t, noBlink: true, rabbitSwing: 0 });
+}
+function rewindFX(g, t, a, label = '◀◀  EPISODE 1') {
+  if (a <= 0) return;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  for (let k = 0; k < 6; k++) { const y = (hash(Math.floor(t * 30) + k) * H) | 0, h = 6 + hash(k + Math.floor(t * 30)) * 30; g.globalAlpha = 0.5 * a; g.drawImage(g.canvas, 0, y, W, h, (hash(k * 3 + Math.floor(t * 30)) - 0.5) * 80, y, W, h); }
+  g.globalAlpha = 0.12 * a; g.fillStyle = '#fff'; for (let y = 0; y < H; y += 6) g.fillRect(0, y, W, 2);
+  g.globalAlpha = a; g.fillStyle = '#fff'; g.font = `800 44px ${F_MONO}`; g.textAlign = 'left'; g.fillText(label, 60, 330);
+  g.restore();
+}
+
+function rabbitOnFloor(g, t, x, y, s) {
+  aoShadow(g, x, y + 10, 70 * s / 9 * 9, 12, 0.5);
+  g.save(); g.translate(x, y); g.rotate(-1.45); drawRabbit(g, 0, -40 * s / 9, s, 0, 0); g.restore();
+}
+function rabbitTag(g, x, y, s, letter = 'H') { // small tag on the rabbit's ear with a gold H
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.strokeStyle = '#8a7a6a'; g.lineWidth = 0.6; line(g, 0, 0, 3, 5);
+  g.fillStyle = lingrad(g, -4, 2, 8, 12, [[0, '#ffe08a'], [1, '#b8861a']]); circle(g, 4, 9, 4.6); g.fill();
+  g.fillStyle = '#1a1a1a'; g.font = `800 6px ${F_UI}`; g.textAlign = 'center'; g.fillText(letter, 4, 11.2);
+  g.restore();
+}
+function floorSet(g, t, blurK) {
+  // floor-level view: tiles in front, the locked gate's bottom rail and the first step outside
+  g.fillStyle = '#2a1418'; g.fillRect(0, 0, W, H);
+  const bg = gx => {
+    tileWall(gx, -200, -200, W + 400, 900, 60);
+    gx.fillStyle = '#7d7a74'; gx.fillRect(-200, 520, W + 400, 140); gx.fillStyle = '#e8b81e'; gx.fillRect(-200, 520, W + 400, 14);   // first step, outside
+    gx.fillStyle = '#86837c'; gx.fillRect(-200, 380, W + 400, 140); gx.fillStyle = '#e8b81e'; gx.fillRect(-200, 380, W + 400, 14);
+    for (let k = 0; k < 8; k++) { const x = -60 + k * 160; limb(gx, x, -200, x, 860, 26, '#7f8792'); limb(gx, x + 6, -200, x + 6, 860, 6, '#d9dee5'); }
+    for (let yy = 860; yy > -300; yy -= 190) for (let k = 0; k < 8; k++) { gx.strokeStyle = '#6b727c'; gx.lineWidth = 12; line(gx, -60 + k * 160, yy, 100 + k * 160, yy - 190); line(gx, 100 + k * 160, yy, -60 + k * 160, yy - 190); }
+    gx.fillStyle = lingrad(gx, 0, 830, 0, 900, [[0, '#dfe3e8'], [1, '#3e444c']]); gx.fillRect(-200, 830, W + 400, 70);
+    drawAsh(gx, t, [-200, -200, W + 400, 700], 60, 0.9);
+  };
+  if (blurK > 1) blurDraw(g, blurK, b => layer(b, 1, bg)); else layer(g, 1, bg);
+  layer(g, 1, g => {
+    g.fillStyle = lingrad(g, 0, 900, 0, H, [[0, '#77736b'], [1, '#a19c92']]); g.fillRect(-200, 900, W + 400, H);
+    g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = 3; for (let k = -10; k <= 10; k++) line(g, 540 + k * 70, 900, 540 + k * 260, H + 200);
+    for (let k = 1; k < 7; k++) { const y = 900 + Math.pow(k / 7, 1.7) * 1100; line(g, -200, y, W + 200, y); }
+  });
+}
+function tunnelView(g, t, z, lit) {
+  const tc = P3(-300, 0, 5200);
+  setCam(t, { x: tc[0] - W / 2, y: tc[1] - H / 2 + 60, z, shake: 0.05 });
+  layer(g, 1, g => { g.drawImage(ST.c, 0, 0); drawCracks(g, 1); people(g, t, 'sit', {}); });
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'multiply'; g.fillStyle = '#5a2a32'; g.fillRect(0, 0, W, H); g.fillStyle = '#8890a8'; g.fillRect(0, 0, W, H); g.restore();
+  layer(g, 1, g => {
+    ST.emerg.forEach(([X, Y, Z], k) => {
+      const on = lit(k), p = P3(X, Y, Z), s = ST.f / Z;
+      g.fillStyle = '#2a2a2a'; rrect(g, p[0] - 16 * s, p[1] - 14 * s, 32 * s, 28 * s, 4 * s); g.fill();
+      g.fillStyle = on > 0 ? mix('#5a0a08', '#ff3b30', on) : '#3a0a08'; circle(g, p[0], p[1], 10 * s); g.fill();
+      if (on > 0) glow(g, p[0], p[1], 330 * s / Math.max(1, CAM.z * 0.8), '#ff3b30', 0.75 * on / Math.max(1, CAM.z * 0.7));
+    });
+  });
+  return tc;
+}
+
+// ---- ep2/src/ui2.js
+// ============================================================================
+// ep2/src/ui2.js — Episode 2 config for the shared on-screen system (src/ui_series.js).
+// ============================================================================
+const SC = n => SCENES_T[n - 1];
+const EPCFG = {
+  clock: [[-1, 'HOUR 3', '11:30 AM'], [EV.hour4, 'HOUR 4', '12:30 PM'], [EV.hour5, 'HOUR 5', '1:30 PM']],
+  rule: { num: 2, t0: EV.rule + 0.05, t1: SC(11).start - 0.2, h: 560, lines: [
+    ['STAY INSIDE', EV.ruleLine2, '#ffffff', 78, 222], ['AT LEAST 24 HOURS.', EV.ruleLine2 + 1.0, '#ffffff', 64, 312],
+    ['THE FIRST DAY IS', EV.ruleLine3, '#ff8a80', 46, 408], ['THE MOST DANGEROUS.', EV.ruleLine3 + 0.9, '#ff8a80', 46, 466]] },
+  supplies: { t0: 0.4, water: '1', food: '0', light: '100%', phone: [[-1, '41%'], [EV.battery, '38%']], phoneRedAt: EV.battery, waterHL: [SC(5).start + 1.7, SC(6).start] },
+  code: { letter: 'H', n: 2, word: 'S · H · _ · _ · _ · _ · _' },
+  vote: { ep: 1, a: 'A · OPEN THE GATE', b: 'B · KEEP IT SHUT', won: 'b' },
+  choice: { t0: SC(20).start, a: 'FOLLOW THE LAUGH', b: 'WAKE THE MAN', next: 3 },
+};
 
 // ---- ep2/src/audio2.js
 // ============================================================================
@@ -2994,79 +3136,6 @@ async function renderMix(narrArrayBuffer, sampleRate = 48000) {
 const RED_T0 = -5;                 // emergency lights have been on since Episode 1
 const SCENE_WHIPS = [18];
 const ALERT_WORDS = ['INCOMING', 'MISSILE.', 'SEEK', 'SHELTER', 'IMMEDIATELY.', 'THIS', 'IS', 'NOT', 'A', 'DRILL.'];
-const redP = t => 0.6 + 0.4 * Math.pow(pulse(t - RED_T0, 1.2), 2);
-
-// ---------------------------------------------------------------- shared pieces for this episode
-function girlFace(g, t, o = {}) {
-  layer(g, 1, g => {
-    g.fillStyle = '#5a5250'; g.fillRect(-200, -200, W + 400, H + 400);
-    drawAsh(g, t, [-200, -200, W + 400, H + 400], 120, 0.9);
-    g.fillStyle = GIRL.top; ellipse(g, 540, 1650, 460, 420); g.fill();
-    g.fillStyle = GIRL.topDark; ellipse(g, 540, 1260, 300, 90); g.fill();
-    // ash settling on her raincoat — it does not melt
-    g.fillStyle = 'rgba(215,210,204,0.9)'; for (let k = 0; k < (o.ash || 0); k++) { circle(g, 200 + hash(k) * 680, 1290 + hash(k + 3) * 260, 4 + hash(k + 5) * 5); g.fill(); }
-    g.save(); g.translate(540, 820); g.rotate(o.tilt || 0);
-    drawHeadFront(g, GIRL, 0, 0, 270, { t, expr: 'neutral', look: [0, 0], noBlink: true, noRim: true });
-    g.restore();
-    drawRabbit(g, 760, 1260, 9, t, Math.sin(t * 1.4) * 0.25);
-    for (let k = 0; k < 6; k++) { const x = 40 + k * 200; limb(g, x, -200, x, H + 200, 34, '#6b6f78'); limb(g, x + 8, -200, x + 8, H + 200, 8, '#b9bec6'); }
-    for (let y = -400; y < H; y += 260) for (let k = 0; k < 6; k++) { g.strokeStyle = '#5e626b'; g.lineWidth = 18; line(g, 40 + k * 200, y, 240 + k * 200, y + 260); }
-  });
-  redLight(g, t, 0.75);
-}
-// Rosa's hand with the key ring; close = 0 open palm … 1 fist
-function keyHand(g, t, close) {
-  g.fillStyle = '#2a1418'; g.fillRect(0, 0, W, H);
-  blurDraw(g, 6, bg => bg.drawImage(ST.c, 0, 0));
-  layer(g, 1, g => {
-    // palm under the ring + sleeve with the orange vest cuff
-    g.fillStyle = ROSA.top; g.save(); g.translate(250, 520); g.rotate(0.55); rrect(g, -470, -120, 520, 240, 110); g.fill(); g.fillStyle = '#ff7a00'; g.fillRect(-110, -120, 70, 240); g.fillStyle = '#e6eef5'; g.fillRect(-80, -120, 18, 240); g.restore();
-    // palm/fist gripping the top of the ring (keys hang out underneath)
-    const hy = 690 - close * 20;
-    g.fillStyle = ROSA.skin; ellipse(g, 520, hy, 210, 140, -0.15); g.fill();
-    g.fillStyle = shade(ROSA.skin, 0.08); ellipse(g, 360, hy + 40, 70, 120, -0.9); g.fill();               // thumb
-    const sw = Math.sin(t * 3) * 0.08 * (1 - close);
-    g.save(); g.translate(560, 800); g.rotate(sw);
-    for (let k = 0; k < 9; k++) {
-      const a = Math.PI / 2 + (k - 4) * 0.16, kx = Math.cos(a) * 110, ky = Math.sin(a) * 110;
-      g.save(); g.translate(kx, ky); g.rotate((k - 4) * 0.12 + Math.sin(t * 4 + k) * 0.05 * (1 - close));
-      const col = k % 3 === 0 ? '#d4af37' : k % 3 === 1 ? '#b8bec7' : '#9aa3ad';
-      g.fillStyle = col; circle(g, 0, 36, 34); g.fill(); g.fillStyle = '#2a1418'; circle(g, 0, 20, 9); g.fill();
-      g.fillStyle = col; g.fillRect(-11, 64, 22, 190 + (k % 3) * 30);
-      for (let j = 0; j < 5; j++) g.fillRect(11, 150 + (k % 3) * 30 + j * 20, 10 + (j % 2) * 9, 12);
-      g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(-7, 70, 5, 170); g.restore();
-    }
-    g.strokeStyle = '#d8d8d8'; g.lineWidth = 14; circle(g, 0, 0, 110); g.stroke();
-    g.restore();
-    for (let k = 0; k < 4; k++) {                                                                      // fingers curl over the ring
-      g.save(); g.translate(600 + k * 22, hy - 70 + k * 48); g.rotate(-0.1 - close * 1.9);
-      g.fillStyle = shade(ROSA.skin, -0.05 - k * 0.025); rrect(g, -28, -34, 200 - close * 90, 62, 31); g.fill();
-      g.fillStyle = 'rgba(255,225,205,0.4)'; ellipse(g, 150 - close * 90, -3, 16, 20); g.fill();
-      g.restore();
-    }
-  });
-  redLight(g, t, 0.8);
-  layer(g, 1, g => glow(g, 900, 300, 600, '#ff3b30', 0.3 * redP(t)));
-}
-// man sitting on the stairs behind the bars (side view), asleep or awake
-function manSitting(g, t, x, y, s, o = {}) {
-  const P = poseSit(t, 9); P.lean = o.asleep ? 0.55 : 0.35; P.head = o.asleep ? 0.6 + Math.sin(t * 1.1) * 0.03 : 0.25;
-  P.bob += o.asleep ? Math.sin(t * 1.4) * 0.8 : 0;                                         // chest rising: he is asleep
-  drawPersonSide(g, MAN, x, y, s, -1, P, { t, expr: o.asleep ? 'neutral' : 'worried', blink: o.asleep ? 1 : undefined });
-  g.fillStyle = 'rgba(205,200,194,0.85)'; for (let k = 0; k < 12; k++) { circle(g, x + (hash(k) - 0.6) * 18 * s, y - 52 * s + hash(k + 1) * 4 * s, 1.1 * s); g.fill(); }
-}
-function girlStanding(g, t, x, y, s) {
-  const GP = poseFrontIdle(t, 3); GP.bob = 0; GP.head = 0; GP.look = [0, 0]; GP.armL = 0.2; GP.elL = 0.3;
-  drawPersonFront(g, GIRL, x, y, s, GP, { t, noBlink: true, rabbitSwing: 0 });
-}
-function rewindFX(g, t, a) {
-  if (a <= 0) return;
-  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
-  for (let k = 0; k < 6; k++) { const y = (hash(Math.floor(t * 30) + k) * H) | 0, h = 6 + hash(k + Math.floor(t * 30)) * 30; g.globalAlpha = 0.5 * a; g.drawImage(g.canvas, 0, y, W, h, (hash(k * 3 + Math.floor(t * 30)) - 0.5) * 80, y, W, h); }
-  g.globalAlpha = 0.12 * a; g.fillStyle = '#fff'; for (let y = 0; y < H; y += 6) g.fillRect(0, y, W, 2);
-  g.globalAlpha = a; g.fillStyle = '#fff'; g.font = `800 44px ${F_MONO}`; g.textAlign = 'left'; g.fillText('◀◀  EPISODE 1', 60, 330);
-  g.restore();
-}
 
 // ================================================================== SCENE 1 — RECAP + VOTE RESULT
 function e2scene1(g, t, lt) {
@@ -3275,36 +3344,6 @@ function e2scene14(g, t, lt) {
   return { capY: 1720 };
 }
 // ================================================================== SCENE 15 — THE RABBIT, INSIDE THE GATE
-function rabbitOnFloor(g, t, x, y, s) {
-  aoShadow(g, x, y + 10, 70 * s / 9 * 9, 12, 0.5);
-  g.save(); g.translate(x, y); g.rotate(-1.45); drawRabbit(g, 0, -40 * s / 9, s, 0, 0); g.restore();
-}
-function rabbitTag(g, x, y, s) { // small tag on the rabbit's ear with a gold H
-  g.save(); g.translate(x, y); g.scale(s, s);
-  g.strokeStyle = '#8a7a6a'; g.lineWidth = 0.6; line(g, 0, 0, 3, 5);
-  g.fillStyle = lingrad(g, -4, 2, 8, 12, [[0, '#ffe08a'], [1, '#b8861a']]); circle(g, 4, 9, 4.6); g.fill();
-  g.fillStyle = '#1a1a1a'; g.font = `800 6px ${F_UI}`; g.textAlign = 'center'; g.fillText('H', 4, 11.2);
-  g.restore();
-}
-function floorSet(g, t, blurK) {
-  // floor-level view: tiles in front, the locked gate's bottom rail and the first step outside
-  g.fillStyle = '#2a1418'; g.fillRect(0, 0, W, H);
-  const bg = gx => {
-    tileWall(gx, -200, -200, W + 400, 900, 60);
-    gx.fillStyle = '#7d7a74'; gx.fillRect(-200, 520, W + 400, 140); gx.fillStyle = '#e8b81e'; gx.fillRect(-200, 520, W + 400, 14);   // first step, outside
-    gx.fillStyle = '#86837c'; gx.fillRect(-200, 380, W + 400, 140); gx.fillStyle = '#e8b81e'; gx.fillRect(-200, 380, W + 400, 14);
-    for (let k = 0; k < 8; k++) { const x = -60 + k * 160; limb(gx, x, -200, x, 860, 26, '#7f8792'); limb(gx, x + 6, -200, x + 6, 860, 6, '#d9dee5'); }
-    for (let yy = 860; yy > -300; yy -= 190) for (let k = 0; k < 8; k++) { gx.strokeStyle = '#6b727c'; gx.lineWidth = 12; line(gx, -60 + k * 160, yy, 100 + k * 160, yy - 190); line(gx, 100 + k * 160, yy, -60 + k * 160, yy - 190); }
-    gx.fillStyle = lingrad(gx, 0, 830, 0, 900, [[0, '#dfe3e8'], [1, '#3e444c']]); gx.fillRect(-200, 830, W + 400, 70);
-    drawAsh(gx, t, [-200, -200, W + 400, 700], 60, 0.9);
-  };
-  if (blurK > 1) blurDraw(g, blurK, b => layer(b, 1, bg)); else layer(g, 1, bg);
-  layer(g, 1, g => {
-    g.fillStyle = lingrad(g, 0, 900, 0, H, [[0, '#77736b'], [1, '#a19c92']]); g.fillRect(-200, 900, W + 400, H);
-    g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = 3; for (let k = -10; k <= 10; k++) line(g, 540 + k * 70, 900, 540 + k * 260, H + 200);
-    for (let k = 1; k < 7; k++) { const y = 900 + Math.pow(k / 7, 1.7) * 1100; line(g, -200, y, W + 200, y); }
-  });
-}
 function e2scene15(g, t, lt) {
   const inside = LINES[33].s;
   setCam(t, { x: 0, y: 0, z: 1.0 + lt * 0.04, shake: 0.03 });
@@ -3344,21 +3383,6 @@ function e2scene17(g, t, lt) {
   return { capY: 1290 };
 }
 // ================================================================== SCENE 18 — A CHILD LAUGHS IN THE TUNNEL
-function tunnelView(g, t, z, lit) {
-  const tc = P3(-300, 0, 5200);
-  setCam(t, { x: tc[0] - W / 2, y: tc[1] - H / 2 + 60, z, shake: 0.05 });
-  layer(g, 1, g => { g.drawImage(ST.c, 0, 0); drawCracks(g, 1); people(g, t, 'sit', {}); });
-  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'multiply'; g.fillStyle = '#5a2a32'; g.fillRect(0, 0, W, H); g.fillStyle = '#8890a8'; g.fillRect(0, 0, W, H); g.restore();
-  layer(g, 1, g => {
-    ST.emerg.forEach(([X, Y, Z], k) => {
-      const on = lit(k), p = P3(X, Y, Z), s = ST.f / Z;
-      g.fillStyle = '#2a2a2a'; rrect(g, p[0] - 16 * s, p[1] - 14 * s, 32 * s, 28 * s, 4 * s); g.fill();
-      g.fillStyle = on > 0 ? mix('#5a0a08', '#ff3b30', on) : '#3a0a08'; circle(g, p[0], p[1], 10 * s); g.fill();
-      if (on > 0) glow(g, p[0], p[1], 330 * s / Math.max(1, CAM.z * 0.8), '#ff3b30', 0.75 * on / Math.max(1, CAM.z * 0.7));
-    });
-  });
-  return tc;
-}
 function e2scene18(g, t, lt) {
   const z = lerp(1.6, 2.6, easeInOut(clamp(lt / 5)));
   const tc = tunnelView(g, t, z, () => redP(t));
