@@ -2,8 +2,7 @@
 // main.js — scene dispatch, frame composition, UI overlays, playback, and
 // hooks for the render pipeline (window.__T, renderAt, renderAudioWav).
 // ============================================================================
-const SCENE_FN = [scene1, scene2, scene3, scene4, scene5, scene6, scene7, scene8, scene9, scene10, scene11, scene12, scene13, scene14, scene15, scene16, scene17,
-  scene18, scene19, scene20, scene21, scene22, scene23, scene24, scene25, scene26, scene27, scene28, scene29, scene30, scene31, scene32, scene33];
+const SCENE_FN = SCENE_LIST;                     // defined by the episode's scene file
 let CANVAS, CTX, READY = false;
 function sceneAt(t) { for (let i = SCENES_T.length - 1; i >= 0; i--) if (t >= SCENES_T[i].start) return i; return 0; }
 function renderFrame(t) {
@@ -17,8 +16,7 @@ function renderFrame(t) {
   g.restore();
   g.setTransform(1, 0, 0, 1, 0, 0);
   // whip-pan smear on selected cuts
-  const whipCuts = [14, 16, 17, 19];
-  if (whipCuts.includes(i + 1)) whipBlur(g, 1 - seg(t, S.start, S.start + 0.18), 1);
+  if (SCENE_WHIPS.includes(i + 1)) whipBlur(g, 1 - seg(t, S.start, S.start + 0.18), 1);
   // act colour script
   const act2 = info.act2 ? 1 : 0;
   postFX(g, t, {

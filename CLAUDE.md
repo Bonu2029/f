@@ -14,4 +14,6 @@ Also paste the caption in the chat reply so it can be copied directly.
 
 ## AFTER THE FLASH — story canon (audience choices)
 - Ep1 poll result: **B · KEEP IT SHUT** (the gate stays locked). Ep2 script: `after-the-flash/ep2/script.md`.
-- Code pieces so far: Ep1 = S, Ep2 = H (7-letter word across the season).
+- Ep2 ends on the choice **A · FOLLOW THE LAUGH** (into the tunnel) vs **B · WAKE THE MAN** (at the gate). Ep2 video: `after-the-flash/ep2/`.
+- Code pieces spell SHELTER across 7 episodes: Ep1 = S, Ep2 = H (next: E).
+- Each new episode: put its files in `after-the-flash/epN/` and add it to `EPISODES` in `tools/timing.py` and `tools/build.py`.

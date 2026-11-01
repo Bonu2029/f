@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Bundle src/*.js + narration.mp3 (base64) + embedded fonts into episode1.html.
-Usage (from after-the-flash/):  python3 tools/build.py"""
+Usage (from after-the-flash/):  python3 tools/build.py [ep1|ep2]"""
 import base64, os, re, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
-ORDER = ['timing.js', 'core.js', 'city.js', 'vehicles.js', 'people.js', 'dog.js', 'station.js', 'ui.js', 'audio.js',
-         'scenes_street.js', 'scenes_under.js', 'main.js']
+SHARED = ['src/core.js', 'src/city.js', 'src/vehicles.js', 'src/people.js', 'src/dog.js', 'src/station.js', 'src/ui.js', 'src/audio.js', 'src/scene_kit.js']
+EPISODES = {
+    'ep1': dict(order=['src/timing.js'] + SHARED + ['src/scenes_street.js', 'src/scenes_under.js', 'src/main.js'],
+                narr='narration.mp3', out='episode1.html', title='After the Flash · Episode 1', sub='EPISODE 1 · HARBOR STREET'),
+    'ep2': dict(order=['ep2/src/timing.js'] + SHARED + ['ep2/src/ui2.js', 'ep2/src/audio2.js', 'ep2/src/scenes2.js', 'src/main.js'],
+                narr='ep2/narration.mp3', out='ep2/episode2.html', title='After the Flash · Episode 2', sub='EPISODE 2 · KEEP IT SHUT'),
+}
 FONT_DIR = os.path.join(HERE, 'fonts')
 FONTS = [('Poppins', 700), ('Poppins', 800), ('Roboto Mono', 700)]
 
@@ -26,14 +31,18 @@ def font_css():
     return '\n'.join(css)
 
 def main():
+    import sys
+    ep = sys.argv[1] if len(sys.argv) > 1 else 'ep1'
+    E = EPISODES[ep]
     tpl = open(os.path.join(ROOT, 'src', 'template.html')).read()
-    code = '\n'.join(f"// ---- {f}\n" + open(os.path.join(ROOT, 'src', f)).read() for f in ORDER)
-    narr = base64.b64encode(open(os.path.join(ROOT, 'narration.mp3'), 'rb').read()).decode()
+    code = '\n'.join(f"// ---- {f}\n" + open(os.path.join(ROOT, f)).read() for f in E['order'])
+    narr = base64.b64encode(open(os.path.join(ROOT, E['narr']), 'rb').read()).decode()
     try: fonts = font_css()
     except Exception as e:
         print('font embed skipped:', e); fonts = ''
-    out = tpl.replace('/*FONTS*/', fonts).replace('/*NARRATION*/', f'const NARRATION_B64="{narr}";').replace('/*CODE*/', code)
-    open(os.path.join(ROOT, 'episode1.html'), 'w').write(out)
-    print('episode1.html', round(len(out) / 1e6, 2), 'MB')
+    out = (tpl.replace('/*FONTS*/', fonts).replace('/*TITLE*/', E['title']).replace('/*SUBTITLE*/', E['sub'])
+              .replace('/*NARRATION*/', f'const NARRATION_B64="{narr}";').replace('/*CODE*/', code))
+    open(os.path.join(ROOT, E['out']), 'w').write(out)
+    print(E['out'], round(len(out) / 1e6, 2), 'MB')
 
 if __name__ == '__main__': main()

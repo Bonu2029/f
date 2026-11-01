@@ -379,7 +379,7 @@ function drawPersonSide(g, C, x, y, s, dir, P, o = {}) {
   const hr = 7 * U * hs, ha = lean + (P.head || 0);
   const hx = nX + Math.sin(ha) * hr * 0.95, hy = nY - Math.cos(ha) * hr * 0.95;
   g.save(); g.translate(hx, hy); g.rotate(P.head || 0); if (P.turn) g.scale(-1, 1);
-  drawHeadSide(g, C, 0, 0, hr, { t: o.t, expr: o.expr || P.expr, look: o.look || P.look, red: o.red, noBlink: o.noBlink });
+  drawHeadSide(g, C, 0, 0, hr, { t: o.t, expr: o.expr || P.expr, look: o.look || P.look, red: o.red, noBlink: o.noBlink, blink: o.blink });
   if (C.acc === 'headphones') { g.strokeStyle = '#222'; g.lineWidth = 1.6 * U; g.beginPath(); g.arc(-hr * 0.1, -hr * 0.1, hr * 1.05, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); g.fillStyle = C.accCol || '#e63946'; ellipse(g, -hr * 0.1, hr * 0.1, hr * 0.3, hr * 0.4); g.fill(); }
   if (C.acc === 'helmet') { g.fillStyle = '#ffc300'; g.beginPath(); g.arc(0, -hr * 0.25, hr * 1.08, Math.PI, 0); g.fill(); g.fillRect(-hr * 1.2, -hr * 0.3, hr * 2.5, hr * 0.18); g.fillStyle = 'rgba(255,255,255,0.4)'; g.fillRect(-hr * 0.2, -hr * 1.2, hr * 0.3, hr * 0.8); }
   g.restore();
