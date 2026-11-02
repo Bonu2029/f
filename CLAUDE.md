@@ -16,5 +16,6 @@ Also paste the caption in the chat reply so it can be copied directly.
 - Ep1 poll result: **B · KEEP IT SHUT** (the gate stays locked). Ep2 script: `after-the-flash/ep2/script.md`.
 - Ep2 ends on the choice **A · FOLLOW THE LAUGH** (into the tunnel) vs **B · WAKE THE MAN** (at the gate). Ep2 video: `after-the-flash/ep2/`.
 - Ep2 poll result: **B · WAKE THE MAN**. Ep3: `after-the-flash/ep3/` (script, video). The man admits the girl is not his daughter; a voice in the tunnel calls Biscuit by name. Ep3 ends on **A · LET THE MAN IN** vs **B · FOLLOW THE VOICE**.
-- Code pieces spell SHELTER across 7 episodes: Ep1 = S, Ep2 = H, Ep3 = E (next: L).
+- Ep3 poll result: **A · LET THE MAN IN**. Ep4 script: `after-the-flash/ep4/script.md`. The man is **Daniel**; the girl told him "Seven letters. Then the door opens." Ep4 ends on **A · HIDE IN THE BOOTH** vs **B · SHINE THE LIGHT**.
+- Code pieces spell SHELTER across 7 episodes: Ep1 = S, Ep2 = H, Ep3 = E, Ep4 = L (next: T).
 - Each new episode: put its files in `after-the-flash/epN/` (timing via `tools/timing.py`, `cfgN.js` = EPCFG for `src/ui_series.js`, `audioN.js`, `scenesN.js`) and add it to `EPISODES` in `tools/timing.py` and `tools/build.py`. Reuse `src/scene_kit.js` / `src/scene_kit2.js`.
