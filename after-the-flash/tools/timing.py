@@ -166,7 +166,45 @@ def ep4_events(L, word, words):
   return {'clicks': L(2), 'lifts': L(3), 'slam': L(7), 'slots': L(16), 'rule': L(21), 'ruleLine2': L(22), 'ruleLine3': L(23),
           'booth': L(24), 'water': L(25), 'crackers': L(26), 'letterL': L(32), 'hum': L(33), 'coming': L(34), 'choiceA': L(36), 'choiceB': L(37)}
 EP4['events'] = ep4_events
-EPISODES = {'ep1': EP1, 'ep2': EP2, 'ep3': EP3, 'ep4': EP4}
+
+EP5 = dict(
+  mp3='ep5/narration.mp3', words='ep5/words.json', out='ep5/src/timing.js',
+  LINES=[
+ "Most of you said [g]hide.[/g]",
+ "Fifteen people. One ticket booth. It fits [r]six.[/r]",
+ "The others lie flat behind the benches.",
+ "Rosa reaches over and turns off your phone light.",
+ "[r]Total dark.[/r]",
+ "The hum becomes a [r]rumble.[/r]", "Wind pushes out of the tunnel.", "Dust in your eyes.",
+ "Then a light.", "Slow. Swinging.",
+ "It's not a train.", "It's a cart on the rails, pushed by people in [r]white suits and masks.[/r]",
+ "They stop at the platform.",
+ "One of them climbs up, a flashlight in one hand.",
+ "Rosa leans close.", "[b]\"That's not our uniform,\"[/b] she whispers.",
+ "The light moves along the wall, bench to bench.",
+ "A muffled voice behind the mask:", "[b]\"Fifteen.\"[/b]",
+ "Then: [b]\"There should be sixteen.\"[/b]",
+ "Biscuit starts to [r]growl.[/r]", "You hold his mouth shut.",
+ "[g]Rule five:[/g]", "[g]In the dark, stay quiet.[/g]", "Light and noise tell them [r]where you are.[/r]",
+ "The figure kneels at the lost and found box.",
+ "He takes the [r]yellow raincoat,[/r] folds it under his arm.",
+ "He stands up.", "On his back, a big black letter.", "[g]T.[/g]",
+ "Then the radio on the cart crackles.", "A child's voice:", "[b]\"Did you find them?\"[/b]",
+ "The figure turns and looks [r]straight at the booth.[/r]",
+ "So… what would [g]you[/g] do?",
+ "[b]Step out and talk to him…[/b]",
+ "[r]or stay hidden?[/r]",
+  ],
+  MERGE=[(1,3),(11,12),(14,15),(17,18),(20,21),(22,23),(26,27),(31,32),(35,36),(38,39),(44,45),(46,47)],
+  SCENE_FIRST=[0,1,2,3,4,5,6,8,10,11,12,13,14,16,17,19,20,22,25,26,27,30,33,34],
+  TITLES=["Recap","Six in the booth","Behind the benches","Light off","Total dark","Rumble","Wind","Swinging light","Not a train","White suits","They stop","One climbs up","Rosa whispers","Bench to bench","Fifteen","Sixteen","Biscuit growls","Rule card","Lost and found","Folded raincoat","The letter T","The radio","He turns","Choice"],
+)
+def ep5_events(L, word, words):
+  return {'lightOff': word('light', L(3), L(3) + 2.0), 'rumble': L(5), 'wind': L(6), 'lantern': L(8), 'cart': L(11), 'stop': L(12),
+          'fifteen': L(18), 'sixteen': word('sixteen', L(19), L(19) + 1.0), 'rule': L(22), 'ruleLine2': L(23), 'ruleLine3': L(24),
+          'letterT': L(29), 'radio': L(30), 'childVoice': L(32), 'turn': L(33), 'choiceA': L(35), 'choiceB': L(36)}
+EP5['events'] = ep5_events
+EPISODES = {'ep1': EP1, 'ep2': EP2, 'ep3': EP3, 'ep4': EP4, 'ep5': EP5}
 
 def detect(mp3):
     dur = float(subprocess.run(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',mp3],capture_output=True,text=True).stdout)

@@ -1,6 +1,6 @@
 # AFTER THE FLASH
 
-Episodes: **Episode 1** (this folder: `episode1.html`, `AfterTheFlash_Ep1.mp4`, `shots/`) · **Episode 2 "Keep It Shut"** (`ep2/`) · **Episode 3 "Wake the Man"** (`ep3/`) · **Episode 4 "Let Him In"** (`ep4/`). Each episode folder holds `episodeN.html`, `AfterTheFlash_EpN.mp4`, `shots/`, `instagram_epN.md`, `script.md`.
+Episodes: **Episode 1** (this folder: `episode1.html`, `AfterTheFlash_Ep1.mp4`, `shots/`) · **Episode 2 "Keep It Shut"** (`ep2/`) · **Episode 3 "Wake the Man"** (`ep3/`) · **Episode 4 "Let Him In"** (`ep4/`) · **Episode 5 "Hide"** (`ep5/`). Each episode folder holds `episodeN.html`, `AfterTheFlash_EpN.mp4`, `shots/`, `instagram_epN.md`, `script.md`.
 Every episode shares one engine (`src/`); an episode adds its own timing, UI overrides, sound mix and scene file.
 
 ## Episode 1
@@ -86,3 +86,11 @@ Captions show only while their line is spoken.
 | `ep4/src/cfg4.js` | Ep4 EPCFG (HOUR 6→7, Rule #4, water 1→12 / food 0→6 roll-up, phone 35%→33%, code piece 4/7 = L, Ep3 vote result, Ep5 choice) |
 | `ep4/src/scenes4.js` | `e4scene1` … `e4scene22`: floor lock, gate lift + daylight under it, Daniel crawling under, slam, Biscuit sniffing, seven code slots, booth, supply shelf, lost-and-found box, raincoat with gold L, humming rails, glow in the tunnel |
 | `ep4/src/audio4.js` | Ep4 mix |
+
+## Episode 5
+| Module | Contents |
+|---|---|
+| `src/scene_kit3.js` (added) | `DANIEL`, `danielFace`, `drawSlots`, `smallBooth`, `lostFoundBox`, `raincoat` (moved from Ep4) |
+| `ep5/src/cfg5.js` | Ep5 EPCFG (HOUR 7→8, Rule #5, code piece 5/7 = T, Ep4 vote result, Ep6 choice) |
+| `ep5/src/scenes5.js` | `HAZ` figures with gas masks (`hazSide`, `hazFront` incl. the stenciled T on the back), the rail handcart (`cartSide`, `cartFront`) with swinging lantern + radio, `boothLook` (view from inside the ticket booth), `e5scene1` … `e5scene24` |
+| `ep5/src/audio5.js` | Ep5 mix |

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Bundle src/*.js + narration.mp3 (base64) + embedded fonts into episode1.html.
-Usage (from after-the-flash/):  python3 tools/build.py [ep1|ep2|ep3|ep4]"""
+Usage (from after-the-flash/):  python3 tools/build.py [ep1..ep5]"""
 import base64, os, re, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 SHARED = ['src/core.js', 'src/city.js', 'src/vehicles.js', 'src/people.js', 'src/dog.js', 'src/station.js', 'src/ui.js', 'src/audio.js', 'src/scene_kit.js']
@@ -13,6 +13,8 @@ EPISODES = {
                 narr='ep3/narration.mp3', out='ep3/episode3.html', title='After the Flash · Episode 3', sub='EPISODE 3 · WAKE THE MAN'),
     'ep4': dict(order=['ep4/src/timing.js'] + SHARED + ['src/ui_series.js', 'src/scene_kit2.js', 'src/scene_kit3.js', 'ep4/src/cfg4.js', 'ep4/src/audio4.js', 'ep4/src/scenes4.js', 'src/main.js'],
                 narr='ep4/narration.mp3', out='ep4/episode4.html', title='After the Flash · Episode 4', sub='EPISODE 4 · LET HIM IN'),
+    'ep5': dict(order=['ep5/src/timing.js'] + SHARED + ['src/ui_series.js', 'src/scene_kit2.js', 'src/scene_kit3.js', 'ep5/src/cfg5.js', 'ep5/src/audio5.js', 'ep5/src/scenes5.js', 'src/main.js'],
+                narr='ep5/narration.mp3', out='ep5/episode5.html', title='After the Flash · Episode 5', sub='EPISODE 5 · HIDE'),
 }
 FONT_DIR = os.path.join(HERE, 'fonts')
 FONTS = [('Poppins', 700), ('Poppins', 800), ('Roboto Mono', 700)]
