@@ -56,7 +56,9 @@ function drawSupplies(g, t) {
   const u = easeOutBack(seg(t, S.t0, S.t0 + 0.6));
   let phone = S.phone[0][1], drop = 0; S.phone.forEach(([pt, v], k) => { if (t >= pt) phone = v; if (k > 0) drop = Math.max(drop, Math.max(0, 1 - Math.abs(t - pt - 0.15) * 3)); });
   const water = S.waterHL && t >= S.waterHL[0] && t < S.waterHL[1] ? pulse(t, 0.6) : 0;
-  const items = [['water', 'WATER', S.water, water], ['food', 'FOOD', S.food, 0], ['light', 'LIGHT', S.light, 0], ['phone', 'PHONE', phone, drop]];
+  const stepv = (v, hl) => { if (!Array.isArray(v)) return [v, hl]; let cur = v[0][1], d = 0; v.forEach(([vt, vv], k) => { if (t >= vt) cur = vv; if (k > 0) d = Math.max(d, Math.max(0, 1 - Math.abs(t - vt - 0.15) * 3)); }); return [cur, Math.max(hl, d)]; };
+  const [wv, wh] = stepv(S.water, water), [fv, fh] = stepv(S.food, 0);
+  const items = [['water', 'WATER', wv, wh], ['food', 'FOOD', fv, fh], ['light', 'LIGHT', S.light, 0], ['phone', 'PHONE', phone, drop]];
   const w = 960, h = 92, x = (W - w) / 2, y = 196 + (1 - u) * -40;
   g.save(); g.globalAlpha = clamp(u);
   glassPanel(g, x, y, w, h, 24, 0.58);

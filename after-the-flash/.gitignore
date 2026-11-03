@@ -3,3 +3,4 @@
 tools/fonts/
 ep*/.frames/
 ep*/.mix.wav
+__pycache__/

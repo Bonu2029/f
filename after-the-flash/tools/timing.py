@@ -129,7 +129,44 @@ def ep3_events(L, word, words):
           'jacket': L(23), 'falls': L(24), 'drawing': L(25), 'station': L(26), 'tunnel': L(27), 'circled': L(28) + 0.9,
           'growl': L(30), 'flicker': L(31), 'voice': L(33), 'choiceA': L(36), 'choiceB': L(37)}
 EP3['events'] = ep3_events
-EPISODES = {'ep1': EP1, 'ep2': EP2, 'ep3': EP3}
+
+EP4 = dict(
+  mp3='ep4/narration.mp3', words='ep4/words.json', out='ep4/src/timing.js',
+  LINES=[
+ "Most of you said [g]let him in.[/g]",
+ "Rosa turns the [g]key.[/g]", "The lock [r]clicks.[/r]",
+ "The gate lifts.", "Just a little.",
+ "The man crawls under it.", "Ash falls off his back.",
+ "The gate [r]slams[/r] down again.",
+ "Biscuit walks up to him…", "and sniffs his hand.",
+ "No growl. Not at him.",
+ "[b]\"Daniel,\"[/b] the man says. [b]\"My name is Daniel.\"[/b]",
+ "Rosa hands him the bottle.", "One sip.",
+ "Then Daniel says something else.", "[b]\"She told me one more thing.\"[/b]",
+ "[b]\"Seven letters.\"[/b]", "[b]\"Then the door opens.\"[/b]",
+ "[g]Seven letters.[/g]", "You think about the drawing.", "The letter [r]E.[/r]",
+ "[g]Rule four:[/g]", "[g]Only eat and drink what was sealed.[/g]", "Wipe the package before you open it.",
+ "Rosa unlocks the ticket booth.",
+ "Behind the counter: a case of [g]bottled water.[/g]", "[g]Crackers. Sealed.[/g]",
+ "For the first time today… people [g]smile.[/g]",
+ "Then Rosa opens the lost and found box.",
+ "On top, folded neatly… a little [r]yellow raincoat.[/r]",
+ "Dry. Clean. [r]Exactly like hers.[/r]",
+ "And pinned to the hood, a gold letter.", "[g]L.[/g]",
+ "Then the rails start to [r]hum.[/r]", "Something is coming down the tunnel.",
+ "So… what would [g]you[/g] do?",
+ "[b]Hide in the ticket booth…[/b]",
+ "[r]or shine the light down the tunnel?[/r]",
+  ],
+  MERGE=[(10,11),(12,14),(28,29),(30,31),(32,33),(35,37),(38,40),(41,42),(46,47)],
+  SCENE_FIRST=[0,1,3,5,7,8,10,11,12,14,16,18,21,24,25,27,28,29,31,33,34,35],
+  TITLES=["Recap","The key","The gate lifts","Crawls under","Slam","Biscuit sniffs","No growl","Daniel","The bottle","Something else","Seven letters","The drawing","Rule card","Ticket booth","Supplies","Smiles","Lost and found","The raincoat","The gold L","Rails hum","Something coming","Choice"],
+)
+def ep4_events(L, word, words):
+  return {'clicks': L(2), 'lifts': L(3), 'slam': L(7), 'slots': L(16), 'rule': L(21), 'ruleLine2': L(22), 'ruleLine3': L(23),
+          'booth': L(24), 'water': L(25), 'crackers': L(26), 'letterL': L(32), 'hum': L(33), 'coming': L(34), 'choiceA': L(36), 'choiceB': L(37)}
+EP4['events'] = ep4_events
+EPISODES = {'ep1': EP1, 'ep2': EP2, 'ep3': EP3, 'ep4': EP4}
 
 def detect(mp3):
     dur = float(subprocess.run(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',mp3],capture_output=True,text=True).stdout)

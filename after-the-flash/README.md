@@ -1,6 +1,6 @@
 # AFTER THE FLASH
 
-Episodes: **Episode 1** (this folder: `episode1.html`, `AfterTheFlash_Ep1.mp4`, `shots/`) · **Episode 2 "Keep It Shut"** (`ep2/`) · **Episode 3 "Wake the Man"** (`ep3/`). Each episode folder holds `episodeN.html`, `AfterTheFlash_EpN.mp4`, `shots/`, `instagram_epN.md`, `script.md`.
+Episodes: **Episode 1** (this folder: `episode1.html`, `AfterTheFlash_Ep1.mp4`, `shots/`) · **Episode 2 "Keep It Shut"** (`ep2/`) · **Episode 3 "Wake the Man"** (`ep3/`) · **Episode 4 "Let Him In"** (`ep4/`). Each episode folder holds `episodeN.html`, `AfterTheFlash_EpN.mp4`, `shots/`, `instagram_epN.md`, `script.md`.
 Every episode shares one engine (`src/`); an episode adds its own timing, UI overrides, sound mix and scene file.
 
 ## Episode 1
@@ -78,3 +78,11 @@ Captions show only while their line is spoken.
 | `ep3/src/cfg3.js` | Ep3 EPCFG (HOUR 5→6, Rule #3, phone 38%→35%, code piece 3/7 = E, Ep2 vote result, Ep4 choice) |
 | `ep3/src/scenes3.js` | `flashlit` (phone-flashlight cone that reveals the dark scene), `e3scene1` … `e3scene22` incl. the Ep1-street flashback (uses `src/scenes_street.js`) and the crayon drawing |
 | `ep3/src/audio3.js` | Ep3 mix |
+
+## Episode 4
+| Module | Contents |
+|---|---|
+| `src/scene_kit3.js` | Shared from Ep3 on: `flashlit` (phone-flashlight cone), `gateDark`, `asleepMan`, `TOPKEEP`, `MAN_CLEAN` / `MAN_SHIRT`, `crayon`, `drawingPaper` |
+| `ep4/src/cfg4.js` | Ep4 EPCFG (HOUR 6→7, Rule #4, water 1→12 / food 0→6 roll-up, phone 35%→33%, code piece 4/7 = L, Ep3 vote result, Ep5 choice) |
+| `ep4/src/scenes4.js` | `e4scene1` … `e4scene22`: floor lock, gate lift + daylight under it, Daniel crawling under, slam, Biscuit sniffing, seven code slots, booth, supply shelf, lost-and-found box, raincoat with gold L, humming rails, glow in the tunnel |
+| `ep4/src/audio4.js` | Ep4 mix |

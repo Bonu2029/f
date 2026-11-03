@@ -37,7 +37,7 @@ function people(g, t, mode, opts = {}) {
     const p = P3(X, 170, Z), s = 1.75 * ST.f / Z, C = CROWD[(k * 6 + 1) % 90], dir = X > 200 ? -1 : 1;
     if (mode === 'stand') drawCrowdSide(g, C, p[0], p[1], s, dir, 'idle', t);
     else if (mode === 'crouch') drawCrowdSide(g, C, p[0], p[1], s, dir, 'crouch', t);
-    else if (mode === 'sit') { const P = poseSit(t, k); if (opts.turn) { P.head = -0.1; P.turn = 0; } drawPersonSide(g, C, p[0], p[1], s, opts.turn ? 1 : dir, P, { t }); }
+    else if (mode === 'sit') { const P = poseSit(t, k); if (opts.turn) { P.head = -0.1; P.turn = 0; } if (opts.expr) P.expr = opts.expr; drawPersonSide(g, C, p[0], p[1], s, opts.turn ? 1 : dir, P, { t }); }
   });
 }
 
