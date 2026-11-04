@@ -2745,7 +2745,7 @@ function gateRed(g, t, o = {}) {
 //   supplies:{t0, water, food, light, phone: [[t, '41%'], ...], phoneRedAt, waterHL: [a, b]}
 //   code:    {letter, n, word}                            code-piece chip
 //   vote:    {ep, a, b, won: 'a'|'b'}                     previous episode's vote result
-//   choice:  {t0, a, b, next}                             this episode's choice card
+//   choice:  {t0, a, b, next, ea?, eb?}                   this episode's choice card (ea/eb: emoji instead of A/B)
 // }
 // ============================================================================
 function clockText(t) { let c = EPCFG.clock[0]; EPCFG.clock.forEach(s => { if (t >= s[0]) c = s; }); return [c[1], c[2]]; }
@@ -2855,13 +2855,14 @@ function drawChoiceCard(g, t) {
     g.shadowColor = c1; g.shadowBlur = 30 * (0.6 + 0.4 * Math.sin(t * 5));
     g.fillStyle = lingrad(g, -360, 0, 360, 0, [[0, c1], [1, c2]]); rrect(g, -360, -64, 720, 128, 64); g.fill(); g.shadowColor = 'transparent';
     g.fillStyle = 'rgba(255,255,255,0.22)'; rrect(g, -350, -58, 700, 54, 54); g.fill();
-    g.fillStyle = 'rgba(0,0,0,0.25)'; circle(g, -290, 0, 42); g.fill();
-    g.fillStyle = '#fff'; g.font = `800 50px ${F_UI}`; g.textBaseline = 'middle'; g.fillText(key, -290, 3);
+    const emo = key !== 'A' && key !== 'B';
+    g.fillStyle = emo ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.25)'; circle(g, -290, 0, emo ? 46 : 42); g.fill();
+    g.fillStyle = '#fff'; g.font = `800 ${emo ? 54 : 50}px ${F_UI}`; g.textBaseline = 'middle'; g.fillText(key, -290, emo ? 4 : 3);
     g.font = `800 48px ${F_UI}`; g.fillText(label, 30, 3);
     g.restore();
   };
-  btn(EV.choiceA, y + 330, '#1e6bff', '#38a1ff', C.a, 'A');
-  btn(EV.choiceB, y + 490, '#e0182d', '#ff4d5a', C.b, 'B');
+  btn(EV.choiceA, y + 330, '#1e6bff', '#38a1ff', C.a, C.ea || 'A');
+  btn(EV.choiceB, y + 490, '#e0182d', '#ff4d5a', C.b, C.eb || 'B');
   if (t >= EV.ring) {
     const r = seg(t, EV.ring, EV.ring + 5), ru = easeOut(seg(t, EV.ring, EV.ring + 0.4));
     g.globalAlpha = clamp(u) * (1 - out) * ru;
@@ -3153,8 +3154,8 @@ const EPCFG = {
     ['WHERE YOU ARE.', EV.ruleLine3 + 1.0, '#ff8a80', 46, 480]] },
   supplies: { t0: 0.4, water: '12', food: '6', light: '100%', phone: [[-1, '33%']], phoneRedAt: -1, waterHL: null },
   code: { letter: 'T', n: 5, word: 'S · H · E · L · T · _ · _' },
-  vote: { ep: 4, a: 'A · HIDE IN THE BOOTH', b: 'B · SHINE THE LIGHT', won: 'a' },
-  choice: { t0: SC(24).start, a: 'STEP OUT AND TALK', b: 'STAY HIDDEN', next: 6 },
+  vote: { ep: 4, a: '🙈 HIDE IN THE BOOTH', b: '🔦 SHINE THE LIGHT', won: 'a' },
+  choice: { t0: SC(24).start, a: 'STEP OUT AND TALK', b: 'STAY HIDDEN', next: 6, ea: '🗣️', eb: '🤫' },
 };
 
 // ---- ep5/src/audio5.js

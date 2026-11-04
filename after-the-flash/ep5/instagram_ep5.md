@@ -14,9 +14,9 @@ He takes the yellow raincoat… and a child's voice crackles over their radio:
 "Did you find them?" 📻
 
 🗳️ What would you do?
-🅰️ STEP OUT AND TALK
-🅱️ STAY HIDDEN
-Comment A or B 👇 Your vote decides Episode 6.
+🗣️ STEP OUT AND TALK
+🤫 STAY HIDDEN
+Comment 🗣️ or 🤫 👇 Your vote decides Episode 6.
 
 🧩 Code piece 5/7: S · H · E · L · T · _ · _ (two letters left. Guess the word!)
 🔔 Follow so you don't miss Episode 6.
@@ -26,11 +26,11 @@ Comment A or B 👇 Your vote decides Episode 6.
 
 ## Poll (Story poll sticker)
 **Question:** He's looking straight at the booth. What do you do?
-- **Option 1:** 🅰️ Step out and talk
-- **Option 2:** 🅱️ Stay hidden
+- **Option 1:** 🗣️ Step out and talk
+- **Option 2:** 🤫 Stay hidden
 
 ## Comment poll (pin as the first comment)
-SO… WHAT WOULD YOU DO? 🤫
-🅰️ = Step out and talk to him
-🅱️ = Stay hidden in the booth
-Reply with A or B. Episode 6 follows the winning choice 👀
+SO… WHAT WOULD YOU DO? 👀
+🗣️ = Step out and talk to him
+🤫 = Stay hidden in the booth
+Reply with 🗣️ or 🤫. Episode 6 follows the winning choice 👀

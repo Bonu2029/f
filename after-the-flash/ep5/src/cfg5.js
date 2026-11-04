@@ -11,6 +11,6 @@ const EPCFG = {
     ['WHERE YOU ARE.', EV.ruleLine3 + 1.0, '#ff8a80', 46, 480]] },
   supplies: { t0: 0.4, water: '12', food: '6', light: '100%', phone: [[-1, '33%']], phoneRedAt: -1, waterHL: null },
   code: { letter: 'T', n: 5, word: 'S · H · E · L · T · _ · _' },
-  vote: { ep: 4, a: 'A · HIDE IN THE BOOTH', b: 'B · SHINE THE LIGHT', won: 'a' },
-  choice: { t0: SC(24).start, a: 'STEP OUT AND TALK', b: 'STAY HIDDEN', next: 6 },
+  vote: { ep: 4, a: '🙈 HIDE IN THE BOOTH', b: '🔦 SHINE THE LIGHT', won: 'a' },
+  choice: { t0: SC(24).start, a: 'STEP OUT AND TALK', b: 'STAY HIDDEN', next: 6, ea: '🗣️', eb: '🤫' },
 };
