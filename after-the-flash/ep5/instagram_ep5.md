@@ -24,13 +24,27 @@ Comment 🗣️ or 🤫 👇 Your vote decides Episode 6.
 
 #AfterTheFlash #Episode5 #AnimatedSeries #AnimatedShortFilm #ShortFilm #2DAnimation #AIAnimation #AIStorytelling #MadeWithAI #Thriller #HorrorStory #CreepyStories #Mystery #SurvivalStory #PostApocalyptic #Suspense #Cliffhanger #WhatWouldYouDo #ChooseYourEnding #InteractiveStory #YouDecide #GoldenRetriever #ReelsInstagram
 
-## Poll (Story poll sticker)
-**Question:** He's looking straight at the booth. What do you do?
-- **Option 1:** 🗣️ Step out and talk
-- **Option 2:** 🤫 Stay hidden
+## Poll (Story poll sticker) — copy each box separately
+
+**Question**
+```
+He's looking straight at the booth. What do you do?
+```
+
+**Option 1**
+```
+🗣️ Step out and talk
+```
+
+**Option 2**
+```
+🤫 Stay hidden
+```
 
 ## Comment poll (pin as the first comment)
+```
 SO… WHAT WOULD YOU DO? 👀
 🗣️ = Step out and talk to him
 🤫 = Stay hidden in the booth
 Reply with 🗣️ or 🤫. Episode 6 follows the winning choice 👀
+```

@@ -11,7 +11,7 @@ Instagram post file next to the MP4, named `instagram_<episode>.md` (e.g. `after
 3. **Hashtags**: 15–25 relevant hashtags (series, genre, animation, AI-made, survival/thriller, storytelling), placed at the end.
 4. **Emoji, not letters, for the two options** (from Ep5 on): pick one emoji per choice (e.g. 🗣️ STEP OUT AND TALK / 🤫 STAY HIDDEN) and use it everywhere instead of A/B or 🅰️/🅱️ — caption, Story poll options, comment poll ("Comment 🗣️ or 🤫"), and the on-screen choice card (`EPCFG.choice.ea` / `eb`). The recap vote chip shows the previous options with their emoji too.
 
-Also paste the caption in the chat reply so it can be copied directly.
+Also paste the caption in the chat reply so it can be copied directly. Give the poll as **separate copy blocks**: the Story poll question, Option 1, and Option 2 each in their own code block (in the file and in the chat reply), plus the pinned comment poll in its own block.
 
 ## AFTER THE FLASH — story canon (audience choices)
 - Ep1 poll result: **B · KEEP IT SHUT** (the gate stays locked). Ep2 script: `after-the-flash/ep2/script.md`.
